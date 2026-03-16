@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+ 
+# notebooks
+.ipynb_checkpoints/
+ 
+# large data
+data*/
+phd*/
+wetransfer*/
+ 
+# artifacts
+*.pkl
+*.joblib
+*.parquet
+*.feather
+*.csv
+ 
+# models / outputs
+models/
+outputs/
+artifacts/
