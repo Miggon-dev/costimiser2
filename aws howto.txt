@@ -1,0 +1,39 @@
+sudo ntpdate time.nist.gov
+source venv/bin/activate
+kubectl port-forward deploy/my-deployment 8000:8000
+
+\kubectl -n "$NS" logs -f "pod/$POD" -- | command grep -viE 'info|debug'
+
+POD=$(kubectl -n "$NS" get pods -l "$SEL" \
+  --field-selector=status.phase=Running \
+  -o jsonpath='{.items[0].metadata.name}')
+
+
+NS=default
+POD=$(kubectl -n $NS get pods -l app=my-deployment -o jsonpath='{.items[0].metadata.name}')
+ 
+# Tail current logs (top container if only one)
+kubectl -n $NS logs -f $POD
+ 
+# If there are multiple containers
+kubectl -n $NS logs -f $POD -c <container-name>
+ 
+# Logs from the *previous* crash (CrashLoopBackOff cases)
+kubectl -n $NS logs --previous $POD -c <container-name>
+
+NS=default   # or your actual ns
+
+SEL=$(kubectl -n "$NS" get deploy my-deployment -o json \
+  | jq -r '.spec.selector.matchLabels | to_entries | map("\(.key)=\(.value)") | join(",")')
+ 
+echo "$SEL"
+kubectl -n "$NS" get pods -l "$SEL"
+
+POD=$(kubectl -n "$NS" get pods -l "$SEL" \
+  --field-selector=status.phase=Running \
+  -o jsonpath='{.items[0].metadata.name}')
+
+
+kubectl rollout status deploy -n "costimiser" "cost-analysis-dashboard" || handle_error
+
+kubectl rollout restart deployment cost-analysis-dashboard
