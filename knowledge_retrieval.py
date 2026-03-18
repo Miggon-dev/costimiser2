@@ -23,6 +23,8 @@ import boto3
 import pandas as pd
 import numpy as np
 import faiss
+import aws_context as awsc
+
  
 # ================================
 # Status hook
@@ -61,25 +63,26 @@ _session: Optional[boto3.session.Session] = None
 rt = None
 s3 = None
 _sts = None
+_session = None
  
 def set_boto3_session(session: boto3.session.Session) -> None:
-    global _session, rt, s3, _sts
+    global _session, rt, s3, _sts, _aws_validated
     _session = session
-    rt = session.client("bedrock-runtime", region_name=REGION)
-    s3 = session.client("s3", region_name=REGION)
-    _sts = session.client("sts", region_name=REGION)
+    awsc.set_session(session)
+    rt = awsc.get_bedrock_runtime()
+    s3 = awsc.get_s3()
+    _sts = awsc.get_sts()
+    _aws_validated = False
  
 def _ensure_clients() -> None:
     global _session, rt, s3, _sts
-    if rt is not None and s3 is not None and _sts is not None:
-        return
  
-    if _session is None:
-        _session = boto3.Session(region_name=REGION)
+    if _session is not None:
+        awsc.set_session(_session)
  
-    rt = _session.client("bedrock-runtime", region_name=REGION)
-    s3 = _session.client("s3", region_name=REGION)
-    _sts = _session.client("sts", region_name=REGION)
+    rt = awsc.get_bedrock_runtime()
+    s3 = awsc.get_s3()
+    _sts = awsc.get_sts()
  
 # ================================
 # Validation flags

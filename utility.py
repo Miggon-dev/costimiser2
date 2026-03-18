@@ -1767,237 +1767,243 @@ def impute_outside_limits_with_grade_median(
     out.loc[mask_bad, var] = grade_median[mask_bad]
     return out
 
+def _feature_engineering(turnup, setpoint_df, steam_null):
+    from datetime import datetime
+    import numpy as np
+
+    for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
+        turnup[v]=turnup[v].astype("float32")
+
+    turnup['MBS_Current_reel_ID']=turnup['MBS_Current_reel_ID'].astype(int)
+    turnup['AB_Grade_ID']=turnup['AB_Grade_ID'].astype(int)
+    turnup['Wedge_Time']=pd.to_datetime(turnup['Wedge_Time'])
+
+    
+    turnup = turnup.assign(
+        grammage = turnup["AB_Grade_ID"].mod(1000),
+        paper_type = (turnup["AB_Grade_ID"] // 1000).astype("string")
+    )
+
+    turnup = turnup[turnup.grammage.isin([85,90,95,100,110,115,120,125,130,135])]
+    turnup = turnup[turnup.paper_type.isin(["3200", "6010", "3300"])]
+
+    paper_type = pd.get_dummies(turnup["paper_type"])
+    turnup = pd.concat([turnup, paper_type], axis=1)
+
+    for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
+        if any(e in v.lower() for e in ["€","g/m2","g/t","mbs_","t/t","level","consistency","temperature","l/min","fibre_fraction"]):
+            turnup.loc[turnup[v] <= 0, v] = np.nan
+
+    for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
+        if any(e in v.lower() for e in ["power","flow"]):
+            turnup.loc[turnup[v] < 0, v] = np.nan
+
+    for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
+        if any(e in v.lower() for e in ["vacuum"]):
+            turnup.loc[turnup[v] > 0, v] = np.nan
+
+    #for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
+    #    if any(e in v.lower() for e in ["mbs_sct"]):
+    #        turnup.loc[turnup[v] > 3, v] = np.nan
+
+    for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
+        if any(e in v.lower() for e in ["moisture"]):
+            turnup.loc[turnup[v] < 5, v] = np.nan
+
+    turnup.loc[turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] > 4, "Starch_uptake_by_paper_Bottom_Roll__g/m2_"] = np.nan
+    turnup.loc[turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"] > 4, "Starch_uptake_by_paper_Top_Roll__g/m2_"] = np.nan
+    turnup.loc[turnup["LF_screen_1_accept_flow"] < 600, "LF_screen_1_accept_flow"] = np.nan
+    turnup.loc[turnup["LF_screen_1_accept_flow"] > 1000, "LF_screen_1_accept_flow"] = np.nan
+    turnup.loc[turnup["Steam__€/T_"] > 100, "Steam__€/T_"] = np.nan
+    turnup.loc[turnup["Steam__kWh/T_"] > 2000, "Steam__kWh/T_"] = np.nan
+    turnup.loc[turnup["Electricity__kWh/T_"] > 500, "Electricity__kWh/T_"] = np.nan
+    turnup.loc[turnup["Starch_consumption_Top__m³/h_"] > 2, "Starch_consumption_Top__m³/h_"] = np.nan
+    turnup.loc[turnup["Starch_application_BW_in_ml"] > 30, "Starch_application_BW_in_ml"] = np.nan
+    turnup.loc[turnup["Starch_flow_to_inactivation"] > 1e8, "Starch_flow_to_inactivation"] = np.nan
+    turnup.loc[turnup["Flow_starch_main_line_to_working_tank_2~^0"] > 8, "Flow_starch_main_line_to_working_tank_2~^0"] = np.nan
+    turnup.loc[turnup["Dilution_water_working_tank_2"] > 6, "Dilution_water_working_tank_2"] = np.nan
+    turnup.loc[turnup["Pulper_consistency"] > 20, "Pulper_consistency"] = np.nan
+    turnup.loc[turnup["Combisorter_1_power"] > 150, "Combisorter_1_power"] = np.nan
+    turnup.loc[turnup["Combisorter_2_power"] > 100, "Combisorter_2_power"] = np.nan
+    turnup.loc[turnup["Contaminex_1_power"] > 100, "Contaminex_1_power"] = np.nan
+    turnup.loc[turnup["Contaminex_2_power"] > 100, "Contaminex_2_power"] = np.nan
+    turnup.loc[turnup["Contaminex_3_power"] > 100, "Contaminex_3_power"] = np.nan
+    turnup.loc[turnup["LF_screen_1_power"] > 150, "LF_screen_1_power"] = np.nan
+    turnup.loc[turnup["LF_screen_1_power"] < 100, "LF_screen_1_power"] = np.nan
+    turnup.loc[turnup["LF_screen_2_power"] > 100, "LF_screen_2_power"] = np.nan
+    turnup.loc[turnup["LF_screen_2_power"] < 85, "LF_screen_2_power"] = np.nan
+    turnup.loc[turnup["LF_screen_3_power"] > 50, "LF_screen_3_power"] = np.nan
+    turnup.loc[turnup["LF_screen_3_power"] < 40, "LF_screen_3_power"] = np.nan
+    turnup.loc[turnup["Multifractor_1_Long_fibre_fraction"] > 50, "Multifractor_1_Long_fibre_fraction"] = np.nan
+    turnup.loc[turnup["Multifractor_2_long_fibre_fraction"] > 50, "Multifractor_2_long_fibre_fraction"] = np.nan
+    turnup.loc[turnup["LF_screen_2_inlet_consistency"] > 2, "LF_screen_2_inlet_consistency"] = np.nan
+    turnup.loc[turnup["Cylinder_14_differential_pressure"] > 0.22, "Cylinder_14_differential_pressure"] = np.nan
+    turnup.loc[turnup["Multifractor_1_long_fibre_flow"] > 400, "Multifractor_1_long_fibre_flow"] = np.nan
+    turnup.loc[turnup["Short_fibre_B06_consistency"] < 4, "Short_fibre_B06_consistency"] = np.nan
+    turnup.loc[turnup["Fibre_usage__T/T_"] < .06, "Fibre_usage__T/T_"] = np.nan
+    turnup.loc[turnup['Combined_cost__€/T_'] > 300, 'Combined_cost__€/T_'] = np.nan
+    turnup.loc[turnup["LF_screen_1_accept_flow"] < 600, "LF_screen_1_accept_flow"] = np.nan
+    turnup.loc[turnup["LF_screen_1_accept_flow"] > 1000, "LF_screen_1_accept_flow"] = np.nan
+    turnup.loc[turnup["Jet/wire_ratio"] > -10, "LF_screen_1_accept_flow"] = np.nan
+    turnup.loc[turnup["MBS_SCT_CD"] > 2.5, "MBS_SCT_CD"] = np.nan
+    turnup.loc[turnup["Draw_AD7-PR"] < 0, "Draw_AD7-PR"] = np.nan
+    turnup.loc[turnup["Draw_SS-AD6"] > 0.25, "Draw_SS-AD6"] = np.nan
+    turnup.loc[turnup["Draw_PD5-SS"] < -0.25, "Draw_PD5-SS"] = np.nan
+    turnup.loc[turnup["Draw_PD3-PD4"] > 0.35, "Draw_PD3-PD4"] = np.nan
+    turnup.loc[turnup["White_water_temperature"] > 60, "White_water_temperature"] = np.nan
+    turnup.loc[turnup["Bentonite_filter_differential_pressure"] > 0, "Bentonite_filter_differential_pressure"] = np.nan
+    turnup.loc[turnup["Jet/wire_ratio"] > -10, "Jet/wire_ratio"] = np.nan
+    turnup.loc[turnup["Free_gas_before_dilution_water_deculator_measurement_1~^0"] > 2, "Free_gas_before_dilution_water_deculator_measurement_1~^0"] = np.nan
+    turnup.loc[turnup["Free_gas_before_dilution_water_deculator_measurement_2"] > 2, "Free_gas_before_dilution_water_deculator_measurement_2"] = np.nan
+    turnup.loc[turnup["Dissolved_gas_before_dilution_water_deculator"] > 2,  "Dissolved_gas_before_dilution_water_deculator"] = np.nan
+    turnup.loc[turnup["Dissolved_gas_before_dilution_water_deculator"] > 2,  "Dissolved_gas_before_dilution_water_deculator"] = np.nan
+    turnup.loc[turnup["Free_gas_after_stock_deculator~^0"] > 0.8,  "Free_gas_after_stock_deculator~^0"] = np.nan
+    turnup.loc[turnup["Dissolved_gas_after_stock_deculator_measurement_1"] > 1,  "Dissolved_gas_after_stock_deculator_measurement_1"] = np.nan
+    turnup.loc[turnup["Dissolved_gas_after_stock_deculator_measurement_2"] > 1,  "Dissolved_gas_after_stock_deculator_measurement_2"] = np.nan
+    turnup.loc[turnup["Condensate_energy_from_paper_plant_to_power_plant"] < 4.5,  "Condensate_energy_from_paper_plant_to_power_plant"] = np.nan
+    turnup.loc[(turnup["Act_Deaerator_mass_flow__g/T_"] > 250) & (turnup["Act_Deaerator_mass_flow__g/T_"] < 70),  "Act_Deaerator_mass_flow__g/T_"] = np.nan
+    turnup.loc[(turnup["Defoamer_mass_flow__g/T_"] > 250) & (turnup["Defoamer_mass_flow__g/T_"] < 30),  "Defoamer_mass_flow__g/T_"] = np.nan
+    turnup.loc[(turnup["Sizing_Agent__g/T_"] > 6000) & (turnup["Sizing_Agent__g/T_"] < 3500),  "Sizing_Agent__g/T_"] = np.nan
+    turnup.loc[(turnup["Dry_Strength_Agent_mass_flow__kg/T_"] > 16) & (turnup["Dry_Strength_Agent_mass_flow__kg/T_"] < 10),  "Dry_Strength_Agent_mass_flow__kg/T_"] = np.nan
+    turnup.loc[(turnup["Natriumhydroxide_mass_flow__g/T_"] > 3000) & (turnup["Natriumhydroxide_mass_flow__g/T_"] < 340),  "Natriumhydroxide_mass_flow__g/T_"] = np.nan
+    turnup.loc[(turnup["Long_fibre_consistency_B07"] <= 0) & (turnup["Long_fibre_consistency_B07"] >= 100),  "Long_fibre_consistency_B07"] = np.nan
+    turnup.loc[(turnup["Short_fibre_B06_consistency"] <= 0) & (turnup["Short_fibre_B06_consistency"] >= 100),  "Short_fibre_B06_consistency"] = np.nan
+    turnup.loc[turnup["Long_fibre_flow"] <= 0,  "Long_fibre_flow"] = np.nan
+
+    impute_outside_limits_with_grade_median(turnup, "Steam__kWh/T_", 800, 1220, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Steam__€/T_", 75, 110, inplace=True)
+
+    for v in ["Pressure_to_inactivation","Current_reel_moisture_average(reel)","Current_reel_dry_average"]:
+        turnup.loc[turnup[v] <= 2, v] = np.nan
+
+    for v in ["Multifractor_1_long_fibre_flow"]:
+        turnup.loc[turnup[v] <= 250, v] = np.nan
+
+    for v in ["Starch_flow_to_inactivation"]:
+        turnup.loc[turnup[v] <= 10000, v] = np.nan
+
+    turnup.loc[(turnup["AB_Grade_ID"]==6010100) &  ( turnup["MBS_CMT30"] > 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]==6010100]["MBS_CMT30"].mean()
+    turnup.loc[(turnup["AB_Grade_ID"]==6010120) &  ( turnup["MBS_CMT30"] < 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]==6010120]["MBS_CMT30"].mean()
+    turnup.loc[turnup["MBS_SCT_CD"] > 2.5, "MBS_SCT_CD"] = np.nan
+
+    turnup = turnup.ffill().bfill().copy()
+
+    # TO ADD
+    if not steam_null:
+        turnup = turnup[turnup["Steam_flow_to_PreDryers"]>42] 
+        turnup = turnup[~((turnup.Wedge_Time > "2025-10-23 11:56") & (turnup.Wedge_Time <"2025-11-16 10:00"))]
+    # END TO ADD
+
+    turnup["Fibre_usage__T/T_"]=(turnup["Current_basis_weight"]*(1-turnup["Current_reel_moisture_average(reel)"]/100)-turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]-turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"])/turnup["Current_basis_weight"]
+    turnup['Combined_cost__€/T_'] = turnup['Combined_cost__€/T_'] - turnup['Fibre_cost__€/T_'] + 146.46 * turnup["Fibre_usage__T/T_"] - turnup['Electricity__€/T_'] + turnup["Electricity__kWh/T_"] * 113.66 / 1000
+    turnup['Fibre_cost__€/T_'] = 146.46*turnup["Fibre_usage__T/T_"]
+    turnup['Electricity__€/T_'] = turnup["Electricity__kWh/T_"] * 113.66 / 1000
+
+    turnup.loc[:,"Starch_uptake__g/m2_"]=turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]+turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"]
+    turnup.loc[:,"ratio_starch"]=turnup["Starch_uptake__g/m2_"]/turnup["Current_basis_weight"]
+    turnup.loc[:,'MC_SF_LF_Demand'] = ((turnup['Short_fibre_flow'] * (turnup['Short_fibre_B06_consistency']/100))+(turnup['Long_fibre_flow']*(turnup['Long_fibre_consistency_B07']/100)))*(60/1000)
+
+    turnup.loc[:,"Steam_current__€/h_"] = turnup["Steam__€/T_"] * turnup["Production_Rate__T/h_"]
+    turnup.loc[:,"Electricity_current__€/h_"] = turnup["Electricity__€/T_"] * turnup["Production_Rate__T/h_"]
+    turnup.loc[:,"Starch_current__€/h_"] = turnup['Starch__€/T_'] * turnup["Production_Rate__T/h_"]
+    turnup['Flow_starch_main_line_to_working_tank']=turnup['Flow_starch_main_line_to_working_tank_2~^0']+turnup["Flow_starch_main_line_to_working_tank_1~^0"]
+    
+    turnup["concentration_starch_working_tank_1"]=turnup["Flow_starch_main_line_to_working_tank_1~^0"]/(turnup["Dilution_water_working_tank_1"]+turnup["Flow_starch_main_line_to_working_tank_1~^0"])
+    turnup["concentration_starch_working_tank_2"]=turnup["Flow_starch_main_line_to_working_tank_2~^0"]/(turnup["Dilution_water_working_tank_2"]+turnup["Flow_starch_main_line_to_working_tank_2~^0"])
+
+    turnup["fibre_short/long"] = turnup['Short_fibre_flow']*turnup['Short_fibre_B06_consistency']/(turnup['Long_fibre_flow']*turnup['Long_fibre_consistency_B07'])
+    turnup["delta_moisture"]=turnup["Current_reel_moisture_average(reel)"]-turnup["Moisture_out_of_PreDryer"]
+    turnup["Fibre_sqm"]=(turnup["Current_reel_dry_average"]-turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]-turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"])
+
+    turnup["AB_Grade_ID"] = turnup["AB_Grade_ID"].astype(str)
+
+    turnup[_agg_cost_label()] = turnup[_costs_to_consider()].sum(axis=1)
+
+    turnup['Combined_cost__€/T_'] = np.where(turnup['Combined_cost__€/T_'] < turnup[_agg_cost_label()] + turnup['Fibre_cost__€/T_'] ,
+                                                turnup[_agg_cost_label()] + turnup['Fibre_cost__€/T_'],
+                                                turnup['Combined_cost__€/T_'])        
+    turnup['Chemicals__€/T_'] = turnup['Combined_cost__€/T_'] - turnup[['Steam__€/T_','Electricity__€/T_','Starch__€/T_','Fibre_cost__€/T_']].sum(axis=1)
+
+    turnup["Combined_cost_current_€/h_"] = turnup[_agg_cost_label()] * turnup["Production_Rate__T/h_"]
+
+    turnup["Steam_flow_to_PreDryers_sqm"]=turnup["Steam_flow_to_PreDryers"]*1e5/(turnup["Speed"]*turnup["Current_reel_width"]*60) # Kg/m2
+    turnup["Steam_flow_to_PreDryers_index"]=turnup["Steam_flow_to_PreDryers_sqm"]*1000/turnup["Current_basis_weight"]   # Kg/Kg
+    turnup["Steam_flow_to_AfterDryers_sqm"]=turnup["Steam_flow_to_AfterDryers"]*1e5/(turnup["Speed"]*turnup["Current_reel_width"]*60)
+    turnup["Steam_flow_to_AfterDryers_index"]=turnup["Steam_flow_to_AfterDryers_sqm"]*1000/turnup["Current_basis_weight"]
+    turnup["Steam__kW"]=turnup["Steam__kWh/T_"]*turnup["Production_Rate__T/h_"]
+
+    turnup["Electricity_index"]=turnup["Electricity__kWh/T_"]
+    turnup["Electricity_sqm"]=turnup["Electricity__kWh/T_"]*turnup["Production_Rate__T/h_"]*100/(turnup["Speed"]*turnup["Current_reel_width"]*60)
+    turnup["SCT_CD_index"]=turnup["MBS_SCT_CD"]/turnup["Current_basis_weight"]
+    turnup["retention"]=1-turnup['Consistency_white_water']/(10*turnup['Headbox_consistency'])
+
+    coef_df = pd.DataFrame({
+        "property": ["MBS_SCT_MD", "MBS_SCT_CD", "MBS_Burst", "MBS_CMT30"],
+        "starch_coef": [0.1356332061139627, 0.15738688100760012, 10.8090692825425, 3.701831560389852]
+    })
+
+    turnup["Wedge_Date"] = turnup["Wedge_Time"].dt.date
+
+    setpnts=setpoint_df[setpoint_df.variable=="min"]
+    #setpnts["AB_Grade_ID"]=setpnts["AB_Grade_ID"].astype(int)
+    setpnts=setpnts.rename(columns={"value":"minimum"})
+
+    overprocessing=pd.melt(turnup[["Wedge_Time",'AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_','MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30']], id_vars=['Wedge_Time','AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_'], value_vars=['MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30'],var_name="property").merge(setpnts, on=["AB_Grade_ID","property"], how="left").drop("variable",axis=1).dropna()
+    overprocessing=pd.merge(overprocessing,coef_df,on=["property"],how="left")
+    overprocessing["property_diff"]=overprocessing["value"]-overprocessing["minimum"]
+    overprocessing["property_pct"]=overprocessing["property_diff"]/overprocessing["minimum"]
+    overprocessing["starch_uptake_diff"]=overprocessing["property_diff"]*overprocessing["starch_coef"]
+    overprocessing["starch_mass_flow_diff_avg"]=overprocessing["starch_uptake_diff"]*1000/overprocessing['Current_basis_weight'] #kg/T
+    overprocessing["starch_cost_diff"]=overprocessing["starch_mass_flow_diff_avg"]* 434.22 / 1000
+    overprocessing = overprocessing[["MBS_Current_reel_ID","property","property_pct","starch_cost_diff"]]
+    overprocessingT=overprocessing.groupby('MBS_Current_reel_ID').agg({"property_pct":"mean","starch_cost_diff":"mean"}).reset_index()
+    overprocessingT["property"]="ALL"
+    overprocessing=pd.concat([overprocessing,overprocessingT],axis=0)
+    overprocessing=overprocessing.pivot(index=["MBS_Current_reel_ID"],columns="property",values=["property_pct","starch_cost_diff"])
+    overprocessing1=overprocessing["property_pct"].rename(columns={"ALL":"Overprocessing_percentage","MBS_SCT_CD":"Overprocessing_SCT_CD","MBS_Burst":"Overprocessing_Burst","MBS_CMT30":"Overprocessing_CMT30"})
+    overprocessing2=overprocessing["starch_cost_diff"][["ALL"]].rename(columns={"ALL":"Overprocessing_cost__€/T_"})
+    overprocessing=pd.concat([overprocessing1,overprocessing2],axis=1)
+    overprocessing=overprocessing.reset_index()[["MBS_Current_reel_ID","Overprocessing_percentage","Overprocessing_SCT_CD","Overprocessing_Burst","Overprocessing_CMT30","Overprocessing_cost__€/T_"]]
+    turnup=pd.merge(turnup,overprocessing,on='MBS_Current_reel_ID',how="left")
+    return turnup
+
+
 def _turnup_data(local, bucket, fs, setpoint_df, steam_null):
-  from datetime import datetime
-  import numpy as np
+    from datetime import datetime
+    import numpy as np
 
-  if local:
+    if local:
 
-      turnup=[]
+        turnup=[]
 
-      for time_ref in ["2025-06-01","2025-07-01","2025-08-01","2025-09-01","2025-10-01","2025-11-01","2025-12-01","2026-01-01","2026-02-01","2026-03-01"]:
-          #print(time_ref)
-          turnup.append(pd.read_parquet(f"./data/costimier_turnup_{time_ref}.parquet",engine="fastparquet"))
-      turnup=pd.concat(turnup,axis=0).copy()
-  else:            
-      prefix = "turnup"
-      paths = [
-          f"s3://{bucket}/{prefix}/costimier_turnup_{d:%Y-%m-%d}.parquet"
-          for d in daterange(datetime(2025, 6, 1), datetime.now(), jump="month")
-      
-      ]
-      existing_paths = [p for p in paths if fs.exists(p)]
-      
-      turnup = pd.concat(
-          (                    
-              pd.read_parquet(p, filesystem=fs)   
-              .assign(**{
-                  c: lambda df, c=c: df[c].astype("float32")
-                  for c in pd.read_parquet(p, filesystem=fs).select_dtypes(include=["number"]).columns
-              })
-              for p in existing_paths
-          ),
-          ignore_index=True,
-          sort=False
-      )
+        for time_ref in ["2025-06-01","2025-07-01","2025-08-01","2025-09-01","2025-10-01","2025-11-01","2025-12-01","2026-01-01","2026-02-01","2026-03-01"]:
+            #print(time_ref)
+            turnup.append(pd.read_parquet(f"./data/costimier_turnup_{time_ref}.parquet",engine="fastparquet"))
+        turnup=pd.concat(turnup,axis=0).copy()
+    else:            
+        prefix = "turnup"
+        paths = [
+            f"s3://{bucket}/{prefix}/costimier_turnup_{d:%Y-%m-%d}.parquet"
+            for d in daterange(datetime(2025, 6, 1), datetime.now(), jump="month")
+        
+        ]
+        existing_paths = [p for p in paths if fs.exists(p)]
+        
+        turnup = pd.concat(
+            (                    
+                pd.read_parquet(p, filesystem=fs)   
+                .assign(**{
+                    c: lambda df, c=c: df[c].astype("float32")
+                    for c in pd.read_parquet(p, filesystem=fs).select_dtypes(include=["number"]).columns
+                })
+                for p in existing_paths
+            ),
+            ignore_index=True,
+            sort=False
+        )
+    turnup = _feature_engineering(turnup, setpoint_df, steam_null)
 
-
-  for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
-      turnup[v]=turnup[v].astype("float32")
-
-  turnup['MBS_Current_reel_ID']=turnup['MBS_Current_reel_ID'].astype(int)
-  turnup['AB_Grade_ID']=turnup['AB_Grade_ID'].astype(int)
-  turnup['Wedge_Time']=pd.to_datetime(turnup['Wedge_Time'])
-
-  
-  turnup = turnup.assign(
-      grammage = turnup["AB_Grade_ID"].mod(1000),
-      paper_type = (turnup["AB_Grade_ID"] // 1000).astype("string")
-  )
-
-  turnup = turnup[turnup.grammage.isin([85,90,95,100,110,115,120,125,130,135])]
-  turnup = turnup[turnup.paper_type.isin(["3200", "6010", "3300"])]
-
-  paper_type = pd.get_dummies(turnup["paper_type"])
-  turnup = pd.concat([turnup, paper_type], axis=1)
-
-  for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
-      if any(e in v.lower() for e in ["€","g/m2","g/t","mbs_","t/t","level","consistency","temperature","l/min","fibre_fraction"]):
-          turnup.loc[turnup[v] <= 0, v] = np.nan
-
-  for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
-      if any(e in v.lower() for e in ["power","flow"]):
-          turnup.loc[turnup[v] < 0, v] = np.nan
-
-  for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
-      if any(e in v.lower() for e in ["vacuum"]):
-          turnup.loc[turnup[v] > 0, v] = np.nan
-
-  #for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
-  #    if any(e in v.lower() for e in ["mbs_sct"]):
-  #        turnup.loc[turnup[v] > 3, v] = np.nan
-
-  for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
-      if any(e in v.lower() for e in ["moisture"]):
-          turnup.loc[turnup[v] < 5, v] = np.nan
-
-  turnup.loc[turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] > 4, "Starch_uptake_by_paper_Bottom_Roll__g/m2_"] = np.nan
-  turnup.loc[turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"] > 4, "Starch_uptake_by_paper_Top_Roll__g/m2_"] = np.nan
-  turnup.loc[turnup["LF_screen_1_accept_flow"] < 600, "LF_screen_1_accept_flow"] = np.nan
-  turnup.loc[turnup["LF_screen_1_accept_flow"] > 1000, "LF_screen_1_accept_flow"] = np.nan
-  turnup.loc[turnup["Steam__€/T_"] > 100, "Steam__€/T_"] = np.nan
-  turnup.loc[turnup["Steam__kWh/T_"] > 2000, "Steam__kWh/T_"] = np.nan
-  turnup.loc[turnup["Electricity__kWh/T_"] > 500, "Electricity__kWh/T_"] = np.nan
-  turnup.loc[turnup["Starch_consumption_Top__m³/h_"] > 2, "Starch_consumption_Top__m³/h_"] = np.nan
-  turnup.loc[turnup["Starch_application_BW_in_ml"] > 30, "Starch_application_BW_in_ml"] = np.nan
-  turnup.loc[turnup["Starch_flow_to_inactivation"] > 1e8, "Starch_flow_to_inactivation"] = np.nan
-  turnup.loc[turnup["Flow_starch_main_line_to_working_tank_2~^0"] > 8, "Flow_starch_main_line_to_working_tank_2~^0"] = np.nan
-  turnup.loc[turnup["Dilution_water_working_tank_2"] > 6, "Dilution_water_working_tank_2"] = np.nan
-  turnup.loc[turnup["Pulper_consistency"] > 20, "Pulper_consistency"] = np.nan
-  turnup.loc[turnup["Combisorter_1_power"] > 150, "Combisorter_1_power"] = np.nan
-  turnup.loc[turnup["Combisorter_2_power"] > 100, "Combisorter_2_power"] = np.nan
-  turnup.loc[turnup["Contaminex_1_power"] > 100, "Contaminex_1_power"] = np.nan
-  turnup.loc[turnup["Contaminex_2_power"] > 100, "Contaminex_2_power"] = np.nan
-  turnup.loc[turnup["Contaminex_3_power"] > 100, "Contaminex_3_power"] = np.nan
-  turnup.loc[turnup["LF_screen_1_power"] > 150, "LF_screen_1_power"] = np.nan
-  turnup.loc[turnup["LF_screen_1_power"] < 100, "LF_screen_1_power"] = np.nan
-  turnup.loc[turnup["LF_screen_2_power"] > 100, "LF_screen_2_power"] = np.nan
-  turnup.loc[turnup["LF_screen_2_power"] < 85, "LF_screen_2_power"] = np.nan
-  turnup.loc[turnup["LF_screen_3_power"] > 50, "LF_screen_3_power"] = np.nan
-  turnup.loc[turnup["LF_screen_3_power"] < 40, "LF_screen_3_power"] = np.nan
-  turnup.loc[turnup["Multifractor_1_Long_fibre_fraction"] > 50, "Multifractor_1_Long_fibre_fraction"] = np.nan
-  turnup.loc[turnup["Multifractor_2_long_fibre_fraction"] > 50, "Multifractor_2_long_fibre_fraction"] = np.nan
-  turnup.loc[turnup["LF_screen_2_inlet_consistency"] > 2, "LF_screen_2_inlet_consistency"] = np.nan
-  turnup.loc[turnup["Cylinder_14_differential_pressure"] > 0.22, "Cylinder_14_differential_pressure"] = np.nan
-  turnup.loc[turnup["Multifractor_1_long_fibre_flow"] > 400, "Multifractor_1_long_fibre_flow"] = np.nan
-  turnup.loc[turnup["Short_fibre_B06_consistency"] < 4, "Short_fibre_B06_consistency"] = np.nan
-  turnup.loc[turnup["Fibre_usage__T/T_"] < .06, "Fibre_usage__T/T_"] = np.nan
-  turnup.loc[turnup['Combined_cost__€/T_'] > 300, 'Combined_cost__€/T_'] = np.nan
-  turnup.loc[turnup["LF_screen_1_accept_flow"] < 600, "LF_screen_1_accept_flow"] = np.nan
-  turnup.loc[turnup["LF_screen_1_accept_flow"] > 1000, "LF_screen_1_accept_flow"] = np.nan
-  turnup.loc[turnup["Jet/wire_ratio"] > -10, "LF_screen_1_accept_flow"] = np.nan
-  turnup.loc[turnup["MBS_SCT_CD"] > 2.5, "MBS_SCT_CD"] = np.nan
-  turnup.loc[turnup["Draw_AD7-PR"] < 0, "Draw_AD7-PR"] = np.nan
-  turnup.loc[turnup["Draw_SS-AD6"] > 0.25, "Draw_SS-AD6"] = np.nan
-  turnup.loc[turnup["Draw_PD5-SS"] < -0.25, "Draw_PD5-SS"] = np.nan
-  turnup.loc[turnup["Draw_PD3-PD4"] > 0.35, "Draw_PD3-PD4"] = np.nan
-  turnup.loc[turnup["White_water_temperature"] > 60, "White_water_temperature"] = np.nan
-  turnup.loc[turnup["Bentonite_filter_differential_pressure"] > 0, "Bentonite_filter_differential_pressure"] = np.nan
-  turnup.loc[turnup["Jet/wire_ratio"] > -10, "Jet/wire_ratio"] = np.nan
-  turnup.loc[turnup["Free_gas_before_dilution_water_deculator_measurement_1~^0"] > 2, "Free_gas_before_dilution_water_deculator_measurement_1~^0"] = np.nan
-  turnup.loc[turnup["Free_gas_before_dilution_water_deculator_measurement_2"] > 2, "Free_gas_before_dilution_water_deculator_measurement_2"] = np.nan
-  turnup.loc[turnup["Dissolved_gas_before_dilution_water_deculator"] > 2,  "Dissolved_gas_before_dilution_water_deculator"] = np.nan
-  turnup.loc[turnup["Dissolved_gas_before_dilution_water_deculator"] > 2,  "Dissolved_gas_before_dilution_water_deculator"] = np.nan
-  turnup.loc[turnup["Free_gas_after_stock_deculator~^0"] > 0.8,  "Free_gas_after_stock_deculator~^0"] = np.nan
-  turnup.loc[turnup["Dissolved_gas_after_stock_deculator_measurement_1"] > 1,  "Dissolved_gas_after_stock_deculator_measurement_1"] = np.nan
-  turnup.loc[turnup["Dissolved_gas_after_stock_deculator_measurement_2"] > 1,  "Dissolved_gas_after_stock_deculator_measurement_2"] = np.nan
-  turnup.loc[turnup["Condensate_energy_from_paper_plant_to_power_plant"] < 4.5,  "Condensate_energy_from_paper_plant_to_power_plant"] = np.nan
-  turnup.loc[(turnup["Act_Deaerator_mass_flow__g/T_"] > 250) & (turnup["Act_Deaerator_mass_flow__g/T_"] < 70),  "Act_Deaerator_mass_flow__g/T_"] = np.nan
-  turnup.loc[(turnup["Defoamer_mass_flow__g/T_"] > 250) & (turnup["Defoamer_mass_flow__g/T_"] < 30),  "Defoamer_mass_flow__g/T_"] = np.nan
-  turnup.loc[(turnup["Sizing_Agent__g/T_"] > 6000) & (turnup["Sizing_Agent__g/T_"] < 3500),  "Sizing_Agent__g/T_"] = np.nan
-  turnup.loc[(turnup["Dry_Strength_Agent_mass_flow__kg/T_"] > 16) & (turnup["Dry_Strength_Agent_mass_flow__kg/T_"] < 10),  "Dry_Strength_Agent_mass_flow__kg/T_"] = np.nan
-  turnup.loc[(turnup["Natriumhydroxide_mass_flow__g/T_"] > 3000) & (turnup["Natriumhydroxide_mass_flow__g/T_"] < 340),  "Natriumhydroxide_mass_flow__g/T_"] = np.nan
-  turnup.loc[(turnup["Long_fibre_consistency_B07"] <= 0) & (turnup["Long_fibre_consistency_B07"] >= 100),  "Long_fibre_consistency_B07"] = np.nan
-  turnup.loc[(turnup["Short_fibre_B06_consistency"] <= 0) & (turnup["Short_fibre_B06_consistency"] >= 100),  "Short_fibre_B06_consistency"] = np.nan
-  turnup.loc[turnup["Long_fibre_flow"] <= 0,  "Long_fibre_flow"] = np.nan
-
-  impute_outside_limits_with_grade_median(turnup, "Steam__kWh/T_", 800, 1220, inplace=True)
-  impute_outside_limits_with_grade_median(turnup, "Steam__€/T_", 75, 110, inplace=True)
-
-  for v in ["Pressure_to_inactivation","Current_reel_moisture_average(reel)","Current_reel_dry_average"]:
-      turnup.loc[turnup[v] <= 2, v] = np.nan
-
-  for v in ["Multifractor_1_long_fibre_flow"]:
-      turnup.loc[turnup[v] <= 250, v] = np.nan
-
-  for v in ["Starch_flow_to_inactivation"]:
-      turnup.loc[turnup[v] <= 10000, v] = np.nan
-
-  turnup.loc[(turnup["AB_Grade_ID"]==6010100) &  ( turnup["MBS_CMT30"] > 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]==6010100]["MBS_CMT30"].mean()
-  turnup.loc[(turnup["AB_Grade_ID"]==6010120) &  ( turnup["MBS_CMT30"] < 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]==6010120]["MBS_CMT30"].mean()
-  turnup.loc[turnup["MBS_SCT_CD"] > 2.5, "MBS_SCT_CD"] = np.nan
-
-  turnup = turnup.ffill().bfill().copy()
-
-  # TO ADD
-  if not steam_null:
-      turnup = turnup[turnup["Steam_flow_to_PreDryers"]>42] 
-      turnup = turnup[~((turnup.Wedge_Time > "2025-10-23 11:56") & (turnup.Wedge_Time <"2025-11-16 10:00"))]
-  # END TO ADD
-
-  turnup["Fibre_usage__T/T_"]=(turnup["Current_basis_weight"]*(1-turnup["Current_reel_moisture_average(reel)"]/100)-turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]-turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"])/turnup["Current_basis_weight"]
-  turnup['Combined_cost__€/T_'] = turnup['Combined_cost__€/T_'] - turnup['Fibre_cost__€/T_'] + 146.46 * turnup["Fibre_usage__T/T_"] - turnup['Electricity__€/T_'] + turnup["Electricity__kWh/T_"] * 113.66 / 1000
-  turnup['Fibre_cost__€/T_'] = 146.46*turnup["Fibre_usage__T/T_"]
-  turnup['Electricity__€/T_'] = turnup["Electricity__kWh/T_"] * 113.66 / 1000
-
-  turnup.loc[:,"Starch_uptake__g/m2_"]=turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]+turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"]
-  turnup.loc[:,"ratio_starch"]=turnup["Starch_uptake__g/m2_"]/turnup["Current_basis_weight"]
-  turnup.loc[:,'MC_SF_LF_Demand'] = ((turnup['Short_fibre_flow'] * (turnup['Short_fibre_B06_consistency']/100))+(turnup['Long_fibre_flow']*(turnup['Long_fibre_consistency_B07']/100)))*(60/1000)
-
-  turnup.loc[:,"Steam_current__€/h_"] = turnup["Steam__€/T_"] * turnup["Production_Rate__T/h_"]
-  turnup.loc[:,"Electricity_current__€/h_"] = turnup["Electricity__€/T_"] * turnup["Production_Rate__T/h_"]
-  turnup.loc[:,"Starch_current__€/h_"] = turnup['Starch__€/T_'] * turnup["Production_Rate__T/h_"]
-  turnup['Flow_starch_main_line_to_working_tank']=turnup['Flow_starch_main_line_to_working_tank_2~^0']+turnup["Flow_starch_main_line_to_working_tank_1~^0"]
-  
-  turnup["concentration_starch_working_tank_1"]=turnup["Flow_starch_main_line_to_working_tank_1~^0"]/(turnup["Dilution_water_working_tank_1"]+turnup["Flow_starch_main_line_to_working_tank_1~^0"])
-  turnup["concentration_starch_working_tank_2"]=turnup["Flow_starch_main_line_to_working_tank_2~^0"]/(turnup["Dilution_water_working_tank_2"]+turnup["Flow_starch_main_line_to_working_tank_2~^0"])
-
-  turnup["fibre_short/long"] = turnup['Short_fibre_flow']*turnup['Short_fibre_B06_consistency']/(turnup['Long_fibre_flow']*turnup['Long_fibre_consistency_B07'])
-  turnup["delta_moisture"]=turnup["Current_reel_moisture_average(reel)"]-turnup["Moisture_out_of_PreDryer"]
-  turnup["Fibre_sqm"]=(turnup["Current_reel_dry_average"]-turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]-turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"])
-
-  turnup["AB_Grade_ID"] = turnup["AB_Grade_ID"].astype(str)
-
-  turnup[_agg_cost_label()] = turnup[_costs_to_consider()].sum(axis=1)
-
-  turnup['Combined_cost__€/T_'] = np.where(turnup['Combined_cost__€/T_'] < turnup[_agg_cost_label()] + turnup['Fibre_cost__€/T_'] ,
-                                            turnup[_agg_cost_label()] + turnup['Fibre_cost__€/T_'],
-                                            turnup['Combined_cost__€/T_'])        
-  turnup['Chemicals__€/T_'] = turnup['Combined_cost__€/T_'] - turnup[['Steam__€/T_','Electricity__€/T_','Starch__€/T_','Fibre_cost__€/T_']].sum(axis=1)
-
-  turnup["Combined_cost_current_€/h_"] = turnup[_agg_cost_label()] * turnup["Production_Rate__T/h_"]
-
-  turnup["Steam_flow_to_PreDryers_sqm"]=turnup["Steam_flow_to_PreDryers"]*1e5/(turnup["Speed"]*turnup["Current_reel_width"]*60) # Kg/m2
-  turnup["Steam_flow_to_PreDryers_index"]=turnup["Steam_flow_to_PreDryers_sqm"]*1000/turnup["Current_basis_weight"]   # Kg/Kg
-  turnup["Steam_flow_to_AfterDryers_sqm"]=turnup["Steam_flow_to_AfterDryers"]*1e5/(turnup["Speed"]*turnup["Current_reel_width"]*60)
-  turnup["Steam_flow_to_AfterDryers_index"]=turnup["Steam_flow_to_AfterDryers_sqm"]*1000/turnup["Current_basis_weight"]
-  turnup["Steam__kW"]=turnup["Steam__kWh/T_"]*turnup["Production_Rate__T/h_"]
-
-  turnup["Electricity_index"]=turnup["Electricity__kWh/T_"]
-  turnup["Electricity_sqm"]=turnup["Electricity__kWh/T_"]*turnup["Production_Rate__T/h_"]*100/(turnup["Speed"]*turnup["Current_reel_width"]*60)
-  turnup["SCT_CD_index"]=turnup["MBS_SCT_CD"]/turnup["Current_basis_weight"]
-  turnup["retention"]=1-turnup['Consistency_white_water']/(10*turnup['Headbox_consistency'])
-
-  coef_df = pd.DataFrame({
-      "property": ["MBS_SCT_MD", "MBS_SCT_CD", "MBS_Burst", "MBS_CMT30"],
-      "starch_coef": [0.1356332061139627, 0.15738688100760012, 10.8090692825425, 3.701831560389852]
-  })
-
-  turnup["Wedge_Date"] = turnup["Wedge_Time"].dt.date
-
-  setpnts=setpoint_df[setpoint_df.variable=="min"]
-  #setpnts["AB_Grade_ID"]=setpnts["AB_Grade_ID"].astype(int)
-  setpnts=setpnts.rename(columns={"value":"minimum"})
-
-  overprocessing=pd.melt(turnup[["Wedge_Time",'AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_','MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30']], id_vars=['Wedge_Time','AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_'], value_vars=['MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30'],var_name="property").merge(setpnts, on=["AB_Grade_ID","property"], how="left").drop("variable",axis=1).dropna()
-  overprocessing=pd.merge(overprocessing,coef_df,on=["property"],how="left")
-  overprocessing["property_diff"]=overprocessing["value"]-overprocessing["minimum"]
-  overprocessing["property_pct"]=overprocessing["property_diff"]/overprocessing["minimum"]
-  overprocessing["starch_uptake_diff"]=overprocessing["property_diff"]*overprocessing["starch_coef"]
-  overprocessing["starch_mass_flow_diff_avg"]=overprocessing["starch_uptake_diff"]*1000/overprocessing['Current_basis_weight'] #kg/T
-  overprocessing["starch_cost_diff"]=overprocessing["starch_mass_flow_diff_avg"]* 434.22 / 1000
-  overprocessing = overprocessing[["MBS_Current_reel_ID","property","property_pct","starch_cost_diff"]]
-  overprocessingT=overprocessing.groupby('MBS_Current_reel_ID').agg({"property_pct":"mean","starch_cost_diff":"mean"}).reset_index()
-  overprocessingT["property"]="ALL"
-  overprocessing=pd.concat([overprocessing,overprocessingT],axis=0)
-  overprocessing=overprocessing.pivot(index=["MBS_Current_reel_ID"],columns="property",values=["property_pct","starch_cost_diff"])
-  overprocessing1=overprocessing["property_pct"].rename(columns={"ALL":"Overprocessing_percentage","MBS_SCT_CD":"Overprocessing_SCT_CD","MBS_Burst":"Overprocessing_Burst","MBS_CMT30":"Overprocessing_CMT30"})
-  overprocessing2=overprocessing["starch_cost_diff"][["ALL"]].rename(columns={"ALL":"Overprocessing_cost__€/T_"})
-  overprocessing=pd.concat([overprocessing1,overprocessing2],axis=1)
-  overprocessing=overprocessing.reset_index()[["MBS_Current_reel_ID","Overprocessing_percentage","Overprocessing_SCT_CD","Overprocessing_Burst","Overprocessing_CMT30","Overprocessing_cost__€/T_"]]
-  turnup=pd.merge(turnup,overprocessing,on='MBS_Current_reel_ID',how="left")
-
-  return turnup
+    return turnup 
 
 def _raw_data(turnup_data):
   turnup = turnup_data
@@ -3120,7 +3126,7 @@ def _drilldown_analysis_plot(drilldown, mix_contribution, level, object_drilldow
       units=""
   
   fig = plot_cost_breakdown(object_drilldown, C, free_y=True, units=units, title=f"Comparison of {object_drilldown} by grade and {reference_drilldown}")
-  if level==1:
+  if level==1 and mix_contribution is not None:
       mix, efficiency = mix_contribution
       for tr in fig.data:
           if tr.type == "scatter" and tr.mode == "text" and "top center" in (tr.textposition or ""):                
@@ -5453,3 +5459,255 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             "Water_flow_Afterdryer_input": cls._add_water_flow_afterdryer_input,
             "Water_flow_Afterdryer_output": cls._add_water_flow_afterdryer_output,
         }
+    
+def calculate_manual_shap(model, X_sample, grade_id=None, X_reference=None, grade_col=None):
+    """
+    SHAP (using shap library) for NON-linear pipelines, computed per grade to avoid grade-mix bias.
+ 
+    Parameters (kept compatible with your old signature style)
+    ----------------------------------------------------------
+    model : fitted estimator or pipeline with .predict
+    X_sample : pd.DataFrame
+        Raw samples to explain (may contain multiple grades)
+    grade_id : optional
+        If provided, compute SHAP only for that grade (subset of X_sample).
+        If None, compute SHAP for each grade found in X_sample and return a dict.
+    X_reference : required
+        Used as SHAP background data.
+        - Recommended: pass your training dataframe (raw space) as X_reference
+        - Advanced: pass dict {grade_value: background_df} to control background per grade
+    grade_col : required
+        Column identifying grade in both X_sample and X_reference (if X_reference is a df)
+ 
+    Returns
+    -------
+    If grade_id is not None:
+        base_values, shap_values, Xe, feature_names
+    If grade_id is None:
+        dict {grade_value: (base_values, shap_values, Xe, feature_names)}
+    """
+    import numpy as np
+    import pandas as pd
+    import shap
+ 
+    if X_reference is None:
+        raise ValueError(
+            "X_reference is required and must be the training dataframe (raw) "
+            "or a dict {grade: background_df}."
+        )
+    if grade_col is None:
+        raise ValueError("grade_col is required (e.g. 'AB_Grade_ID').")
+ 
+    def _is_df(x):
+        return isinstance(x, pd.DataFrame)
+ 
+    # -------- background getter --------
+    if _is_df(X_reference):
+        X_train = X_reference
+        if grade_col not in X_train.columns:
+            raise KeyError(f"Training df (X_reference) must include '{grade_col}' for per-grade background.")
+ 
+        def get_background(g):
+            # robust matching (handles int/float/str mixes)
+            return X_train[X_train[grade_col].astype(str) == str(g)]
+ 
+    elif isinstance(X_reference, dict):
+ 
+        def get_background(g):
+            bg = X_reference.get(g)
+            if bg is None:
+                bg = X_reference.get(str(g))
+            return bg
+ 
+    else:
+        raise TypeError("X_reference must be a pandas DataFrame (training df) or a dict {grade: background_df}.")
+ 
+    # feature columns = all except grade col
+    feature_names = [c for c in X_sample.columns if c != grade_col]
+ 
+    # internal sampling knobs
+    background_size = 200
+    explain_size = 200
+    min_bg = 30
+ 
+    def compute_for_grade(g):
+        Xg = X_sample[X_sample[grade_col] == g]
+        if Xg.empty:
+            return None
+ 
+        bg = get_background(g)
+        if bg is None or len(bg) < min_bg:
+            # fallback: use all training (if df) or current grade slice (if dict missing)
+            bg = X_reference if _is_df(X_reference) else Xg
+ 
+        Xb = bg[feature_names].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+        Xe = Xg[feature_names].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+ 
+        if len(Xb) > background_size:
+            Xb = Xb.sample(background_size, random_state=42)
+        if len(Xe) > explain_size:
+            Xe = Xe.sample(explain_size, random_state=42)
+ 
+        explainer = shap.Explainer(model.predict, Xb)
+        sv = explainer(Xe)
+ 
+        shap_values = np.asarray(sv.values, dtype=float)
+        base_values = sv.base_values  # scalar or (n_samples,)
+ 
+        return base_values, shap_values, Xe, feature_names
+ 
+    # -------- single grade --------
+    if grade_id is not None:
+        out = compute_for_grade(grade_id)
+        if out is None:
+            raise ValueError(f"No rows found in X_sample for grade_id={grade_id}")
+        return out
+ 
+    # -------- all grades in X_sample --------
+    grades = sorted(X_sample[grade_col].dropna().astype(str).unique().tolist())
+    results = {}
+    for g in grades:
+        out = compute_for_grade(g)
+        if out is not None:
+            results[g] = out
+ 
+    return results
+
+def plotly_shap_beeswarm(
+    shap_values,
+    X_feat: pd.DataFrame,
+    feature_names=None,
+    max_features=15,
+):
+    """
+    Plot SHAP summary beeswarm similar to the historical analysis tab.
+ 
+    Parameters
+    ----------
+    shap_values : array (n_samples, n_features)
+    X_feat : DataFrame with feature values
+    feature_names : optional list of feature names
+    max_features : maximum rows to display (including "Sum of other features")
+    """
+    import numpy as np
+    import pandas as pd
+    import plotly.graph_objects as go
+
+    shap_values = np.asarray(shap_values)
+ 
+    if shap_values.ndim == 1:
+        shap_values = shap_values.reshape(-1, 1)
+ 
+    if feature_names is None:
+        feature_names = list(X_feat.columns)
+ 
+    X_feat = X_feat[feature_names]
+ 
+    n_samples, n_features = shap_values.shape
+ 
+    # -------- Feature ranking --------
+    mean_abs_shap = np.abs(shap_values).mean(axis=0)
+ 
+    max_display = min(max_features, n_features)
+ 
+    # top features (excluding merged row)
+    top_idx = np.argsort(mean_abs_shap)[-(max_display - 1):]
+ 
+    other_idx = np.setdiff1d(np.arange(n_features), top_idx)
+ 
+    labels = [f"Sum of {len(other_idx)} other features"] + [feature_names[i] for i in top_idx]
+ 
+    fig = go.Figure()
+ 
+    separation = 1.3
+    rng = np.random.default_rng(42)
+ 
+    # -------- SUM OF OTHER FEATURES --------
+    if len(other_idx) > 0:
+ 
+        shap_sum = shap_values[:, other_idx].sum(axis=1)
+ 
+        feat_sum = X_feat.iloc[:, other_idx].mean(axis=1).values
+ 
+        jitter = rng.normal(0, 0.2, len(shap_sum))
+ 
+        fig.add_trace(
+            go.Scattergl(
+                x=shap_sum,
+                y=jitter,
+                mode="markers",
+                customdata=feat_sum,
+                marker=dict(
+                    size=5,
+                    opacity=0.6,
+                    color=feat_sum,
+                    colorscale="Bluered",
+                    showscale=True,
+                    colorbar=dict(title="Value", showticklabels=False),
+                ),
+                hovertemplate="<b>Sum of other features</b><br>"
+                              "SHAP: %{x:.3f}<br>"
+                              "Value: %{customdata:.3f}<extra></extra>",
+                showlegend=False,
+            )
+        )
+ 
+    # -------- TOP FEATURES --------
+    row = 1
+ 
+    for i in top_idx:
+ 
+        shap_val = shap_values[:, i]
+        feat_val = X_feat.iloc[:, i]
+ 
+        jitter = rng.normal(row * separation, 0.2, len(shap_val))
+ 
+        fig.add_trace(
+            go.Scattergl(
+                x=shap_val,
+                y=jitter,
+                mode="markers",
+                customdata=feat_val,
+                marker=dict(
+                    size=5,
+                    opacity=0.6,
+                    color=feat_val,
+                    colorscale="Bluered",
+                    showscale=False,
+                ),
+                hovertemplate=f"<b>{feature_names[i]}</b><br>"
+                              "SHAP: %{x:.3f}<br>"
+                              "Value: %{customdata:.3f}<extra></extra>",
+                showlegend=False,
+            )
+        )
+ 
+        row += 1
+ 
+    # -------- Layout --------
+ 
+    tickvals = [k * separation for k in range(row)]
+    ticktext = labels
+ 
+    max_abs = float(np.max(np.abs(shap_values)))
+    padding = 0.2 * max_abs
+ 
+    fig.update_layout(
+        title="SHAP Summary",
+        xaxis=dict(
+            title="SHAP Value",
+            range=[-max_abs - padding, max_abs + padding],
+        ),
+        yaxis=dict(
+            tickvals=tickvals,
+            ticktext=ticktext,
+            title=""
+        ),
+        height=600,
+        hovermode="closest",
+        template="plotly_white",
+    )
+ 
+    fig.add_vline(x=0, line_width=1, line_dash="dash")
+ 
+    return fig
