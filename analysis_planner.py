@@ -1,0 +1,543 @@
+"""
+analysis_planner.py
+ 
+Step 20 - planning layer for the AI Process Assistant.
+ 
+This module:
+- defines tool specs
+- builds a deterministic planning context from parsed query data
+- creates an initial analysis plan
+- validates the plan
+ 
+For now, planning is rule-based.
+Later, plan_analysis(...) can be replaced by an LLM planner.
+"""
+ 
+from __future__ import annotations
+ 
+from typing import Any, Dict, List, Optional
+ 
+ 
+TOOL_SPECS: Dict[str, Dict[str, Any]] = {
+    "process_data": {
+        "requires": ["target_range"],
+        "optional": ["grades", "grade", "cost_component"],
+        "description": "Retrieve and summarize observed process data.",
+    },
+    "diagnosis": {
+        "requires": ["target_range", "baseline_range"],
+        "optional": ["grades", "levels", "objects", "lang"],
+        "description": "Multi-level drilldown diagnosis for cost or overprocessing.",
+    },
+    "cost_driver": {
+        "requires": ["target_range", "baseline_range"],
+        "optional": ["grade", "cost_component"],
+        "description": "Identify variables contributing to change between target and baseline.",
+    },
+    "shap": {
+        "requires": ["target_range", "baseline_range"],
+        "optional": ["grade", "cost_component"],
+        "description": "Feature-level explanation of modelled cost component differences.",
+    },
+    "recommend": {
+        "requires": ["target_range", "baseline_range"],
+        "optional": ["grade", "cost_component", "lang"],
+        "description": "Generate actionable recommendations based on diagnosis and drivers.",
+    },
+    "scenario": {
+        "requires": ["cost_component", "interventions"],
+        "optional": ["grade", "reel_id", "timestamp"],
+        "description": "Simulate a what-if scenario from a selected reference turnup.",
+    },
+    "knowledge": {
+        "requires": [],
+        "optional": ["query"],
+        "description": "Retrieve knowledge via RAG.",
+    },
+}
+ 
+ 
+ALLOWED_GOALS = {
+    "factual_lookup",
+    "diagnose",
+    "explain_change",
+    "recommend",
+    "what_if",
+    "knowledge_assisted_analysis",
+}
+ 
+ALLOWED_FINAL_TEMPLATES = {
+    "process_data_only",
+    "diagnosis_only",
+    "cost_driver_only",
+    "shap_only",
+    "scenario_only",
+    "diagnosis_plus_cost_driver",
+    "cost_driver_plus_shap",
+    "knowledge_plus_analysis",
+    "diagnosis_plus_cost_driver_plus_recommendations",
+    "diagnosis_plus_cost_driver_plus_recommendations_plus_scenario",
+    "diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations",
+    "diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations_plus_scenario",
+}
+ 
+ 
+def _default_lang(parsed: Dict[str, Any]) -> str:
+    lang = parsed.get("lang")
+    return lang if lang in ("en", "de") else "en"
+ 
+ 
+def _default_grades(parsed: Dict[str, Any]) -> Optional[List[str]]:
+    """
+    Prefer parsed['grades'] if present, else wrap parsed['grade'] if present.
+    Otherwise return None and let downstream tools use their defaults.
+    """
+    grades = parsed.get("grades")
+    if grades:
+        return [str(g) for g in grades]
+ 
+    grade = parsed.get("grade")
+    if grade is not None:
+        return [str(grade)]
+ 
+    return None
+ 
+ 
+def _has_required_fields(parsed: Dict[str, Any], required_fields: List[str]) -> bool:
+    for field in required_fields:
+        value = parsed.get(field)
+        if value is None:
+            return False
+        if field == "interventions" and not value:
+            return False
+    return True
+ 
+ 
+def _eligible_tools_from_parsed(parsed: Dict[str, Any]) -> List[str]:
+    """
+    Deterministically determine which tools are eligible.
+    This is not the final plan yet.
+    """
+    intent = parsed.get("intent")
+    eligible: List[str] = []
+    if intent == "process_data":
+        eligible = ["process_data"]
+    elif intent == "diagnosis":
+        eligible = ["diagnosis"]
+        if _has_required_fields(parsed, ["target_range", "baseline_range"]):
+            eligible.append("cost_driver")
+            eligible.append("shap")
+            eligible.append("knowledge")
+            eligible.append("recommend")
+    elif intent == "cost_driver":
+        eligible = ["cost_driver"]
+        if _has_required_fields(parsed, ["target_range"]):
+            eligible.append("process_data")
+    elif intent == "shap":
+        eligible = ["shap"]
+        if _has_required_fields(parsed, ["target_range"]):
+            eligible.append("process_data")
+    elif intent == "simulate_scenario":
+        eligible = ["scenario"]
+    elif intent == "knowledge":
+        eligible = ["knowledge"]
+        if _has_required_fields(parsed, ["target_range", "baseline_range"]):
+            eligible.append("diagnosis")
+            eligible.append("cost_driver")
+            eligible.append("shap")
+            eligible.append("recommend")
+        elif parsed.get("target_range") is not None:
+            eligible.append("process_data")
+    else:
+        eligible = ["knowledge"]
+    # keep order, remove duplicates
+    out = []
+    seen = set()
+    for t in eligible:
+        if t not in seen:
+            out.append(t)
+            seen.add(t)
+    return out
+ 
+ 
+def build_planning_context(parsed: Dict[str, Any], raw_query: Optional[str] = None) -> Dict[str, Any]:
+    query = raw_query or parsed.get("raw_query", "")
+    q = query.lower()
+
+    resolved_grades = _default_grades(parsed)
+
+    primary_grade = str(parsed["grade"]) if parsed.get("grade") is not None else (
+        resolved_grades[0] if resolved_grades else None
+    )
+
+    analysis_signals = {
+        "wants_explanation": any(k in q for k in [
+            "help me understand",
+            "understand why",
+            "explain why",
+            "why did",
+            "why has",
+            "what is driving",
+            "what's driving",
+            "what is causing",
+            "what's causing",
+        ]),
+        "wants_recommendations": any(k in q for k in [
+            "recommend",
+            "recommendation",
+            "recommendations",
+            "improve",
+            "improvement",
+            "reduce cost",
+            "what should we do",
+            "what can we do",
+            "actions",
+        ]),
+        "wants_estimate": any(k in q for k in [
+            "expected savings",
+            "savings",
+            "expected impact",
+            "impact",
+            "how much",
+            "estimate",
+        ]),
+        "wants_simulation": any(k in q for k in [
+            "what if",
+            "simulate",
+            "scenario",
+            "if we change",
+            "if i change",
+        ]),
+    }
+
+    return {
+        "user_query": query,
+        "parsed": parsed,
+        "allowed_tools": _eligible_tools_from_parsed(parsed),
+        "tool_specs": TOOL_SPECS,
+        "resolved_defaults": {
+            "lang": _default_lang(parsed),
+            "grades": resolved_grades,
+            "primary_grade": primary_grade,
+            "cost_component": parsed.get("cost_component"),
+        },
+        "context_signals": analysis_signals,
+        "hard_constraints": [
+            "Use only allowed tools.",
+            "Diagnosis requires target_range and baseline_range.",
+            "Cost_driver requires target_range and baseline_range.",
+            "SHAP requires target_range and baseline_range.",
+            "Recommend depends on comparative context.",
+            "Scenario requires cost_component and at least one intervention unless downstream logic supplies them.",
+            "Prefer the fewest tools needed.",
+        ],
+    }
+ 
+ 
+def _step(tool: str, purpose: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "tool": tool,
+        "purpose": purpose,
+        "args": args,
+    }
+ 
+ 
+def _common_args(parsed: Dict[str, Any], defaults: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "target_range": parsed.get("target_range"),
+        "baseline_range": parsed.get("baseline_range"),
+        "grade": parsed.get("grade"),
+        "grades": defaults.get("grades"),
+        "cost_component": parsed.get("cost_component"),
+        "levels": parsed.get("levels"),
+        "objects": parsed.get("objects"),
+        "lang": defaults.get("lang", "en"),
+        "reel_id": parsed.get("reel_id"),
+        "timestamp": parsed.get("timestamp"),
+        "interventions": parsed.get("interventions"),
+    }
+ 
+ 
+def _pick_present_args(args: Dict[str, Any], allowed_keys: List[str]) -> Dict[str, Any]:
+    out = {}
+    for k in allowed_keys:
+        v = args.get(k)
+        if v is not None:
+            if k == "interventions" and not v:
+                continue
+            out[k] = v
+    return out
+ 
+ 
+def plan_analysis(planning_context: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Compositional planner:
+    - diagnosis
+    - cost_driver
+    - recommend
+    - scenario
+    Complex behaviors are expressed as step sequences.
+    """
+    parsed = planning_context["parsed"]
+    allowed_tools = planning_context["allowed_tools"]
+    defaults = planning_context["resolved_defaults"]
+    signals = planning_context["context_signals"]
+    intent = parsed.get("intent")
+    common = _common_args(parsed, defaults)
+    user_query = planning_context["user_query"].lower()
+    # ----------------------------
+    # Direct single-step intents
+    # ----------------------------
+    if intent == "process_data" and "process_data" in allowed_tools:
+        return {
+            "goal": "factual_lookup",
+            "steps": [
+                _step(
+                    tool="process_data",
+                    purpose="Summarize the requested observed process data.",
+                    args=_pick_present_args(
+                        common,
+                        ["target_range", "baseline_range", "grade", "cost_component"],
+                    ),
+                )
+            ],
+            "final_template": "process_data_only",
+        }
+    if intent == "simulate_scenario" and "scenario" in allowed_tools:
+        return {
+            "goal": "what_if",
+            "steps": [
+                _step(
+                    tool="scenario",
+                    purpose="Estimate the effect of the requested intervention.",
+                    args=_pick_present_args(
+                        common,
+                        ["cost_component", "grade", "reel_id", "timestamp", "interventions"],
+                    ),
+                )
+            ],
+            "final_template": "scenario_only",
+        }
+    if intent == "cost_driver" and "cost_driver" in allowed_tools:
+        return {
+            "goal": "explain_change",
+            "steps": [
+                _step(
+                    tool="cost_driver",
+                    purpose="Identify the variables contributing to the change between periods.",
+                    args=_pick_present_args(
+                        common,
+                        ["target_range", "baseline_range", "grade", "cost_component"],
+                    ),
+                )
+            ],
+            "final_template": "cost_driver_only",
+        }
+    if intent == "shap" and "shap" in allowed_tools:
+        return {
+            "goal": "explain_change",
+            "steps": [
+                _step(
+                    tool="shap",
+                    purpose="Explain the modelled difference between target and baseline.",
+                    args=_pick_present_args(
+                        common,
+                        ["target_range", "baseline_range", "grade", "cost_component"],
+                    ),
+                )
+            ],
+            "final_template": "shap_only",
+        }
+    # ----------------------------
+    # Comparative orchestration path
+    # ----------------------------
+    if intent == "diagnosis" and "diagnosis" in allowed_tools:
+        steps = []
+        diagnosis_step = _step(
+            tool="diagnosis",
+            purpose="Diagnose the issue across the requested drilldown levels and objects.",
+            args=_pick_present_args(
+                common,
+                ["target_range", "baseline_range", "grades", "levels", "objects", "lang"],
+            ),
+        )
+        steps.append(diagnosis_step)
+        # Explanation layer
+        # Use cost_driver for 'why' / understanding / drivers / recommendations
+        if (
+            signals["wants_explanation"]
+            or signals["wants_recommendations"]
+            or signals["wants_estimate"]
+        ) and "cost_driver" in allowed_tools:
+            cost_driver_args = _pick_present_args(
+                common,
+                ["target_range", "baseline_range", "grade", "cost_component"],
+            )
+            # If grade is missing, fall back to primary_grade
+            if cost_driver_args.get("grade") is None and defaults.get("primary_grade") is not None:
+                cost_driver_args["grade"] = defaults["primary_grade"]
+            steps.append(
+                _step(
+                    tool="cost_driver",
+                    purpose="Identify the variables contributing to the change between periods.",
+                    args=cost_driver_args,
+                )
+            )
+        # Recommendation layer
+        if signals["wants_recommendations"]:
+            # Add knowledge before recommendations so recommendation generation
+            # can use both driver evidence and retrieved context.
+            steps.append(
+                _step(
+                    tool="knowledge",
+                    purpose="Retrieve domain knowledge relevant to the identified cost component and driver variables.",
+                    args={"query": planning_context["user_query"]},
+                )
+            )
+            recommend_args = _pick_present_args(
+                common,
+                ["target_range", "baseline_range", "grade", "cost_component", "lang"],
+            )
+            if recommend_args.get("grade") is None and defaults.get("primary_grade") is not None:
+                recommend_args["grade"] = defaults["primary_grade"]
+            steps.append(
+                _step(
+                    tool="recommend",
+                    purpose="Generate actionable recommendations based on diagnosis, drivers, and knowledge context.",
+                    args=recommend_args,
+                )
+            )
+        # Quantification layer
+        # Only add scenario automatically if user asks for estimate and
+        # explicit interventions already exist.
+        if signals["wants_estimate"] and parsed.get("interventions"):
+            scenario_args = _pick_present_args(
+                common,
+                ["cost_component", "grade", "reel_id", "timestamp", "interventions"],
+            )
+            if scenario_args.get("grade") is None and defaults.get("primary_grade") is not None:
+                scenario_args["grade"] = defaults["primary_grade"]
+            steps.append(
+                _step(
+                    tool="scenario",
+                    purpose="Estimate the expected effect of the recommended or requested intervention.",
+                    args=scenario_args,
+                )
+            )
+        # Decide template from steps
+        tool_sequence = [s["tool"] for s in steps]
+        if tool_sequence == ["diagnosis"]:
+            final_template = "diagnosis_only"
+            goal = "diagnose"
+        elif tool_sequence == ["diagnosis", "cost_driver"]:
+            final_template = "diagnosis_plus_cost_driver"
+            goal = "explain_change"
+        elif tool_sequence == ["diagnosis", "cost_driver", "knowledge", "recommend"]:
+            final_template = "diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations"
+            goal = "recommend"
+        elif tool_sequence == ["diagnosis", "cost_driver", "knowledge", "recommend", "scenario"]:
+            final_template = "diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations_plus_scenario"
+            goal = "recommend"
+        elif tool_sequence == ["diagnosis", "cost_driver", "recommend"]:
+            final_template = "diagnosis_plus_cost_driver_plus_recommendations"
+            goal = "recommend"
+        elif tool_sequence == ["diagnosis", "cost_driver", "recommend", "scenario"]:
+            final_template = "diagnosis_plus_cost_driver_plus_recommendations_plus_scenario"
+            goal = "recommend"
+        else:
+            final_template = "diagnosis_only"
+            goal = "diagnose"
+        return {
+            "goal": goal,
+            "steps": steps,
+            "final_template": final_template,
+        }
+    # ----------------------------
+    # Knowledge-only / fallback
+    # ----------------------------
+    if "knowledge" in allowed_tools:
+        return {
+            "goal": "knowledge_assisted_analysis",
+            "steps": [
+                _step(
+                    tool="knowledge",
+                    purpose="Retrieve relevant knowledge context.",
+                    args={"query": planning_context["user_query"]},
+                )
+            ],
+            "final_template": "knowledge_plus_analysis",
+        }
+    # Fallback fallback
+    return {
+        "goal": "knowledge_assisted_analysis",
+        "steps": [
+            _step(
+                tool="knowledge",
+                purpose="Retrieve relevant knowledge context.",
+                args={"query": planning_context["user_query"]},
+            )
+        ],
+        "final_template": "knowledge_plus_analysis",
+    }
+ 
+ 
+def validate_plan(plan: Dict[str, Any], planning_context: Dict[str, Any]) -> None:
+    """
+    Validate that the plan is consistent with the allowed tools and tool contracts.
+    Raises ValueError if invalid.
+    """
+    if not isinstance(plan, dict):
+        raise ValueError("Plan must be a dict")
+ 
+    goal = plan.get("goal")
+    if goal not in ALLOWED_GOALS:
+        raise ValueError(f"Invalid plan goal: {goal!r}")
+ 
+    final_template = plan.get("final_template")
+    if final_template not in ALLOWED_FINAL_TEMPLATES:
+        raise ValueError(f"Invalid final_template: {final_template!r}")
+ 
+    steps = plan.get("steps")
+    if not isinstance(steps, list) or not steps:
+        raise ValueError("Plan must contain a non-empty 'steps' list")
+ 
+    allowed_tools = set(planning_context["allowed_tools"])
+ 
+    for i, step in enumerate(steps):
+        if not isinstance(step, dict):
+            raise ValueError(f"Step {i} must be a dict")
+ 
+        tool = step.get("tool")
+        args = step.get("args", {})
+ 
+        if tool not in TOOL_SPECS:
+            raise ValueError(f"Unknown tool in step {i}: {tool!r}")
+ 
+        if tool not in allowed_tools:
+            raise ValueError(f"Tool {tool!r} in step {i} is not allowed for this query")
+ 
+        if not isinstance(args, dict):
+            raise ValueError(f"Step {i} args must be a dict")
+ 
+        required_args = TOOL_SPECS[tool]["requires"]
+        for req in required_args:
+            if req not in args or args[req] is None or (req == "interventions" and not args[req]):
+                raise ValueError(
+                    f"Step {i} for tool {tool!r} is missing required arg {req!r}"
+                )
+ 
+ 
+def make_plan(parsed: Dict[str, Any], raw_query: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Convenience wrapper:
+    - build planning context
+    - create plan
+    - validate plan
+    """
+    context = build_planning_context(parsed=parsed, raw_query=raw_query)
+    plan = plan_analysis(context)
+    validate_plan(plan, context)
+    return {
+        "planning_context": context,
+        "plan": plan,
+    }

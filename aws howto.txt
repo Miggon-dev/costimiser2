@@ -37,3 +37,5 @@ POD=$(kubectl -n "$NS" get pods -l "$SEL" \
 kubectl rollout status deploy -n "costimiser" "cost-analysis-dashboard" || handle_error
 
 kubectl rollout restart deployment cost-analysis-dashboard
+
+python app/backfill_toolkit/scripts/backfill_refetch_api.py --env dev --start 2025-04-01 --end 2026-02-03 --output-target s3 --overwrite 1 --dry-run 0 --cooldown-seconds 5

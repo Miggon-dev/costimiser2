@@ -126,14 +126,18 @@ def get_feature_snapshot(
     timestamp: Optional[str] = None,
     grade: Optional[Any] = None,
     reel_id: Optional[Any] = None,
+    target_range=None,
     columns: Optional[List[str]] = None,
     time_col: str = DEFAULT_TIME_COL,
     grade_col: str = DEFAULT_GRADE_COL,
     reel_col: str = DEFAULT_REEL_COL,
 ) -> pd.DataFrame:
     """
-    For the current system, a feature snapshot is simply a filtered subset
+    For the current system, a feature snapshot is a filtered subset
     of the engineered wide dataframe.
+ 
+    If target_range is provided, filter rows to:
+        start <= time_col < end
     """
     df = load_turnup_data()
  
@@ -142,6 +146,13 @@ def get_feature_snapshot(
     if timestamp is not None:
         ts = pd.to_datetime(timestamp)
         mask &= df[time_col] == ts
+ 
+    if target_range is not None:
+        start, end = target_range
+        start = pd.to_datetime(start)
+        end = pd.to_datetime(end)
+        mask &= df[time_col] >= start
+        mask &= df[time_col] < end
  
     if grade is not None:
         mask &= df[grade_col] == grade
