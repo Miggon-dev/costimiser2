@@ -198,17 +198,36 @@ def test_synthesize_recommendation_plan():
     bundle = ap.make_plan(parsed, raw_query=q)
     execution_out = ae.execute_plan(bundle)
     final_out = syn.synthesize_execution(execution_out)
+
+    assert_in("type", final_out)
+    assert_in("text", final_out)
+    assert_in("blocks", final_out)
+    assert_in("plan", final_out)
+    assert_in("step_results", final_out)
+    assert_true(final_out["type"] == "orchestrated", f"Unexpected type: {final_out['type']}")
     assert_nonempty_text(final_out["text"])
+
     return {
+        "type": final_out["type"],
+        "n_blocks": len(final_out["blocks"]),
+        "tools": [s["tool"] for s in final_out["plan"]["steps"]],
         "text_preview": final_out["text"][:500],
-        "plan": final_out["plan"],
     }
 
 def test_router_diagnosis():
-    out = ar.answer("diagnose cost overall for grade 6010120 in March 2026")
+    out = ar.answer("diagnose cost for grade 6010120 in week 11")
+    assert_in("type", out)
     assert_in("text", out)
+    assert_in("blocks", out)
+    assert_in("plan", out)
+    assert_in("step_results", out)
+    assert_true(out["type"] == "orchestrated", f"Unexpected type: {out['type']}")
     assert_nonempty_text(out["text"])
-    return {"text_preview": out["text"][:300]}
+    return {
+        "type": out["type"],
+        "n_blocks": len(out["blocks"]),
+        "tools": [s["tool"] for s in out["plan"]["steps"]],
+    }
 
 def test_router_recommendation():
     out = ar.answer("what are the recommendations to improve the steam cost for grade 6010120 in week 11")
@@ -307,12 +326,75 @@ def test_shap_tool():
         baseline_range=(date(2026, 2, 9), date(2026, 3, 9)),
     )
     assert_not_none(out, "SHAP output is None")
-    return out
+    assert_in("figure", out)
+    assert_in("data_frame", out)
+    assert_in("text", out)
+    return {
+        "has_figure": out["figure"] is not None,
+        "n_rows": 0 if out["data_frame"] is None else len(out["data_frame"]),
+        "text_preview": out["text"][:200] if out.get("text") else "",
+    }
 
 def test_router_shap():
     out = ar.answer("show shap for steam cost for grade 6010120 in week 11")
     assert_not_none(out, "Router SHAP output is None")
-    return out
+    assert_in("figure", out)
+    assert_in("data_frame", out)
+    assert_in("text", out)
+    return {
+        "has_figure": out["figure"] is not None,
+        "n_rows": 0 if out["data_frame"] is None else len(out["data_frame"]),
+        "text_preview": out["text"][:200] if out.get("text") else "",
+    }
+
+def test_shap_without_grade():
+    out = ar.answer_shap(
+        component="steam",
+        grade_id=None,
+        target_range=(date(2026, 3, 9), date(2026, 3, 14)),
+        baseline_range=(date(2026, 2, 9), date(2026, 3, 9)),
+    )
+    assert_not_none(out, "SHAP without grade output is None")
+    assert_in("figure", out)
+    assert_in("data_frame", out)
+    assert_in("text", out)
+    return {
+        "has_figure": out["figure"] is not None,
+        "n_rows": 0 if out["data_frame"] is None else len(out["data_frame"]),
+        "text_preview": out["text"][:200] if out.get("text") else "",
+    }
+
+def test_router_shap_without_grade():
+    out = ar.answer("show shap for steam cost in week 11")
+    assert_not_none(out, "Router SHAP without grade output is None")
+    assert_in("figure", out)
+    assert_in("data_frame", out)
+    assert_in("text", out)
+    return {
+        "has_figure": out["figure"] is not None,
+        "n_rows": 0 if out["data_frame"] is None else len(out["data_frame"]),
+        "text_preview": out["text"][:200] if out.get("text") else "",
+    }
+
+def test_shap_dataframe_structure():
+    out = ar.answer_shap(
+        component="steam",
+        grade_id="6010120",
+        target_range=(date(2026, 3, 9), date(2026, 3, 14)),
+        baseline_range=(date(2026, 2, 9), date(2026, 3, 9)),
+    )
+    df = out["data_frame"]
+    assert_not_none(df, "SHAP dataframe is None")
+    assert_true(len(df.columns) > 0, "SHAP dataframe has no columns")
+
+    shap_cols = [c for c in df.columns if str(c).startswith("shap_")]
+    assert_true(len(shap_cols) > 0, f"No shap_ columns found in {list(df.columns)}")
+
+    return {
+        "n_cols": len(df.columns),
+        "n_shap_cols": len(shap_cols),
+        "sample_shap_cols": shap_cols[:5],
+    }
 
 def test_router_cost_driver():
     out = ar.answer("show cost drivers for steam cost for grade 6010120 in week 11")
@@ -345,13 +427,18 @@ def test_answer_orchestrated():
         "what are the recommendations to improve the steam cost for grade 6010120 in week 11"
     )
     assert_not_none(out, "Orchestrated output is None")
+    assert_in("type", out)
+    assert_in("text", out)
+    assert_in("blocks", out)
     assert_in("plan", out)
     assert_in("step_results", out)
+    assert_true(out["type"] == "orchestrated", f"Unexpected type: {out['type']}")
     assert_nonempty_text(out["text"])
     return {
-        "plan": out["plan"],
+        "type": out["type"],
         "n_steps": len(out["step_results"]),
-        "text_preview": out["text"][:400],
+        "n_blocks": len(out["blocks"]),
+        "tools": [s["tool"] for s in out["plan"]["steps"]],
     }
 
 def test_router_recommendation_with_estimate():
@@ -441,7 +528,7 @@ def test_process_data_basis_weight_selection():
 
 def test_process_data_and_selection():
     out = ar.answer(
-        "show steam and electricity for grade 6010120 last week"
+        "show steam kWh and electricity kWh for grade 6010120 last week"
     )
     assert_in("columns", out)
     cols_l = [c.lower() for c in out["columns"]]
@@ -510,3 +597,38 @@ def test_parse_plot_preferences():
     prefs = pdt.parse_plot_preferences(q)
     assert_true(prefs["secondary_axis"] is True, f"Unexpected prefs: {prefs}")
     return prefs
+
+def test_orchestrated_standard_response_shape():
+    out = ar.answer("diagnose cost for grade 6010120 in week 11")
+    assert_in("type", out)
+    assert_in("text", out)
+    assert_in("figure", out)
+    assert_in("data_frame", out)
+    assert_in("blocks", out)
+    assert_in("raw", out)
+    assert_in("plan", out)
+    assert_in("step_results", out)
+    assert_true(out["type"] == "orchestrated", f"Unexpected type: {out['type']}")
+    return {
+        "type": out["type"],
+        "n_blocks": len(out["blocks"]),
+        "n_steps": len(out["step_results"]),
+    }
+
+def test_router_diagnosis_has_blocks():
+    out = ar.answer("diagnose cost for grade 6010120 in week 11")
+    assert_in("blocks", out)
+    assert_true(isinstance(out["blocks"], list), "blocks must be a list")
+    return {
+        "n_blocks": len(out["blocks"]),
+        "has_any_figure": any(b.get("figure") is not None for b in out["blocks"]),
+    }
+
+def test_router_recommendation_has_blocks():
+    out = ar.answer("what are the recommendations to improve the steam cost for grade 6010120 in week 11")
+    assert_in("blocks", out)
+    assert_true(isinstance(out["blocks"], list), "blocks must be a list")
+    return {
+        "n_blocks": len(out["blocks"]),
+        "tools": [s["tool"] for s in out["plan"]["steps"]],
+    }

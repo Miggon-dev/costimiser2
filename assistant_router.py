@@ -94,8 +94,108 @@ def answer_knowledge(query: str) -> Dict[str, Any]:
 # -------------------------------------------------
 # Process data workflow
 # -------------------------------------------------
- 
 def answer_process_data(
+    target_range=None,
+    grade=None,
+    variables=None,
+    query: str = None,
+):
+    import time_context as tc
+    import process_data_tools as pdt
+    from assistant_router import make_standard_response
+
+    # ------------------------
+    # Resolve SINGLE range
+    # ------------------------
+    resolved = tc.resolve_single_period_range(target_range=target_range)
+    target_range = resolved["target_range"]
+    used_default = resolved["used_default"]
+
+    # ------------------------
+    # Get data
+    # ------------------------
+    df = get_feature_snapshot(
+        target_range=target_range,
+        grade=grade,
+    )
+
+    if df.empty:
+        return make_standard_response(
+            type_="process_data",
+            text="No data available for the selected filters.",
+            figure=None,
+            data_frame=df,
+            blocks=[],
+            raw=None,
+            columns=[],
+            n_rows=0,
+            target_range=target_range,
+            used_default_range=used_default,
+            plot_preferences={"secondary_axis": False},
+        )
+
+    # ------------------------
+    # Feature selection
+    # ------------------------
+    if variables:
+        cols = variables
+        plot_prefs = {"secondary_axis": False}
+    else:
+        feature_query = pdt.extract_feature_request_phrase(query or "")
+        plot_prefs = pdt.parse_plot_preferences(query or "")
+        negative_terms = pdt.extract_negative_terms(query or "")
+
+        cols = pdt.select_features_from_query(
+            query=feature_query,
+            df_columns=df.columns.tolist(),
+            use_llm_fallback=True,
+        )
+
+        cols = pdt.filter_columns_by_negative_terms(
+            cols,
+            negative_terms,
+        )
+
+    cols = [c for c in cols if c in df.columns]
+
+    if plot_prefs.get("secondary_axis", False) and len(cols) > 2:
+        cols = cols[:2]
+
+    # ------------------------
+    # Plot
+    # ------------------------
+    fig = pdt.build_process_plot(
+        df=df,
+        columns=cols,
+        time_col=DEFAULT_TIME_COL,
+        secondary_axis=plot_prefs.get("secondary_axis", False),
+    )
+
+    # ------------------------
+    # Optional default message
+    # ------------------------
+    default_msg = tc.build_single_period_message(
+        target_range=target_range,
+        used_default=used_default,
+        lang="en",
+    )
+    text = default_msg if default_msg else None
+
+    return make_standard_response(
+        type_="process_data",
+        text=text,
+        figure=fig,
+        data_frame=df,
+        blocks=[],
+        raw=None,
+        columns=cols,
+        n_rows=len(df),
+        target_range=target_range,
+        used_default_range=used_default,
+        plot_preferences=plot_prefs,
+    )
+
+def answer_process_dataTOREMOVE(
     target_range=None,
     grade=None,
     variables=None,
@@ -192,8 +292,86 @@ def answer_process_data(
 # -------------------------------------------------
 # SHAP workflow
 # -------------------------------------------------
- 
 def answer_shap(
+    component: str,
+    grade_id: str = None,
+    target_range=None,
+    baseline_range=None,
+    lang: str = "en",
+) -> Dict[str, Any]:
+    import time_context as tc
+    import process_data_tools as pdt
+    import shap_tools as st
+
+    resolved = tc.resolve_ranges(
+        target_range=target_range,
+        baseline_range=baseline_range,
+    )
+
+    target_range = resolved["target_range"]
+    baseline_range = resolved["baseline_range"]
+    used_any_default = resolved["used_any_default"]
+
+    X_sample = pdt.get_feature_snapshot(
+        grade=grade_id,
+        target_range=target_range,
+    )
+
+    X_reference = pdt.get_feature_snapshot(
+        grade=grade_id,
+        target_range=baseline_range,
+    )
+
+    if X_sample.empty:
+        raise ValueError(
+            f"No target data found for grade {grade_id} in range {target_range}"
+            if grade_id is not None
+            else f"No target data found in range {target_range}"
+        )
+
+    if X_reference.empty:
+        raise ValueError(
+            f"No baseline data found for grade {grade_id} in range {baseline_range}"
+            if grade_id is not None
+            else f"No baseline data found in range {baseline_range}"
+        )
+
+    out = st.explain_grade_component(
+        component=component,
+        grade_id=grade_id,
+        X_sample=X_sample,
+        X_reference=X_reference,
+    )
+
+    default_msg = tc.build_default_ranges_message(
+        target_range=target_range,
+        baseline_range=baseline_range,
+        used_any_default=used_any_default,
+        lang=lang,
+    )
+
+    if grade_id is None:
+        main_msg = f"SHAP explanation for {component} using all available grades."
+    else:
+        main_msg = f"SHAP explanation for {component} and grade {grade_id}."
+
+    text = (default_msg + "\n\n" if default_msg else "") + main_msg
+
+    return make_standard_response(
+        type_="shap",
+        text=text,
+        figure=out.get("figure"),
+        data_frame=out.get("data_frame"),
+        blocks=[],
+        raw=out,
+        component=component,
+        grade=grade_id,
+        target_range=target_range,
+        baseline_range=baseline_range,
+        used_default_ranges=used_any_default,
+    )
+
+def answer_shap_TOREMOVE(
     component: str,
     grade_id: str,
     target_range=None,
@@ -201,6 +379,9 @@ def answer_shap(
     lang: str = "en",
 ) -> Dict[str, Any]:
     import time_context as tc
+    import process_data_tools as pdt
+    import shap_tools as st
+
  
     resolved = tc.resolve_ranges(
         target_range=target_range,
@@ -227,14 +408,12 @@ def answer_shap(
     if X_reference.empty:
         raise ValueError(f"No baseline data found for grade {grade_id} in range {baseline_range}")
  
-    res = st.explain_grade_component(
+    out  = st.explain_grade_component(
         component=component,
         grade_id=grade_id,
         X_sample=X_sample,
         X_reference=X_reference,
     )
- 
-    fig = st.build_shap_beeswarm_figure(res, max_features=15)
  
     default_msg = tc.build_default_ranges_message(
         target_range=target_range,
@@ -242,20 +421,25 @@ def answer_shap(
         used_any_default=used_any_default,
         lang=lang,
     )
+
+    if grade_id is None:
+        main_msg = f"SHAP explanation for {component} using all available grades."
+    else:
+        main_msg = f"SHAP explanation for {component} and grade {grade_id}."
+
+    text = (default_msg + "\n\n" if default_msg else "") + main_msg
  
     return {
         "type": "shap",
+        "text": text,
+        "figure": out.get("figure"),
+        "data_frame": out.get("data_frame"),
         "component": component,
-        "grade_id": grade_id,
+        "grade": grade_id,
         "target_range": target_range,
         "baseline_range": baseline_range,
         "used_default_ranges": used_any_default,
-        "message": default_msg,
-        "Xe_shape": res["Xe"].shape,
-        "n_features": len(res["feature_names"]),
-        "shap_shape": res["shap_values"].shape,
-        "result": res,
-        "figure": fig,
+        "raw": out,
     }
  
  
@@ -303,7 +487,7 @@ def answer(query: str) -> Dict[str, Any]:
             target_range=parsed.get("target_range"),
         )
     if intent == "shap":
-        if cost_component is None or grade is None:
+        if cost_component is None:
             raise ValueError(
                 "SHAP query detected, but cost_component and grade could not be parsed."
             )
@@ -499,7 +683,7 @@ def answer_scenario(
         "data": sim,
     }
 
-def answer_diagnosis(
+def answer_diagnosis_TOREMOVE(
     target_range,
     baseline_range,
     grades=None,
@@ -508,13 +692,13 @@ def answer_diagnosis(
     lang="en",
 ):
     import diagnosis_tools as diag
- 
+
     if target_range is None:
         raise ValueError("Diagnosis requires target_range")
- 
+
     if baseline_range is None:
         raise ValueError("Diagnosis requires baseline_range")
- 
+
     out = diag.run_diagnosis(
         target_range=target_range,
         baseline_range=baseline_range,
@@ -523,14 +707,57 @@ def answer_diagnosis(
         objects=objects,
         lang=lang,
     )
- 
+
+    normalized_blocks = []
+    for block in out.get("blocks", []):
+        normalized_blocks.append(
+            {
+                "level": block.get("level"),
+                "object_drilldown": block.get("object_drilldown"),
+                "text": block.get("description_md"),
+                "figure": block.get("figure"),
+                "raw": block,
+            }
+        )
+
     return {
-        "text": out["combined_text"],
-        "data": out,
+        "type": "diagnosis",
+        "text": out.get("combined_text"),
+        "figure": None,
+        "data_frame": None,
+        "blocks": normalized_blocks,
+        "target_range": out.get("target_range"),
+        "baseline_range": out.get("baseline_range"),
+        "grades_summary": out.get("grades_summary"),
+        "levels": out.get("levels"),
+        "objects": out.get("objects"),
+        "lang": out.get("lang"),
+        "reference": out.get("reference"),
+        "raw": out,
     }
 
-
 def answer_orchestrated(query: str) -> Dict[str, Any]:
+    import analysis_planner as ap
+    import analysis_executor as ae
+    import analysis_synthesizer as syn
+
+    parsed = qp.parse_query(query)
+    plan_bundle = ap.make_plan(parsed, raw_query=query)
+    execution_out = ae.execute_plan(plan_bundle)
+
+    plan_bundle, execution_out = _maybe_append_scenario_step(
+        plan_bundle=plan_bundle,
+        execution_out=execution_out,
+        parsed=parsed,
+    )
+
+    final_out = syn.synthesize_execution(execution_out)
+
+    # keep parsed as extra metadata, but preserve standardized structure
+    final_out["parsed"] = parsed
+    return final_out
+
+def answer_orchestrated_TOREMOVE(query: str) -> Dict[str, Any]:
     import analysis_planner as ap
     import analysis_executor as ae
     import analysis_synthesizer as syn
@@ -654,4 +881,25 @@ def _maybe_append_scenario_step(plan_bundle, execution_out, parsed):
     import analysis_executor as ae
     new_execution_out = ae.execute_plan(new_bundle)
     return new_bundle, new_execution_out
+
+
+def make_standard_response(
+    type_: str,
+    text=None,
+    figure=None,
+    data_frame=None,
+    blocks=None,
+    raw=None,
+    **extra,
+) -> Dict[str, Any]:
+    out = {
+        "type": type_,
+        "text": text,
+        "figure": figure,
+        "data_frame": data_frame,
+        "blocks": blocks or [],
+        "raw": raw,
+    }
+    out.update(extra)
+    return out
 

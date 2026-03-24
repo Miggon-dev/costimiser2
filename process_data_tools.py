@@ -459,8 +459,10 @@ def get_feature_snapshot(
  
     return out
 
-    
-def build_process_plot(
+
+
+
+def build_process_plot_TOREMOVE(
     df: pd.DataFrame,
     columns: List[str],
     time_col: str,
@@ -481,7 +483,7 @@ def build_process_plot(
                 go.Scatter(
                     x=df_plot[time_col],
                     y=df_plot[col],
-                    mode="lines",
+                    mode="markers",
                     name=col,
                 )
             )
@@ -494,7 +496,7 @@ def build_process_plot(
         go.Scatter(
             x=df_plot[time_col],
             y=df_plot[columns[0]],
-            mode="lines",
+            mode="markers",
             name=columns[0],
         ),
         secondary_y=False,
@@ -503,7 +505,7 @@ def build_process_plot(
         go.Scatter(
             x=df_plot[time_col],
             y=df_plot[columns[1]],
-            mode="lines",
+            mode="markers",
             name=columns[1],
         ),
         secondary_y=True,
@@ -515,7 +517,7 @@ def build_process_plot(
             go.Scatter(
                 x=df_plot[time_col],
                 y=df_plot[col],
-                mode="lines",
+                mode="markers",
                 name=col,
             ),
             secondary_y=False,

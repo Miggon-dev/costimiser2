@@ -1793,6 +1793,8 @@ def _feature_engineering(turnup, setpoint_df, steam_null):
     turnup = turnup[turnup.grammage.isin([85,90,95,100,110,115,120,125,130,135])]
     turnup = turnup[turnup.paper_type.isin(["3200", "6010", "3300"])]
 
+    update_turnup_grammage(turnup)
+
     paper_type = pd.get_dummies(turnup["paper_type"])
     turnup = pd.concat([turnup, paper_type], axis=1)
 
@@ -5228,7 +5230,9 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
                     dd.append("Current_basis_weight")
                     dd.append("Speed_PD1")
                     dd.append("Current_reel_width")
-                    dd.append("Actual_moisture")
+                    dd.append("Current_reel_moisture_average(reel)")
+                    dd.append("Moisture_out_of_PreDryer")
+                    #dd.append("Actual_moisture")                    
             return list(set(dd))
  
     # -------------------------
@@ -5446,7 +5450,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             df["Current_basis_weight"]
             * df["Speed_PD1"]
             * df["Current_reel_width"]
-            * df["Actual_moisture"]
+            * (df["Current_reel_moisture_average(reel)"]-df["Moisture_out_of_PreDryer"])
             * 60
             / 1e10
         )
@@ -5572,13 +5576,41 @@ def calculate_manual_shap(model, X_sample, grade_id=None, X_reference=None, grad
  
     # -------- all grades in X_sample --------
     grades = sorted(X_sample[grade_col].dropna().astype(str).unique().tolist())
-    results = {}
+
+    base_values_all = []
+    shap_values_all = []
+    Xe_all = []
+    feature_names_ref = None
+
     for g in grades:
         out = compute_for_grade(g)
-        if out is not None:
-            results[g] = out
- 
-    return results
+        if out is None:
+            continue
+
+        base_values_g, shap_values_g, Xe_g, feature_names_g = out
+
+        if feature_names_ref is None:
+            feature_names_ref = list(feature_names_g)
+        else:
+            if list(feature_names_g) != feature_names_ref:
+                raise ValueError(
+                    f"Inconsistent feature_names across grades. "
+                    f"Expected {feature_names_ref}, got {list(feature_names_g)} for grade {g}."
+                )
+
+        base_values_all.append(np.asarray(base_values_g))
+        shap_values_all.append(np.asarray(shap_values_g))
+        Xe_all.append(Xe_g.copy())
+
+    if not Xe_all:
+        raise ValueError("No valid rows found in X_sample across any grade")
+
+    base_values = np.concatenate(base_values_all, axis=0)
+    shap_values = np.vstack(shap_values_all)
+    Xe = pd.concat(Xe_all, axis=0).reset_index(drop=True)
+    feature_names = feature_names_ref
+
+    return base_values, shap_values, Xe, feature_names
 
 def plotly_shap_beeswarm(
     shap_values,
@@ -5718,3 +5750,155 @@ def plotly_shap_beeswarm(
     fig.add_vline(x=0, line_width=1, line_dash="dash")
  
     return fig
+
+def update_turnup_grammage(
+    turnup: pd.DataFrame,
+    targets=(85, 90, 100, 110, 115, 120),
+    tolerance=4.5,
+    persist_n=3,
+    inplace=True,
+):
+    """
+    Update basis weight category, classify grammage consistency,
+    and correct AB_Grade_ID / grammage when grammage is deemed wrong.
+
+    Rules
+    -----
+    1. basis_weight_cat is assigned to the nearest target if Current_basis_weight
+       is within tolerance; otherwise grammage is kept.
+    2. Isolated basis_weight_cat values are corrected only if:
+       - both neighbours are equal,
+       - the current value differs from the neighbours,
+       - and it also differs from grammage.
+    3. grammage_check is classified as:
+       - match
+       - batch_start_ok
+       - grammage_wrong
+       - check
+    4. For grammage_wrong rows only:
+       - AB_Grade_ID is replaced by a grade whose last 3 digits match basis_weight_cat
+       - if several candidates exist, prefer one with same first 4 digits
+       - if none exists, replace only the last 3 digits of the current AB_Grade_ID
+       - grammage is updated to basis_weight_cat
+
+    Parameters
+    ----------
+    turnup : pd.DataFrame
+    targets : iterable of numeric
+    tolerance : float
+    persist_n : int
+        Minimum consecutive mismatch length to classify as grammage_wrong.
+    inplace : bool
+        If True, modify input dataframe in place and return it.
+        If False, work on a copy and return the copy.
+
+    Returns
+    -------
+    pd.DataFrame
+    """
+    import numpy as np
+    import pandas as pd
+
+    if not inplace:
+        turnup = turnup.copy()
+
+    targets = np.array(targets)
+
+    # ---- 1) Initial basis_weight_cat assignment ----
+    values = turnup["Current_basis_weight"].to_numpy()
+    grammage_values = turnup["grammage"].to_numpy()
+
+    diffs = np.abs(values[:, None] - targets)
+    closest_idx = diffs.argmin(axis=1)
+    min_diff = diffs.min(axis=1)    
+
+    turnup["AB_Grade_ID"] = turnup["AB_Grade_ID"].astype("string")
+    turnup["basis_weight_cat"] = np.where(
+        min_diff <= tolerance,
+        targets[closest_idx],
+        grammage_values,
+    )
+
+    # ---- 2) Correct isolated basis_weight_cat values only if different from grammage ----
+    bw = turnup["basis_weight_cat"].to_numpy(copy=True)
+    gr = pd.to_numeric(turnup["grammage"], errors="coerce").to_numpy()
+
+    prev_bw = turnup["basis_weight_cat"].shift(1).to_numpy()
+    next_bw = turnup["basis_weight_cat"].shift(-1).to_numpy()
+
+    mask_isolated = (
+        (prev_bw == next_bw) &
+        (bw != prev_bw) &
+        (bw != gr)
+    )
+
+    bw[mask_isolated] = prev_bw[mask_isolated]
+    turnup["basis_weight_cat"] = bw
+
+    # ---- 3) Classify mismatch behaviour ----
+    turnup["mismatch"] = turnup["basis_weight_cat"] != turnup["grammage"]
+    turnup["new_grammage_batch"] = turnup["grammage"] != turnup["grammage"].shift()
+    turnup["mismatch_group"] = turnup["mismatch"].ne(turnup["mismatch"].shift()).cumsum()
+
+    turnup["mismatch_run_length"] = (
+        turnup.groupby("mismatch_group")["mismatch"]
+        .transform("size")
+        .where(turnup["mismatch"], 0)
+    )
+
+    turnup["mismatch_run_pos"] = (
+        turnup.groupby("mismatch_group").cumcount() + 1
+    ).where(turnup["mismatch"], 0)
+
+    def classify_row(row):
+        if not row["mismatch"]:
+            return "match"
+        elif row["new_grammage_batch"] and row["mismatch_run_pos"] == 1:
+            return "batch_start_ok"
+        elif row["mismatch_run_length"] >= persist_n:
+            return "grammage_wrong"
+        else:
+            return "check"
+
+    turnup["grammage_check"] = turnup.apply(classify_row, axis=1)
+
+    # ---- 4) Prepare available AB_Grade_ID candidates ----
+    available_grades = pd.Series(turnup["AB_Grade_ID"].dropna().astype(str).unique())
+
+    grades_by_grammage = {}
+    for g in available_grades:
+        if len(g) >= 3:
+            gramm = g[-3:]
+            grades_by_grammage.setdefault(gramm, []).append(g)
+
+    def replace_grade_id(ab_grade_id, target_grammage):
+        if pd.isna(ab_grade_id) or pd.isna(target_grammage):
+            return ab_grade_id
+
+        old_str = str(ab_grade_id)
+        target_str = f"{int(target_grammage):03d}"
+
+        candidates = grades_by_grammage.get(target_str, [])
+
+        same_prefix = [c for c in candidates if c[:4] == old_str[:4]]
+        if same_prefix:
+            return same_prefix[0]
+
+        if candidates:
+            return candidates[0]
+
+        if len(old_str) >= 3:
+            return old_str[:-3] + target_str
+        return target_str
+
+    # ---- 5) Update AB_Grade_ID and grammage only where grammage is wrong ----
+    mask_wrong = turnup["grammage_check"].eq("grammage_wrong")
+
+    turnup.loc[mask_wrong, "AB_Grade_ID"] = turnup.loc[mask_wrong].apply(
+        lambda row: replace_grade_id(row["AB_Grade_ID"], row["basis_weight_cat"]),
+        axis=1
+    )
+
+    turnup.loc[mask_wrong, "grammage"] = turnup.loc[mask_wrong, "basis_weight_cat"]
+
+    return turnup

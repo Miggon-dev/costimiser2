@@ -113,24 +113,34 @@ def compute_shap_for_component(
         grade_col=grade_col,
     )
  
- 
+
 def explain_grade_component(
     component: str,
-    grade_id: str,
+    grade_id: Optional[str] = None,
     X_sample: Optional[pd.DataFrame] = None,
     X_reference: Optional[pd.DataFrame] = None,
     grade_col: str = GRADE_COL,
 ) -> Dict[str, Any]:
     """
-    Compute SHAP for one component and one grade.
-    Returns a structured dictionary.
+    Compute SHAP for one component.
+    If grade_id is provided, filter by grade.
+    If grade_id is None, compute on all available rows.
     """
     if X_sample is None:
         X_sample = load_turnup_data()
- 
+
     if X_reference is None:
         X_reference = get_reference_data()
- 
+
+    res = compute_shap_for_component(
+        component=component,
+        X_sample=X_sample,
+        grade_id=grade_id,
+        X_reference=X_reference,
+        grade_col=grade_col,
+    )
+
+
     base_values, shap_values, Xe, feature_names = compute_shap_for_component(
         component=component,
         X_sample=X_sample,
@@ -138,15 +148,38 @@ def explain_grade_component(
         X_reference=X_reference,
         grade_col=grade_col,
     )
- 
+
+    shap_df = build_shap_dataframe(
+        Xe=Xe,
+        shap_values=shap_values,
+        feature_names=feature_names,
+    )
+
+    fig = None
+    try:
+        shap_result = {
+            "shap_values": shap_values,
+            "Xe": Xe,
+            "feature_names": feature_names,
+        }
+
+        fig = build_shap_beeswarm_figure(shap_result)
+
+    except Exception as e:
+        print("build_shap_beeswarm_figure failed:", e)
+        fig = None
+
     return {
         "component": component,
-        "grade_id": str(grade_id),
+        "grade_id": None if grade_id is None else str(grade_id),
         "base_values": base_values,
         "shap_values": shap_values,
         "Xe": Xe,
         "feature_names": feature_names,
+        "data_frame": shap_df,
+        "figure": fig,
     }
+
  
  
 def build_shap_beeswarm_figure(
@@ -162,3 +195,42 @@ def build_shap_beeswarm_figure(
         feature_names=shap_result["feature_names"],
         max_features=max_features,
     )
+
+
+def build_shap_dataframe(
+    Xe: pd.DataFrame,
+    shap_values,
+    feature_names,
+) -> pd.DataFrame:
+    """
+    Return a long dataframe with:
+    - row index
+    - feature
+    - value
+    - shap_value
+    """
+    import numpy as np
+    import pandas as pd
+
+    if Xe is None or len(Xe) == 0:
+        return pd.DataFrame(columns=["row_id", "feature", "value", "shap_value"])
+
+    Xv = Xe.copy()
+
+    # shap_values expected shape: (n_rows, n_features)
+    sv = np.asarray(shap_values)
+
+    rows = []
+    for i in range(len(Xv)):
+        for j, feat in enumerate(feature_names):
+            value = Xv.iloc[i][feat] if feat in Xv.columns else None
+            shap_val = sv[i, j]
+            rows.append(
+                {
+                    "row_id": i,
+                    "feature": feat,
+                    "value": value,
+                    "shap_value": shap_val,
+                }
+            )
+    return pd.DataFrame(rows)
