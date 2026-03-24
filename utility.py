@@ -1950,26 +1950,27 @@ def _feature_engineering(turnup, setpoint_df, steam_null):
 
     turnup["Wedge_Date"] = turnup["Wedge_Time"].dt.date
 
-    setpnts=setpoint_df[setpoint_df.variable=="min"]
-    #setpnts["AB_Grade_ID"]=setpnts["AB_Grade_ID"].astype(int)
-    setpnts=setpnts.rename(columns={"value":"minimum"})
-
-    overprocessing=pd.melt(turnup[["Wedge_Time",'AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_','MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30']], id_vars=['Wedge_Time','AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_'], value_vars=['MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30'],var_name="property").merge(setpnts, on=["AB_Grade_ID","property"], how="left").drop("variable",axis=1).dropna()
+    overprocessing=pd.melt(turnup[["Wedge_Time",'AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_','MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30']], id_vars=['Wedge_Time','AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_'], value_vars=['MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30'],var_name="property").merge(setpoint_df.pivot(index=["AB_Grade_ID","property"], columns=["variable"], values="value").reset_index(), on=["AB_Grade_ID","property"], how="left").dropna()
     overprocessing=pd.merge(overprocessing,coef_df,on=["property"],how="left")
-    overprocessing["property_diff"]=overprocessing["value"]-overprocessing["minimum"]
-    overprocessing["property_pct"]=overprocessing["property_diff"]/overprocessing["minimum"]
+    overprocessing["property_diff"]=overprocessing["value"]-overprocessing["min"]
+    overprocessing["property_pct"]=overprocessing["property_diff"]/overprocessing["min"]
+    overprocessing["overprocessing_std"]=(overprocessing["value"]-(overprocessing["min"] + overprocessing["target"])/2)/((overprocessing["target"] - overprocessing["min"])/2)
+    overprocessing["overprocessing_score"]=(overprocessing["overprocessing_std"]-1).clip(0)
+    overprocessing["underprocessing_score"]=(-overprocessing["overprocessing_std"]-1).clip(0)
     overprocessing["starch_uptake_diff"]=overprocessing["property_diff"]*overprocessing["starch_coef"]
     overprocessing["starch_mass_flow_diff_avg"]=overprocessing["starch_uptake_diff"]*1000/overprocessing['Current_basis_weight'] #kg/T
     overprocessing["starch_cost_diff"]=overprocessing["starch_mass_flow_diff_avg"]* 434.22 / 1000
-    overprocessing = overprocessing[["MBS_Current_reel_ID","property","property_pct","starch_cost_diff"]]
-    overprocessingT=overprocessing.groupby('MBS_Current_reel_ID').agg({"property_pct":"mean","starch_cost_diff":"mean"}).reset_index()
+    overprocessing = overprocessing[["MBS_Current_reel_ID","property","property_pct","starch_cost_diff","overprocessing_std","overprocessing_score","underprocessing_score"]]
+    overprocessingT=overprocessing.groupby('MBS_Current_reel_ID').agg({"property_pct":"mean","starch_cost_diff":"mean", "overprocessing_std":"mean","overprocessing_score":"sum","underprocessing_score":"sum"}).reset_index()
     overprocessingT["property"]="ALL"
     overprocessing=pd.concat([overprocessing,overprocessingT],axis=0)
+    overprocessing.pivot(index=["MBS_Current_reel_ID"],columns="property",values=["property_pct","starch_cost_diff"])
     overprocessing=overprocessing.pivot(index=["MBS_Current_reel_ID"],columns="property",values=["property_pct","starch_cost_diff"])
     overprocessing1=overprocessing["property_pct"].rename(columns={"ALL":"Overprocessing_percentage","MBS_SCT_CD":"Overprocessing_SCT_CD","MBS_Burst":"Overprocessing_Burst","MBS_CMT30":"Overprocessing_CMT30"})
     overprocessing2=overprocessing["starch_cost_diff"][["ALL"]].rename(columns={"ALL":"Overprocessing_cost__€/T_"})
-    overprocessing=pd.concat([overprocessing1,overprocessing2],axis=1)
-    overprocessing=overprocessing.reset_index()[["MBS_Current_reel_ID","Overprocessing_percentage","Overprocessing_SCT_CD","Overprocessing_Burst","Overprocessing_CMT30","Overprocessing_cost__€/T_"]]
+    overprocessing3=overprocessingT[["MBS_Current_reel_ID","overprocessing_std","overprocessing_score","underprocessing_score"]].set_index("MBS_Current_reel_ID")
+    overprocessing=pd.concat([overprocessing1,overprocessing2,overprocessing3],axis=1)
+    overprocessing=overprocessing.reset_index()[["MBS_Current_reel_ID","Overprocessing_percentage","Overprocessing_SCT_CD","Overprocessing_Burst","Overprocessing_CMT30","Overprocessing_cost__€/T_","overprocessing_std","overprocessing_score","underprocessing_score"]]
     turnup=pd.merge(turnup,overprocessing,on='MBS_Current_reel_ID',how="left")
     return turnup
 
