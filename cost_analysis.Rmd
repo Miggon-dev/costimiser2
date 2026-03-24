@@ -1,6 +1,6 @@
 ---
-title: "Cost Analysis"
-#title: "Kostenanalyse"
+#title: "Cost Analysis"
+title: "Kostenanalyse"
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 output:
   pdf_document:
@@ -10,7 +10,7 @@ output:
 fontsize: 11pt
 geometry: margin=1in
 params:
-  lang: "en"
+  lang: "de"
 
 ---
 
@@ -79,7 +79,7 @@ min_date = turnup_data["Wedge_Time"].min()
 
 last_friday = max_date - pd.to_timedelta((max_date.weekday() - 4) % 7, unit="D")
 target_start = last_friday - pd.Timedelta(days=4)      # Monday
-target_end_exclusive = last_friday + pd.Timedelta(days=1)  # Saturday (exclusive end)
+target_end_exclusive = last_friday + pd.Timedelta(days=3)  # Saturday (exclusive end)
 target_range = (target_start.date(), target_end_exclusive.date())
 end_date=min(target_start.date() - timedelta(days=1),max_date.date())
 baseline_start = end_date - pd.Timedelta(weeks=4)
@@ -1234,30 +1234,113 @@ if (visualize_plots && py$current_enabled) {
 }
 ```
 
+
 ```{python llm}
 import os
+import sys
 import boto3
+import traceback
+import pathlib
+import logging
  
+logfile = pathlib.Path("knit.log")
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=[
+        logging.FileHandler(logfile, mode="a", encoding="utf-8"),
+        logging.StreamHandler(sys.stdout),
+    ],
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    force=True
+)
+log = logging.getLogger("llm")
+ 
+log.info("=== Entering llm chunk ===")
+log.info(f"Python executable: {sys.executable}")
+log.info(f"Working directory: {os.getcwd()}")
+ 
+try:
+    session = boto3.Session(
+        profile_name="DatafactoryDeveloper-781690932061",
+        region_name="eu-west-1"
+    )
+    log.info("boto3 session created")
+ 
+    creds = session.get_credentials()
+    frozen = creds.get_frozen_credentials() if creds else None
+    log.info(f"Credentials available: {frozen is not None}")
+    if frozen is not None:
+        log.info(f"Access key prefix: {frozen.access_key[:6]}***")
+ 
+    import knowledge_retrieval as rag
+    log.info(f"knowledge_retrieval imported from: {getattr(rag, '__file__', 'unknown')}")
 
-import rag_papermaking_faiss_s3 as rag 
-rag.rt = boto3.client("bedrock-runtime", region_name="eu-west-1")
+    importlib.reload(awsc)
+    importlib.reload(rag)
+
+    rag.set_boto3_session(session)
+    log.info("rag.set_boto3_session(session) completed")
+ 
+except Exception as e:
+    log.exception("Failure in llm chunk")
+    raise
 ```
 
 ```{python summary}
-if LANG=="en":
-  out = rag.ask("Provide a summary, diagnosis and action plan from these insights, no numbers in headings, but make sure that you know which section the variables belong and what is their purpose:" + ".".join(descriptions))
-else:
-  out = rag.ask(
-    "Erstelle eine Zusammenfassung, Diagnose und einen Maßnahmenplan auf Basis dieser Erkenntnisse. Keine Nummern in den Uberschriften. "
-    "Stelle dabei sicher, dass klar ist, zu welchem Abschnitt die Variablen gehören und welchen Zweck sie erfüllen: "
-    + ".".join(descriptions)
-)
-answer = out["answer"]
+import traceback
+import json
+
+log.info("=== Entering summary chunk ===")
+
+try:
+    log.info(f"LANG: {LANG}")
+    log.info(f"descriptions count: {len(descriptions)}")
+
+    non_empty = [str(x) for x in descriptions if x is not None and str(x).strip()]
+    prompt_body = ".".join(non_empty)
+
+    log.info(f"non-empty descriptions count: {len(non_empty)}")
+    log.info(f"prompt_body length: {len(prompt_body)}")
+    log.info(f"prompt preview: {prompt_body[:2000]}")
+
+    if LANG == "en":
+        prompt = (
+            "Provide a summary, diagnosis and action plan from these insights, "
+            "no numbers in headings, but make sure that you know which section "
+            "the variables belong and what is their purpose:" + prompt_body
+        )
+    else:
+        prompt = (
+            "Erstelle eine Zusammenfassung, Diagnose und einen Maßnahmenplan auf Basis dieser Erkenntnisse. "
+            "Keine Nummern in den Uberschriften. "
+            "Stelle dabei sicher, dass klar ist, zu welchem Abschnitt die Variablen gehören "
+            "und welchen Zweck sie erfüllen: " + prompt_body
+        )
+
+    log.info(f"final prompt length: {len(prompt)}")
+    log.info("Calling rag.ask(prompt)")
+
+    rag.set_boto3_session(session)
+    
+    out = rag.ask(prompt)
+
+    log.info(f"rag.ask returned object type: {type(out)}")
+    try:
+        log.info(f"rag.ask returned repr: {repr(out)[:4000]}")
+    except Exception:
+        log.exception("Could not log repr(out)")
+
+    answer = out["answer"]
+    log.info(f"answer length: {len(answer)}")
+    log.info(f"answer preview: {answer[:2000]}")
+
+except Exception as e:
+    log.exception("Failure in summary chunk")
+    raise
 
 ```
 
 `r py$answer`
-
 
 
 

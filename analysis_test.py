@@ -260,14 +260,30 @@ def test_process_data_tool():
     out = ar.answer_process_data(
         target_range=(date(2026, 3, 9), date(2026, 3, 14)),
         grade="6010120",
+        query="show cost for grade 6010120 in week 11",
     )
     assert_not_none(out, "Process data output is None")
-    return out
+    assert_in("figure", out)
+    assert_in("data_frame", out)
+    assert_in("columns", out)
+    assert_true(isinstance(out["columns"], list), "columns must be a list")
+    return {
+        "n_rows": out["n_rows"],
+        "columns": out["columns"],
+        "has_figure": out["figure"] is not None,
+    }
 
 def test_router_process_data():
-    out = ar.answer("show cost data for grade 6010120 in week 11")
+    out = ar.answer("show cost for grade 6010120 in week 11")
     assert_not_none(out, "Router process_data output is None")
-    return out
+    assert_in("figure", out)
+    assert_in("data_frame", out)
+    assert_in("columns", out)
+    return {
+        "columns": out["columns"],
+        "has_figure": out["figure"] is not None,
+        "n_rows": out["n_rows"],
+    }
 
 def test_prediction_tool():
     out = ar.answer_prediction(
@@ -337,3 +353,160 @@ def test_answer_orchestrated():
         "n_steps": len(out["step_results"]),
         "text_preview": out["text"][:400],
     }
+
+def test_router_recommendation_with_estimate():
+    out = ar.answer(
+        "what are the recommendations to improve the steam cost for grade 6010120 in week 11 and what are the expected savings"
+    )
+    assert_in("plan", out)
+    tools = [s["tool"] for s in out["plan"]["steps"]]
+    assert_true(tools[-1] == "scenario", f"Expected scenario as final step, got {tools}")
+    assert_nonempty_text(out["text"])
+    return {
+        "tools": tools,
+        "text_preview": out["text"][:500],
+    }
+
+def test_recommendation_has_suggested_interventions():
+    cdr = cdt.run_cost_driver_analysis(
+        target_range=(date(2026, 3, 9), date(2026, 3, 14)),
+        baseline_range=(date(2026, 2, 9), date(2026, 3, 9)),
+        cost_component="steam",
+        grade="6010120",
+    )
+    rec = rt.build_recommendations(
+        cost_driver_result=cdr,
+        lang="en",
+    )
+    assert_in("suggested_interventions", rec)
+    assert_true(isinstance(rec["suggested_interventions"], list), "Expected list")
+    return rec["suggested_interventions"]
+
+def test_router_recommendation_without_estimate_no_scenario():
+    out = ar.answer(
+        "what are the recommendations to improve the steam cost for grade 6010120 in week 11"
+    )
+    tools = [s["tool"] for s in out["plan"]["steps"]]
+    assert_true("scenario" not in tools, f"Did not expect scenario in tools: {tools}")
+    return tools
+
+def test_router_recommendation_with_estimate():
+    out = ar.answer(
+        "what are the recommendations to improve the steam cost for grade 6010120 in week 11 and what are the expected savings"
+    )
+    tools = [s["tool"] for s in out["plan"]["steps"]]
+    assert_true(tools[-1] == "scenario", f"Expected final step to be scenario, got {tools}")
+    return tools
+
+def test_cost_driver_has_figure():
+    out = ar.answer_cost_driver_analysis(
+        target_range=(date(2026, 3, 9), date(2026, 3, 14)),
+        baseline_range=(date(2026, 2, 9), date(2026, 3, 9)),
+        cost_component="steam",
+        grade="6010120",
+        lang="en",
+    )
+    assert_in("figure", out)
+    return {"has_figure": out["figure"] is not None}
+
+def test_planner_regressions():
+    cases = {
+        "diagnose cost overall for grade 6010120 in March 2026": ["diagnosis"],
+        "help me understand why cost worsened for grade 6010120 in March 2026": ["diagnosis", "cost_driver"],
+        "what are the recommendations to improve the steam cost for grade 6010120 in week 11": ["diagnosis", "cost_driver", "knowledge", "recommend"],
+        "simulate starch cost for grade 6010120 if Starch_uptake__g/m2_ is reduced by 10%": ["scenario"],
+    }
+    results = {}
+    for q, expected in cases.items():
+        parsed = qp.parse_query(q)
+        bundle = ap.make_plan(parsed, raw_query=q)
+        tools = [s["tool"] for s in bundle["plan"]["steps"]]
+        assert_true(tools == expected, f"For query {q!r}, expected {expected}, got {tools}")
+        results[q] = tools
+    return results
+
+def test_process_data_basis_weight_selection():
+    out = ar.answer(
+        "show current basis weight for grade 6010120 last week"
+    )
+    assert_in("columns", out)
+    assert_true(
+        any("basis" in c.lower() and "weight" in c.lower() for c in out["columns"]),
+        f"Expected a basis weight column, got {out['columns']}",
+    )
+    return {
+        "columns": out["columns"],
+        "has_figure": out["figure"] is not None,
+    }
+
+def test_process_data_and_selection():
+    out = ar.answer(
+        "show steam and electricity for grade 6010120 last week"
+    )
+    assert_in("columns", out)
+    cols_l = [c.lower() for c in out["columns"]]
+    assert_true(any("steam" in c for c in cols_l), f"No steam column found: {out['columns']}")
+    assert_true(any("electric" in c for c in cols_l), f"No electricity column found: {out['columns']}")
+    return {
+        "columns": out["columns"],
+        "has_figure": out["figure"] is not None,
+    }
+
+def test_process_data_negative_filter():
+    out = ar.answer(
+        "show basis weight without target for grade 6010120 last week"
+    )
+    assert_in("columns", out)
+    cols_l = [c.lower() for c in out["columns"]]
+    assert_true(
+        not any("target" in c for c in cols_l),
+        f"Target columns should be excluded, got {out['columns']}",
+    )
+    assert_true(
+        any("basis" in c and "weight" in c for c in cols_l),
+        f"Expected a basis weight column, got {out['columns']}",
+    )
+    return {
+        "columns": out["columns"],
+        "has_figure": out["figure"] is not None,
+    }
+
+def test_process_data_secondary_axis_preference():
+    out = ar.answer(
+        "show basis weight and predrier steam in secondary axis for grade 6010120 last week"
+    )
+    assert_in("plot_preferences", out)
+    assert_true(
+        out["plot_preferences"].get("secondary_axis") is True,
+        f"Expected secondary_axis=True, got {out['plot_preferences']}",
+    )
+    assert_in("figure", out)
+    return {
+        "columns": out["columns"],
+        "plot_preferences": out["plot_preferences"],
+        "has_figure": out["figure"] is not None,
+    }
+
+def test_extract_feature_request_phrase():
+    q = "show basis weight and predrier steam in secondary axis for grade 6010120 last week"
+    phrase = pdt.extract_feature_request_phrase(q)
+    assert_true("basis weight" in phrase, f"Unexpected cleaned phrase: {phrase}")
+    assert_true("predrier steam" in phrase, f"Unexpected cleaned phrase: {phrase}")
+    assert_true("grade" not in phrase, f"Grade should be removed: {phrase}")
+    assert_true("secondary axis" not in phrase, f"Plot instruction should be removed: {phrase}")
+    return phrase
+
+
+def test_extract_negative_terms():
+    q = "show basis weight without target and prediction for grade 6010120 last week"
+    terms = pdt.extract_negative_terms(q)
+    assert_true("target" in " ".join(terms), f"Missing target in {terms}")
+    assert_true("prediction" in " ".join(terms), f"Missing prediction in {terms}")
+    return terms
+
+
+def test_parse_plot_preferences():
+    q = "show basis weight and predrier steam in secondary axis for grade 6010120 last week"
+    prefs = pdt.parse_plot_preferences(q)
+    assert_true(prefs["secondary_axis"] is True, f"Unexpected prefs: {prefs}")
+    return prefs

@@ -247,6 +247,7 @@ def build_recommendations(
             contribution=contribution,
             diff_info=diff_map.get(variable),
         )
+        action["suggested_intervention"] = _suggest_intervention_from_action(action)
         actions.append(action)
     if lang == "de":
         text_lines = _build_recommendation_lines_de(focus, actions)
@@ -264,10 +265,18 @@ def build_recommendations(
                 "Additional domain guidance from the knowledge context was considered when interpreting these recommendations."
             )
     text = header + "\n\n" + "\n".join(f"- {line}" for line in text_lines)
+
+    suggested_interventions = [
+        a["suggested_intervention"]
+        for a in actions
+        if a.get("suggested_intervention") is not None
+    ]
+    
     return {
         "text": text,
         "focus": focus,
         "actions": actions,
+        "suggested_interventions": suggested_interventions,
         "knowledge_text": knowledge_text,
         "knowledge_result": knowledge_result,
         "diagnosis_result": diagnosis_result,
@@ -304,3 +313,22 @@ def _extract_knowledge_text(knowledge_result: Optional[Dict[str, Any]]) -> str:
         if "text" in knowledge_result and knowledge_result["text"]:
             return str(knowledge_result["text"])
     return str(knowledge_result) if knowledge_result else ""
+
+def _suggest_intervention_from_action(action: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    variable = action.get("variable")
+    direction_hint = action.get("direction_hint")
+    if not variable:
+        return None
+    if direction_hint == "reduce_or_optimize":
+        return {
+            "variable": variable,
+            "mode": "relative",
+            "value": -0.05,
+        }
+    if direction_hint == "restore_or_increase":
+        return {
+            "variable": variable,
+            "mode": "relative",
+            "value": 0.05,
+        }
+    return None

@@ -1,0 +1,160 @@
+---
+title: "Cost Analysis"
+#title: "Kostenanalyse"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output:
+  pdf_document:
+    toc: true
+    number_sections: true
+    latex_engine: xelatex
+fontsize: 11pt
+geometry: margin=1in
+params:
+  lang: "en"
+
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+
+#knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, error = TRUE, attr.source = c('.numberLines', 'startFrom="1"'))
+ 
+# optional: richer stack traces from tidyverse errors
+options(rlang_backtrace_on_error = "full")
+ 
+# optional (helps some tools show file/line in traces)
+options(keep.source = TRUE)
+
+
+library(reticulate)
+ 
+# Use your exact venv path (the folder, not python.exe)
+reticulate::use_virtualenv("C:/workspace/costimiser/.venv", required = TRUE)
+ 
+# sanity check (optional)
+#reticulate::py_config()
+
+#knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+visualize_plots <- TRUE   # or FALSE
+
+lang <- params$lang
+
+tr <- function(en, de) {
+  if (lang == "de") de else en
+}
+
+```
+
+
+
+```{python, echo=FALSE}
+import logging, time, pathlib
+logfile = pathlib.Path("knit.log")
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=[logging.FileHandler(logfile, mode="a", encoding="utf-8")],
+    format="%(asctime)s %(levelname)s: %(message)s"
+)
+log = logging.getLogger("knitr")
+
+LANG = r.lang
+```
+
+```{python data, echo=FALSE}
+import pandas as pd
+from utility import _process_data, _turnup_data, setpoint_df, _summary_cost_plot, make_model_cost
+from datetime import date, timedelta
+import plotly.io as pio
+from pathlib import Path
+import pickle
+
+
+steam_null = False
+turnup_data = _turnup_data(True, "", None, setpoint_df, steam_null)
+
+max_date = turnup_data["Wedge_Time"].max()
+min_date = turnup_data["Wedge_Time"].min()
+
+last_friday = max_date - pd.to_timedelta((max_date.weekday() - 4) % 7, unit="D")
+target_start = last_friday - pd.Timedelta(days=4)      # Monday
+target_end_exclusive = last_friday + pd.Timedelta(days=1)  # Saturday (exclusive end)
+target_range = (target_start.date(), target_end_exclusive.date())
+end_date=min(target_start.date() - timedelta(days=1),max_date.date())
+baseline_start = end_date - pd.Timedelta(weeks=4)
+baseline_end = end_date
+baseline_range = (baseline_start, baseline_end)
+
+period_md = f"{baseline_start.strftime('%B %d, %Y')} – {target_end_exclusive.strftime('%B %d, %Y')}"
+
+process_data =  _process_data(turnup_data, target_range, baseline_range, steam_null)
+
+plotly_theme = "plotly_white"
+
+grades_summary = ["3200115", "6010085", "6010100", "6010120"]
+
+def fibre_cost(row):
+    basis_weight = row["Current_basis_weight"]
+    starch_uptake = row["Starch_uptake__g/m2_"]
+    moisture = row["Current_reel_moisture_average(reel)"]
+    return 146.46*(basis_weight*(1-moisture/100)-starch_uptake)/basis_weight
+
+def fibre_features():
+    return ["Current_basis_weight","Starch_uptake__g/m2_","Current_reel_moisture_average(reel)"]
+
+MODELS_DIR = Path("models").resolve()
+
+with open(MODELS_DIR / "model_electricity.pkl", "rb") as f:
+    electricity_model = pickle.load(f)
+
+with open(MODELS_DIR / "model_steam.pkl", "rb") as f:
+    steam_model = pickle.load(f)
+
+with open(MODELS_DIR / "model_starch.pkl", "rb") as f:
+    starch_model = pickle.load(f)
+
+def steam_features():
+    return list(steam_model.best_estimator_.feature_names_in_)
+
+def electricity_features():
+    return list(electricity_model.best_estimator_.feature_names_in_)
+
+def starch_features():
+    return list(starch_model.best_estimator_.feature_names_in_)
+
+steam_cost = make_model_cost(steam_model, steam_features)
+electricity_cost = make_model_cost(electricity_model, electricity_features)
+starch_cost = make_model_cost(starch_model, starch_features)
+
+descriptions = []
+```
+
+
+
+```{python llm}
+import os
+import boto3
+
+session = boto3.Session(
+    profile_name="DatafactoryDeveloper-781690932061",
+    region_name="eu-west-1"
+)
+
+import knowledge_retrieval as rag 
+rag.set_boto3_session(session)
+# rag.rt = boto3.client("bedrock-runtime", region_name="eu-west-1")
+```
+
+```{python summary}
+out = rag.ask("What is retention")
+
+answer = out["answer"]
+
+```
+
+`r py$answer`
+
+
+
+

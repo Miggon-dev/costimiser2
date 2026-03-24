@@ -14,6 +14,7 @@ from utility import (
     _process_data_clustered,
     _process_data_clustered_summary,
     _shapley_contrib,
+    _cost_driver_plot,
     setpoint_df,
     build_shapley_text,
 )
@@ -204,6 +205,7 @@ def run_cost_driver_analysis(
             "shapley_contrib": pd.DataFrame(),
             "top_driver_variables": [],
             "extreme_cluster_differences": pd.DataFrame(),
+            "figure":None,
         }
     if len(process_data_clustered) == 0:
         return {
@@ -218,6 +220,7 @@ def run_cost_driver_analysis(
             "shapley_contrib": pd.DataFrame(),
             "top_driver_variables": [],
             "extreme_cluster_differences": pd.DataFrame(),
+            "figure":None,
         }
     
     targets = process_data_clustered["target"].unique()
@@ -234,6 +237,7 @@ def run_cost_driver_analysis(
             "shapley_contrib": pd.DataFrame(),
             "top_driver_variables": [],
             "extreme_cluster_differences": pd.DataFrame(),
+            "figure":None,
         }
     # 6. Summary (df1, df2)
     df1, df2 = _process_data_clustered_summary(
@@ -262,6 +266,7 @@ def run_cost_driver_analysis(
             "shapley_contrib": pd.DataFrame(),
             "top_driver_variables": [],
             "extreme_cluster_differences": pd.DataFrame(),
+            "figure":None,
         }
     # 7. SHAP contribution between periods
     shapley_contrib = _shapley_contrib(
@@ -281,6 +286,9 @@ def run_cost_driver_analysis(
     )
     if shapley_contrib is None:
         shapley_contrib = pd.DataFrame()
+    figure = None
+    if shapley_contrib is not None and not shapley_contrib.empty:
+        figure = _cost_driver_plot(shapley_contrib)
     top_driver_variables = extract_top_driver_variables(
         shapley_contrib=shapley_contrib,
         top_n=3,
@@ -303,6 +311,7 @@ def run_cost_driver_analysis(
         "shapley_contrib": shapley_contrib,
         "top_driver_variables": top_driver_variables,
         "extreme_cluster_differences": extreme_cluster_differences,
+        "figure":figure,
     }
 
 # -------------------------------------------------

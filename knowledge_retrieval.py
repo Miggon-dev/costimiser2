@@ -24,6 +24,7 @@ import pandas as pd
 import numpy as np
 import faiss
 import aws_context as awsc
+from botocore.config import Config
 
  
 # ================================
@@ -64,6 +65,23 @@ rt = None
 s3 = None
 _sts = None
 _session = None
+
+BEDROCK_CONFIG = Config(
+    connect_timeout=10,   # time to establish connection
+    read_timeout=300,     # <-- increase this (e.g. 300s = 5 min)
+    retries={
+        "max_attempts": 3,
+        "mode": "standard"
+    }
+)
+ 
+def get_bedrock_runtime():
+    global _session
+    return _session.client(
+        "bedrock-runtime",
+        region_name="eu-west-1",
+        config=BEDROCK_CONFIG
+    )
  
 def set_boto3_session(session: boto3.session.Session) -> None:
     global _session, rt, s3, _sts, _aws_validated
@@ -77,12 +95,21 @@ def set_boto3_session(session: boto3.session.Session) -> None:
 def _ensure_clients() -> None:
     global _session, rt, s3, _sts
  
-    if _session is not None:
-        awsc.set_session(_session)
+    if _session is None:
+        raise RuntimeError("No boto3 session has been set. Call set_boto3_session(session) first.")
  
-    rt = awsc.get_bedrock_runtime()
-    s3 = awsc.get_s3()
-    _sts = awsc.get_sts()
+    if rt is None:
+        rt = _session.client(
+            "bedrock-runtime",
+            region_name=REGION,
+            config=BEDROCK_CONFIG,
+        )
+ 
+    if s3 is None:
+        s3 = _session.client("s3", region_name=REGION)
+ 
+    if _sts is None:
+        _sts = _session.client("sts", region_name=REGION)
  
 # ================================
 # Validation flags

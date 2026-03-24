@@ -1,0 +1,1006 @@
+2026-03-22 19:47:04,637 INFO: Fibre_cost__€/T_
+2026-03-22 19:47:15,364 INFO: Steam__€/T_
+2026-03-22 19:47:51,290 INFO: Electricity__€/T_
+2026-03-22 19:48:15,251 INFO: Starch__€/T_
+2026-03-22 19:48:31,711 INFO: Fibre_cost__€/T_
+2026-03-22 19:48:41,506 INFO: Steam__€/T_
+2026-03-22 19:49:15,378 INFO: Electricity__€/T_
+2026-03-22 19:49:37,113 INFO: Starch__€/T_
+2026-03-22 19:49:55,945 INFO: Fibre_cost__€/T_
+2026-03-22 19:50:09,918 INFO: Steam__€/T_
+2026-03-22 19:50:47,856 INFO: Electricity__€/T_
+2026-03-22 19:51:14,703 INFO: Starch__€/T_
+2026-03-22 19:51:24,479 INFO: Loading faiss with AVX512 support.
+2026-03-22 19:51:24,479 INFO: Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-03-22 19:51:24,480 INFO: Loading faiss with AVX2 support.
+2026-03-22 19:51:24,570 INFO: Successfully loaded faiss with AVX2 support.
+2026-03-22 19:51:28,630 INFO: Loading cached SSO token for dssmith
+2026-03-22 20:19:56,897 INFO: Loading faiss with AVX512 support.
+2026-03-22 20:19:56,898 INFO: Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-03-22 20:19:56,898 INFO: Loading faiss with AVX2 support.
+2026-03-22 20:19:56,977 INFO: Successfully loaded faiss with AVX2 support.
+2026-03-22 20:19:57,803 INFO: Loading cached SSO token for dssmith
+2026-03-22 20:21:19,486 INFO: Fibre_cost__€/T_
+2026-03-22 20:21:30,029 INFO: Steam__€/T_
+2026-03-22 20:22:05,207 INFO: Electricity__€/T_
+2026-03-22 20:22:27,365 INFO: Starch__€/T_
+2026-03-22 20:22:43,166 INFO: Fibre_cost__€/T_
+2026-03-22 20:22:52,649 INFO: Steam__€/T_
+2026-03-22 20:23:28,172 INFO: Electricity__€/T_
+2026-03-22 20:23:49,336 INFO: Starch__€/T_
+2026-03-22 20:24:08,048 INFO: Fibre_cost__€/T_
+2026-03-22 20:24:20,778 INFO: Steam__€/T_
+2026-03-22 20:24:57,737 INFO: Electricity__€/T_
+2026-03-22 20:25:22,812 INFO: Starch__€/T_
+2026-03-22 20:25:30,235 INFO: Loading faiss with AVX512 support.
+2026-03-22 20:25:30,235 INFO: Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-03-22 20:25:30,235 INFO: Loading faiss with AVX2 support.
+2026-03-22 20:25:30,257 INFO: Successfully loaded faiss with AVX2 support.
+2026-03-22 20:25:30,994 INFO: Loading cached SSO token for dssmith
+2026-03-23 06:49:15,764 INFO: Fibre_cost__€/T_
+2026-03-23 06:49:26,891 INFO: Steam__€/T_
+2026-03-23 06:50:03,601 INFO: Electricity__€/T_
+2026-03-23 06:50:27,177 INFO: Starch__€/T_
+2026-03-23 06:50:59,442 INFO: Fibre_cost__€/T_
+2026-03-23 06:51:10,789 INFO: Steam__€/T_
+2026-03-23 06:51:45,204 INFO: Electricity__€/T_
+2026-03-23 06:52:09,167 INFO: Starch__€/T_
+2026-03-23 06:52:40,917 INFO: Fibre_cost__€/T_
+2026-03-23 06:52:53,754 INFO: Steam__€/T_
+2026-03-23 06:53:29,324 INFO: Electricity__€/T_
+2026-03-23 06:53:53,654 INFO: Starch__€/T_
+2026-03-23 06:54:15,947 INFO: Loading faiss with AVX512 support.
+2026-03-23 06:54:15,947 INFO: Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-03-23 06:54:15,947 INFO: Loading faiss with AVX2 support.
+2026-03-23 06:54:16,051 INFO: Successfully loaded faiss with AVX2 support.
+2026-03-23 06:54:20,127 INFO: Loading cached SSO token for dssmith
+2026-03-23 07:04:17,492 INFO: Fibre_cost__€/T_
+2026-03-23 07:04:32,185 INFO: Steam__€/T_
+2026-03-23 07:06:04,594 INFO: Fibre_cost__€/T_
+2026-03-23 07:06:17,897 INFO: Steam__€/T_
+2026-03-23 07:07:03,614 INFO: Electricity__€/T_
+2026-03-23 07:07:28,720 INFO: Starch__€/T_
+2026-03-23 07:07:59,835 INFO: Fibre_cost__€/T_
+2026-03-23 07:08:12,946 INFO: Steam__€/T_
+2026-03-23 07:08:53,158 INFO: Electricity__€/T_
+2026-03-23 07:09:18,533 INFO: Starch__€/T_
+2026-03-23 07:09:48,699 INFO: Fibre_cost__€/T_
+2026-03-23 07:10:00,603 INFO: Steam__€/T_
+2026-03-23 07:10:35,811 INFO: Electricity__€/T_
+2026-03-23 07:11:02,085 INFO: Starch__€/T_
+2026-03-23 07:11:35,651 INFO: Fibre_cost__€/T_
+2026-03-23 07:11:49,529 INFO: Steam__€/T_
+2026-03-23 07:12:26,721 INFO: Electricity__€/T_
+2026-03-23 07:12:51,184 INFO: Starch__€/T_
+2026-03-23 07:13:15,885 INFO: Loading faiss with AVX512 support.
+2026-03-23 07:13:15,886 INFO: Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-03-23 07:13:15,886 INFO: Loading faiss with AVX2 support.
+2026-03-23 07:13:15,977 INFO: Successfully loaded faiss with AVX2 support.
+2026-03-23 07:13:20,704 INFO: Loading cached SSO token for dssmith
+2026-03-23 07:20:57,555 INFO: Fibre_cost__€/T_
+2026-03-23 07:21:09,642 INFO: Steam__€/T_
+2026-03-23 07:21:51,346 INFO: Electricity__€/T_
+2026-03-23 07:22:15,952 INFO: Starch__€/T_
+2026-03-23 07:22:47,013 INFO: Fibre_cost__€/T_
+2026-03-23 07:22:59,347 INFO: Steam__€/T_
+2026-03-23 07:23:40,120 INFO: Electricity__€/T_
+2026-03-23 07:24:06,045 INFO: Starch__€/T_
+2026-03-23 07:24:38,002 INFO: Fibre_cost__€/T_
+2026-03-23 07:24:49,420 INFO: Steam__€/T_
+2026-03-23 07:25:28,228 INFO: Electricity__€/T_
+2026-03-23 07:25:56,063 INFO: Starch__€/T_
+2026-03-23 07:26:29,929 INFO: Fibre_cost__€/T_
+2026-03-23 07:26:43,450 INFO: Steam__€/T_
+2026-03-23 07:27:24,203 INFO: Electricity__€/T_
+2026-03-23 07:27:49,129 INFO: Starch__€/T_
+2026-03-23 07:28:13,830 INFO: Loading faiss with AVX512 support.
+2026-03-23 07:28:13,831 INFO: Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-03-23 07:28:13,831 INFO: Loading faiss with AVX2 support.
+2026-03-23 07:28:13,855 INFO: Successfully loaded faiss with AVX2 support.
+2026-03-23 07:28:14,775 INFO: Loading cached SSO token for dssmith
+2026-03-23 07:28:15,720 INFO: SSO Token refresh succeeded
+2026-03-23 07:35:02,561 INFO: Fibre_cost__€/T_
+2026-03-23 07:35:19,319 INFO: Steam__€/T_
+2026-03-23 07:36:02,590 INFO: Electricity__€/T_
+2026-03-23 07:36:29,051 INFO: Starch__€/T_
+2026-03-23 07:37:00,389 INFO: Fibre_cost__€/T_
+2026-03-23 07:37:13,070 INFO: Steam__€/T_
+2026-03-23 07:37:50,690 INFO: Electricity__€/T_
+2026-03-23 07:38:15,148 INFO: Starch__€/T_
+2026-03-23 07:38:45,343 INFO: Fibre_cost__€/T_
+2026-03-23 07:38:57,590 INFO: Steam__€/T_
+2026-03-23 07:39:40,136 INFO: Electricity__€/T_
+2026-03-23 07:40:03,752 INFO: Starch__€/T_
+2026-03-23 07:40:35,865 INFO: Fibre_cost__€/T_
+2026-03-23 07:40:48,396 INFO: Steam__€/T_
+2026-03-23 07:41:24,484 INFO: Electricity__€/T_
+2026-03-23 07:41:48,097 INFO: Starch__€/T_
+2026-03-23 07:45:54,584 INFO: Fibre_cost__€/T_
+2026-03-23 07:46:08,264 INFO: Steam__€/T_
+2026-03-23 07:46:54,081 INFO: Electricity__€/T_
+2026-03-23 07:47:21,860 INFO: Starch__€/T_
+2026-03-23 07:47:58,527 INFO: Fibre_cost__€/T_
+2026-03-23 07:48:12,915 INFO: Steam__€/T_
+2026-03-23 07:49:14,016 INFO: Electricity__€/T_
+2026-03-23 07:49:50,075 INFO: Starch__€/T_
+2026-03-23 07:50:31,588 INFO: Fibre_cost__€/T_
+2026-03-23 07:50:46,697 INFO: Steam__€/T_
+2026-03-23 07:51:32,722 INFO: Electricity__€/T_
+2026-03-23 07:52:01,426 INFO: Starch__€/T_
+2026-03-23 07:52:42,972 INFO: Fibre_cost__€/T_
+2026-03-23 07:52:57,400 INFO: Steam__€/T_
+2026-03-23 07:53:46,217 INFO: Electricity__€/T_
+2026-03-23 07:54:19,638 INFO: Starch__€/T_
+2026-03-23 08:04:34,543 INFO: Fibre_cost__€/T_
+2026-03-23 08:04:46,616 INFO: Steam__€/T_
+2026-03-23 08:05:24,062 INFO: Electricity__€/T_
+2026-03-23 08:05:49,416 INFO: Starch__€/T_
+2026-03-23 08:06:20,298 INFO: Fibre_cost__€/T_
+2026-03-23 08:06:32,399 INFO: Steam__€/T_
+2026-03-23 08:07:11,060 INFO: Electricity__€/T_
+2026-03-23 08:07:37,707 INFO: Starch__€/T_
+2026-03-23 08:08:08,066 INFO: Fibre_cost__€/T_
+2026-03-23 08:08:21,066 INFO: Steam__€/T_
+2026-03-23 08:08:56,142 INFO: Electricity__€/T_
+2026-03-23 08:09:22,468 INFO: Starch__€/T_
+2026-03-23 08:09:56,638 INFO: Fibre_cost__€/T_
+2026-03-23 08:10:09,610 INFO: Steam__€/T_
+2026-03-23 08:10:47,177 INFO: Electricity__€/T_
+2026-03-23 08:11:13,860 INFO: Starch__€/T_
+2026-03-23 08:11:38,801 INFO [llm] === Entering llm chunk ===
+2026-03-23 08:11:38,804 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-03-23 08:11:38,807 INFO [llm] Working directory: c:\workspace\costimiser
+2026-03-23 08:11:38,837 INFO [llm] boto3 session created
+2026-03-23 08:11:39,322 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-03-23 08:11:40,555 INFO [llm] Credentials available: True
+2026-03-23 08:11:40,555 INFO [llm] Access key prefix: ASIA3M***
+2026-03-23 08:11:40,594 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-03-23 08:11:40,594 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-03-23 08:11:40,594 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-03-23 08:11:40,681 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-03-23 08:11:43,543 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-03-23 08:11:43,916 INFO [llm] rag.set_boto3_session(session) completed
+2026-03-23 08:11:44,100 INFO [llm] === Entering summary chunk ===
+2026-03-23 08:11:44,103 INFO [llm] LANG: en
+2026-03-23 08:11:44,104 INFO [llm] descriptions count: 22
+2026-03-23 08:11:44,104 INFO [llm] non-empty descriptions count: 22
+2026-03-23 08:11:44,104 INFO [llm] prompt_body length: 8062
+2026-03-23 08:11:44,104 INFO [llm] prompt preview: For all considered grades, TOTAL cost saw a decrease of 2.91 €/t, resulting in 277.09 €/t.
+
+Breaking down the overall cost change, 0.05 €/t was driven by a more expensive mix of grades, and 2.96 €/t was due to an improvement in the process..For all considered grades, TOTAL overprocessing saw an increase of 0.35 %, resulting in 6.33 %..For grade 3200115, TOTAL cost saw a decrease of 5.66 €/t, resulting in 270.97 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 5.74 €/t, resulting in 284.57 €/t.
+
+For grade 6010100, TOTAL cost saw an increase of 2.37 €/t, resulting in 286.79 €/t.
+
+For grade 6010120, TOTAL cost saw a decrease of 2.55 €/t, resulting in 273.32 €/t.
+
+Looking across individual grades, the strongest cost increase was observed for grade 6010100 (+2.37 €/t) and the strongest cost decrease was observed for grade 6010085 (-5.74 €/t). These movements stand out and may require further investigation..For grade 3200115, TOTAL overprocessing saw an increase of 2.52 %, resulting in 10.38 %.
+
+For grade 6010085, TOTAL overprocessing saw an increase of 0.77 %, resulting in 6.93 %.
+
+For grade 6010100, TOTAL overprocessing saw an increase of 3.14 %, resulting in 9.97 %.
+
+For grade 6010120, TOTAL overprocessing saw a decrease of 0.48 %, resulting in 4.18 %.
+
+Looking across individual grades, the strongest overprocessing increase was observed for grade 6010100 (+3.14 %) and the strongest overprocessing decrease was observed for grade 6010120 (-0.48 %). These movements stand out and may require further investigation..Average change by component:
+
+- **Steam__€/T_** decreased on average (-3.67 €/t).
+
+- **Starch__€/T_** increased on average (+0.88 €/t).
+
+- **Fibre_cost__€/T_** decreased on average (-0.39 €/t).
+
+- **Electricity__€/T_** increased on average (+0.22 €/t).
+
+- **Chemicals__€/T_** increased on average (+0.07 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Starch__€/T_** (+0.88 €/t on average), with the highest inc
+2026-03-23 08:11:44,104 INFO [llm] final prompt length: 8241
+2026-03-23 08:11:44,104 INFO [llm] Calling rag.ask(prompt)
+2026-03-23 08:13:47,929 INFO [llm] rag.ask returned object type: <class 'dict'>
+2026-03-23 08:13:47,929 INFO [llm] rag.ask returned repr: {'answer': '# SUMMARY, DIAGNOSIS AND ACTION PLAN\n\n## Executive Summary\n\nThe overall performance shows a **positive cost reduction of 2.96 €/t** driven by process improvements, achieving a total cost of 277.09 €/t across all grades. However, this is accompanied by a concerning **increase in overprocessing of 0.35%**, reaching 6.33% total. The results reveal significant grade-specific variations requiring targeted interventions.\n\n**Key Variables by Section:**\n- **Cost Components**: Steam, Starch, Fibre, Electricity, Chemicals (measure resource consumption per ton)\n- **Quality Parameters**: SCT_CD (Short-span Compression Test - Cross Direction), Burst strength, CMT30 (Concora Medium Test) - measure paper strength properties\n- **Process Variables**: Moisture, temperature, vacuum settings, consistency, retention, speed - control production efficiency and quality\n\n## Diagnosis by Section\n\n### Overall Cost Performance\n**Purpose**: Track total production economics and identify cost drivers\n\n**Findings**:\n- Total cost decreased 2.91 €/t to 277.09 €/t\n- Process improvements contributed -2.96 €/t (positive)\n- Grade mix penalty: +0.05 €/t (negative)\n\n**Critical Issues**:\n1. **Steam consumption** showed the largest improvement (-3.67 €/t average), particularly in grade 3200115 (-6.59 €/t)\n2. **Starch costs** increased significantly (+0.88 €/t average), with grade 6010100 worst affected (+2.69 €/t)\n3. **Grade 6010100** is an outlier with +2.37 €/t cost increase despite overall improvements\n\n### Overprocessing Analysis\n**Purpose**: Measure excess quality delivery beyond specification (waste of resources)\n\n**Findings**:\n- Overall overprocessing increased 0.35% to 6.33%\n- Grade-specific variations are extreme:\n  - Grade 3200115: +2.52% (now 10.38% - critically high)\n  - Grade 6010100: +3.14% (now 9.97% - critically high)\n  - Grade 6010120: -0.48% (now 4.18% - best performer)\n\n**Critical Issues**:\n1. Strength properties (SCT_CD +2.06%, Burst +2.04%) increased beyond necessary levels\n2. Grade 6010100 shows simultaneous cost increase AND overprocessing increase - double penalty\n3. According to [papermaking_science_technology.pdf:d6f6f20ccb65b658:3395:0], "a 1% increase in SCT causes an operating cost increase of EUR 4.73/t" - the observed increases represent significant unnecessary costs\n\n### Grade-Specific Diagnosis\n\n#### Grade 6010085 (Best Cost Performance: -5.74 €/t)\n**Wet End Section** (forming/retention):\n- **Positive**: Consistency white water increased (+0.26), improved retention efficiency\n- **Positive**: Speed increased (+20.23 m/min), better productivity\n- **Negative**: Retention decreased (-0.02%), losing fibers/chemicals\n\n**Press Section**:\n- **Positive**: Vacuum uhle-box Pick-Up increased, better water removal\n- **Negative**: Retention Aid increased (+13.84 g/T), chemical cost penalty\n\n**Drying Section**:\n- **Positive**: DG4 inlet air temperature decreased (-26.80°C), major steam savings\n- **Negative**: Reel moisture decreased (-0.40-0.46%), over-drying\n\n#### Grade 3200115 (Strong Cost Performance: -5.66 €/t)\n**Size Press Section**:\n- **Positive**: Starch uptake increased (+0.18 g/m²), improved efficiency\n\n**Drying Section**:\n- **Positive**: DG4 inlet air temperature decreased (-28.33°C), excellent steam savings\n- **Positive**: Speed increased dramatically (+53.65 m/min), high productivity gain\n\n**Wet End Section**:\n- **Negative**: Retention decreased (-0.02%), fiber loss\n- **Mixed**: Overprocessing at 10.38% indicates excessive strength delivery\n\n#### Grade 6010100 (Problem Grade: +2.37 €/t cost increase)\n**Critical Issues**:\n- **Negative**: Speed decreased (-32.19 m/min), major productivity loss\n- **Negative**: Consistency white water decreased (-0.20), poor retention\n- **Negative**: Starch costs increased (+2.69 €/t), highest among all grades\n- **Negative**: Retention Aid increased (+13.87 g/T), chemical waste\n- **Negative**: Overprocessing at 9.97% with +
+2026-03-23 08:13:47,930 INFO [llm] answer length: 9945
+2026-03-23 08:13:47,930 INFO [llm] answer preview: # SUMMARY, DIAGNOSIS AND ACTION PLAN
+
+## Executive Summary
+
+The overall performance shows a **positive cost reduction of 2.96 €/t** driven by process improvements, achieving a total cost of 277.09 €/t across all grades. However, this is accompanied by a concerning **increase in overprocessing of 0.35%**, reaching 6.33% total. The results reveal significant grade-specific variations requiring targeted interventions.
+
+**Key Variables by Section:**
+- **Cost Components**: Steam, Starch, Fibre, Electricity, Chemicals (measure resource consumption per ton)
+- **Quality Parameters**: SCT_CD (Short-span Compression Test - Cross Direction), Burst strength, CMT30 (Concora Medium Test) - measure paper strength properties
+- **Process Variables**: Moisture, temperature, vacuum settings, consistency, retention, speed - control production efficiency and quality
+
+## Diagnosis by Section
+
+### Overall Cost Performance
+**Purpose**: Track total production economics and identify cost drivers
+
+**Findings**:
+- Total cost decreased 2.91 €/t to 277.09 €/t
+- Process improvements contributed -2.96 €/t (positive)
+- Grade mix penalty: +0.05 €/t (negative)
+
+**Critical Issues**:
+1. **Steam consumption** showed the largest improvement (-3.67 €/t average), particularly in grade 3200115 (-6.59 €/t)
+2. **Starch costs** increased significantly (+0.88 €/t average), with grade 6010100 worst affected (+2.69 €/t)
+3. **Grade 6010100** is an outlier with +2.37 €/t cost increase despite overall improvements
+
+### Overprocessing Analysis
+**Purpose**: Measure excess quality delivery beyond specification (waste of resources)
+
+**Findings**:
+- Overall overprocessing increased 0.35% to 6.33%
+- Grade-specific variations are extreme:
+  - Grade 3200115: +2.52% (now 10.38% - critically high)
+  - Grade 6010100: +3.14% (now 9.97% - critically high)
+  - Grade 6010120: -0.48% (now 4.18% - best performer)
+
+**Critical Issues**:
+1. Strength properties (SCT_CD +2.06%, Burst +2.04%) increased beyond necessary levels
+2. Grade 601
+2026-03-23 08:18:06,947 INFO: Fibre_cost__€/T_
+2026-03-23 08:18:18,750 INFO: Steam__€/T_
+2026-03-23 08:18:54,702 INFO: Electricity__€/T_
+2026-03-23 08:19:20,129 INFO: Starch__€/T_
+2026-03-23 08:19:50,014 INFO: Fibre_cost__€/T_
+2026-03-23 08:20:02,809 INFO: Steam__€/T_
+2026-03-23 08:20:40,395 INFO: Electricity__€/T_
+2026-03-23 08:21:06,258 INFO: Starch__€/T_
+2026-03-23 08:21:39,592 INFO: Fibre_cost__€/T_
+2026-03-23 08:21:51,203 INFO: Steam__€/T_
+2026-03-23 08:22:26,918 INFO: Electricity__€/T_
+2026-03-23 08:22:50,966 INFO: Starch__€/T_
+2026-03-23 08:23:24,358 INFO: Fibre_cost__€/T_
+2026-03-23 08:23:37,357 INFO: Steam__€/T_
+2026-03-23 08:24:15,131 INFO: Electricity__€/T_
+2026-03-23 08:24:40,281 INFO: Starch__€/T_
+2026-03-23 08:25:05,326 INFO [llm] === Entering llm chunk ===
+2026-03-23 08:25:05,338 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-03-23 08:25:05,348 INFO [llm] Working directory: c:\workspace\costimiser
+2026-03-23 08:25:05,378 INFO [llm] boto3 session created
+2026-03-23 08:25:05,718 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-03-23 08:25:06,887 INFO [botocore.tokens] SSO Token refresh succeeded
+2026-03-23 08:25:08,208 INFO [llm] Credentials available: True
+2026-03-23 08:25:08,208 INFO [llm] Access key prefix: ASIA3M***
+2026-03-23 08:25:08,215 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-03-23 08:25:08,215 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-03-23 08:25:08,215 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-03-23 08:25:08,300 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-03-23 08:25:08,924 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-03-23 08:25:09,014 INFO [llm] rag.set_boto3_session(session) completed
+2026-03-23 08:25:09,352 INFO [llm] === Entering summary chunk ===
+2026-03-23 08:25:09,359 INFO [llm] LANG: de
+2026-03-23 08:25:09,359 INFO [llm] descriptions count: 22
+2026-03-23 08:25:09,359 INFO [llm] non-empty descriptions count: 22
+2026-03-23 08:25:09,359 INFO [llm] prompt_body length: 8532
+2026-03-23 08:25:09,359 INFO [llm] prompt preview: Für alle betrachteten Sorten, TOTAL Kosten verzeichnete einen Rückgang of 2.91 €/t, was zu 277.09 €/t.
+
+Bei der Aufschlüsselung der gesamten Veränderung der Kosten ergibt sich, dass 0.05 €/t durch eine teurer Sortenmischung verursacht wurden und 2.96 €/t auf einer Verbesserung im Prozess zurückzuführen sind..Für alle betrachteten Sorten, TOTAL Überverarbeitung saw an Anstieg of 0.35 %, was zu 6.33 %..Für Sorte 3200115, TOTAL Kosten verzeichnete einen Rückgang of 5.66 €/t, was zu 270.97 €/t.
+
+Für Sorte 6010085, TOTAL Kosten verzeichnete einen Rückgang of 5.74 €/t, was zu 284.57 €/t.
+
+Für Sorte 6010100, TOTAL Kosten saw an Anstieg of 2.37 €/t, was zu 286.79 €/t.
+
+Für Sorte 6010120, TOTAL Kosten verzeichnete einen Rückgang of 2.55 €/t, was zu 273.32 €/t.
+
+Über alle einzelnen Sorten betrachtet der stärkste Kosten-Anstieg wurde für Sorte 6010100 beobachtet (+2.37 €/t) und der stärkste Kosten-Rückgang wurde für Sorte 6010085 beobachtet (-5.74 €/t). Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden..Für Sorte 3200115, TOTAL Überverarbeitung saw an Anstieg of 2.52 %, was zu 10.38 %.
+
+Für Sorte 6010085, TOTAL Überverarbeitung saw an Anstieg of 0.77 %, was zu 6.93 %.
+
+Für Sorte 6010100, TOTAL Überverarbeitung saw an Anstieg of 3.14 %, was zu 9.97 %.
+
+Für Sorte 6010120, TOTAL Überverarbeitung verzeichnete einen Rückgang of 0.48 %, was zu 4.18 %.
+
+Über alle einzelnen Sorten betrachtet der stärkste Überverarbeitung-Anstieg wurde für Sorte 6010100 beobachtet (+3.14 %) und der stärkste Überverarbeitung-Rückgang wurde für Sorte 6010120 beobachtet (-0.48 %). Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden..Durchschnittliche Veränderung je Komponente:
+
+- **Steam__€/T_** ist im Durchschnitt gesunken (-3.67 €/t).
+
+- **Starch__€/T_** ist im Durchschnitt gestiegen (+0.88 €/t).
+
+- **Fibre_cost__€/T_** ist im Durchschnitt gesunken (-0.39 €/t).
+
+- **Electricity__€/T_** ist im Durchschnitt gestiegen (+0.22 €/t).
+
+- **Chemicals__€/T_** ist im 
+2026-03-23 08:25:09,359 INFO [llm] final prompt length: 8774
+2026-03-23 08:25:09,360 INFO [llm] Calling rag.ask(prompt)
+2026-03-23 08:30:28,422 ERROR [llm] Failure in summary chunk
+Traceback (most recent call last):
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connection.py", line 516, in getresponse
+    httplib_response = super().getresponse()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 1430, in getresponse
+    response.begin()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 331, in begin
+    version, status, reason = self._read_status()
+                              ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 292, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\socket.py", line 719, in readinto
+    return self._sock.recv_into(b)
+           ~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\ssl.py", line 1304, in recv_into
+    return self.read(nbytes, buffer)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\ssl.py", line 1138, in read
+    return self._sslobj.read(len, buffer)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+TimeoutError: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\httpsession.py", line 465, in send
+    urllib_response = conn.urlopen(
+        method=request.method,
+    ...<7 lines>...
+        chunked=self._chunked(request.headers),
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\util\retry.py", line 449, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\util\util.py", line 39, in reraise
+    raise value
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 536, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 367, in _raise_timeout
+    raise ReadTimeoutError(
+        self, url, f"Read timed out. (read timeout={timeout_value})"
+    ) from err
+urllib3.exceptions.ReadTimeoutError: AWSHTTPSConnectionPool(host='bedrock-runtime.eu-west-1.amazonaws.com', port=443): Read timed out. (read timeout=60)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 30, in <module>
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 319, in ask
+    answer = llm_answer(prompt)
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 144, in llm_answer
+    resp = rt.converse(
+        modelId=LLM_MODEL_ID,
+    ...<8 lines>...
+        inferenceConfig={"maxTokens": max_tokens, "temperature": temperature},
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 602, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 1060, in _make_api_call
+    http, parsed_response = self._make_request(
+                            ~~~~~~~~~~~~~~~~~~^
+        operation_model, request_dict, request_context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 1084, in _make_request
+    return self._endpoint.make_request(operation_model, request_dict)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 119, in make_request
+    return self._send_request(request_dict, operation_model)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 200, in _send_request
+    while self._needs_retry(
+          ~~~~~~~~~~~~~~~~~^
+        attempts,
+        ^^^^^^^^^
+    ...<3 lines>...
+        exception,
+        ^^^^^^^^^^
+    ):
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 360, in _needs_retry
+    responses = self._event_emitter.emit(
+        event_name,
+    ...<5 lines>...
+        request_dict=request_dict,
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 412, in emit
+    return self._emitter.emit(aliased_event_name, **kwargs)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 256, in emit
+    return self._emit(event_name, kwargs)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 239, in _emit
+    response = handler(**kwargs)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 207, in __call__
+    if self._checker(**checker_kwargs):
+       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 284, in __call__
+    should_retry = self._should_retry(
+        attempt_number, response, caught_exception
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 320, in _should_retry
+    return self._checker(attempt_number, response, caught_exception)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 363, in __call__
+    checker_response = checker(
+        attempt_number, response, caught_exception
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 247, in __call__
+    return self._check_caught_exception(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        attempt_number, caught_exception
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 416, in _check_caught_exception
+    raise caught_exception
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 279, in _do_get_response
+    http_response = self._send(request)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 383, in _send
+    return self.http_session.send(request)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\httpsession.py", line 502, in send
+    raise ReadTimeoutError(endpoint_url=request.url, error=e)
+botocore.exceptions.ReadTimeoutError: Read timeout on endpoint URL: "https://bedrock-runtime.eu-west-1.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aeu-west-1%3A781690932061%3Ainference-profile%2Feu.anthropic.claude-sonnet-4-5-20250929-v1%3A0/converse"
+2026-03-23 08:41:23,363 INFO: Fibre_cost__€/T_
+2026-03-23 08:41:36,538 INFO: Steam__€/T_
+2026-03-23 08:42:13,619 INFO: Electricity__€/T_
+2026-03-23 08:42:37,796 INFO: Starch__€/T_
+2026-03-23 08:43:07,679 INFO: Fibre_cost__€/T_
+2026-03-23 08:43:20,205 INFO: Steam__€/T_
+2026-03-23 08:43:59,676 INFO: Electricity__€/T_
+2026-03-23 08:44:26,254 INFO: Starch__€/T_
+2026-03-23 08:44:56,590 INFO: Fibre_cost__€/T_
+2026-03-23 08:45:08,102 INFO: Steam__€/T_
+2026-03-23 08:45:45,440 INFO: Electricity__€/T_
+2026-03-23 08:46:08,863 INFO: Starch__€/T_
+2026-03-23 08:46:43,800 INFO: Fibre_cost__€/T_
+2026-03-23 08:46:56,801 INFO: Steam__€/T_
+2026-03-23 08:47:37,526 INFO: Electricity__€/T_
+2026-03-23 08:48:06,808 INFO: Starch__€/T_
+2026-03-23 08:48:34,145 INFO [llm] === Entering llm chunk ===
+2026-03-23 08:48:34,150 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-03-23 08:48:34,157 INFO [llm] Working directory: c:\workspace\costimiser
+2026-03-23 08:48:34,174 INFO [llm] boto3 session created
+2026-03-23 08:48:34,668 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-03-23 08:48:35,987 INFO [llm] Credentials available: True
+2026-03-23 08:48:35,987 INFO [llm] Access key prefix: ASIA3M***
+2026-03-23 08:48:36,023 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-03-23 08:48:36,023 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-03-23 08:48:36,023 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-03-23 08:48:36,106 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-03-23 08:48:36,658 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-03-23 08:48:36,761 INFO [llm] rag.set_boto3_session(session) completed
+2026-03-23 08:48:36,991 INFO [llm] === Entering summary chunk ===
+2026-03-23 08:48:36,995 INFO [llm] LANG: de
+2026-03-23 08:48:36,995 INFO [llm] descriptions count: 22
+2026-03-23 08:48:36,995 INFO [llm] non-empty descriptions count: 22
+2026-03-23 08:48:36,995 INFO [llm] prompt_body length: 8532
+2026-03-23 08:48:36,995 INFO [llm] prompt preview: Für alle betrachteten Sorten, TOTAL Kosten verzeichnete einen Rückgang of 2.91 €/t, was zu 277.09 €/t.
+
+Bei der Aufschlüsselung der gesamten Veränderung der Kosten ergibt sich, dass 0.05 €/t durch eine teurer Sortenmischung verursacht wurden und 2.96 €/t auf einer Verbesserung im Prozess zurückzuführen sind..Für alle betrachteten Sorten, TOTAL Überverarbeitung saw an Anstieg of 0.35 %, was zu 6.33 %..Für Sorte 3200115, TOTAL Kosten verzeichnete einen Rückgang of 5.66 €/t, was zu 270.97 €/t.
+
+Für Sorte 6010085, TOTAL Kosten verzeichnete einen Rückgang of 5.74 €/t, was zu 284.57 €/t.
+
+Für Sorte 6010100, TOTAL Kosten saw an Anstieg of 2.37 €/t, was zu 286.79 €/t.
+
+Für Sorte 6010120, TOTAL Kosten verzeichnete einen Rückgang of 2.55 €/t, was zu 273.32 €/t.
+
+Über alle einzelnen Sorten betrachtet der stärkste Kosten-Anstieg wurde für Sorte 6010100 beobachtet (+2.37 €/t) und der stärkste Kosten-Rückgang wurde für Sorte 6010085 beobachtet (-5.74 €/t). Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden..Für Sorte 3200115, TOTAL Überverarbeitung saw an Anstieg of 2.52 %, was zu 10.38 %.
+
+Für Sorte 6010085, TOTAL Überverarbeitung saw an Anstieg of 0.77 %, was zu 6.93 %.
+
+Für Sorte 6010100, TOTAL Überverarbeitung saw an Anstieg of 3.14 %, was zu 9.97 %.
+
+Für Sorte 6010120, TOTAL Überverarbeitung verzeichnete einen Rückgang of 0.48 %, was zu 4.18 %.
+
+Über alle einzelnen Sorten betrachtet der stärkste Überverarbeitung-Anstieg wurde für Sorte 6010100 beobachtet (+3.14 %) und der stärkste Überverarbeitung-Rückgang wurde für Sorte 6010120 beobachtet (-0.48 %). Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden..Durchschnittliche Veränderung je Komponente:
+
+- **Steam__€/T_** ist im Durchschnitt gesunken (-3.67 €/t).
+
+- **Starch__€/T_** ist im Durchschnitt gestiegen (+0.88 €/t).
+
+- **Fibre_cost__€/T_** ist im Durchschnitt gesunken (-0.39 €/t).
+
+- **Electricity__€/T_** ist im Durchschnitt gestiegen (+0.22 €/t).
+
+- **Chemicals__€/T_** ist im 
+2026-03-23 08:48:36,995 INFO [llm] final prompt length: 8774
+2026-03-23 08:48:36,995 INFO [llm] Calling rag.ask(prompt)
+2026-03-23 08:53:53,434 ERROR [llm] Failure in summary chunk
+Traceback (most recent call last):
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connection.py", line 516, in getresponse
+    httplib_response = super().getresponse()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 1430, in getresponse
+    response.begin()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 331, in begin
+    version, status, reason = self._read_status()
+                              ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 292, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\socket.py", line 719, in readinto
+    return self._sock.recv_into(b)
+           ~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\ssl.py", line 1304, in recv_into
+    return self.read(nbytes, buffer)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\ssl.py", line 1138, in read
+    return self._sslobj.read(len, buffer)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+TimeoutError: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\httpsession.py", line 465, in send
+    urllib_response = conn.urlopen(
+        method=request.method,
+    ...<7 lines>...
+        chunked=self._chunked(request.headers),
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\util\retry.py", line 449, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\util\util.py", line 39, in reraise
+    raise value
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 536, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 367, in _raise_timeout
+    raise ReadTimeoutError(
+        self, url, f"Read timed out. (read timeout={timeout_value})"
+    ) from err
+urllib3.exceptions.ReadTimeoutError: AWSHTTPSConnectionPool(host='bedrock-runtime.eu-west-1.amazonaws.com', port=443): Read timed out. (read timeout=60)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 30, in <module>
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 337, in ask
+    answer = llm_answer(prompt)
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 162, in llm_answer
+    resp = rt.converse(
+        modelId=LLM_MODEL_ID,
+    ...<8 lines>...
+        inferenceConfig={"maxTokens": max_tokens, "temperature": temperature},
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 602, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 1060, in _make_api_call
+    http, parsed_response = self._make_request(
+                            ~~~~~~~~~~~~~~~~~~^
+        operation_model, request_dict, request_context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 1084, in _make_request
+    return self._endpoint.make_request(operation_model, request_dict)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 119, in make_request
+    return self._send_request(request_dict, operation_model)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 200, in _send_request
+    while self._needs_retry(
+          ~~~~~~~~~~~~~~~~~^
+        attempts,
+        ^^^^^^^^^
+    ...<3 lines>...
+        exception,
+        ^^^^^^^^^^
+    ):
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 360, in _needs_retry
+    responses = self._event_emitter.emit(
+        event_name,
+    ...<5 lines>...
+        request_dict=request_dict,
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 412, in emit
+    return self._emitter.emit(aliased_event_name, **kwargs)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 256, in emit
+    return self._emit(event_name, kwargs)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 239, in _emit
+    response = handler(**kwargs)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 207, in __call__
+    if self._checker(**checker_kwargs):
+       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 284, in __call__
+    should_retry = self._should_retry(
+        attempt_number, response, caught_exception
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 320, in _should_retry
+    return self._checker(attempt_number, response, caught_exception)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 363, in __call__
+    checker_response = checker(
+        attempt_number, response, caught_exception
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 247, in __call__
+    return self._check_caught_exception(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        attempt_number, caught_exception
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 416, in _check_caught_exception
+    raise caught_exception
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 279, in _do_get_response
+    http_response = self._send(request)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 383, in _send
+    return self.http_session.send(request)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\httpsession.py", line 502, in send
+    raise ReadTimeoutError(endpoint_url=request.url, error=e)
+botocore.exceptions.ReadTimeoutError: Read timeout on endpoint URL: "https://bedrock-runtime.eu-west-1.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aeu-west-1%3A781690932061%3Ainference-profile%2Feu.anthropic.claude-sonnet-4-5-20250929-v1%3A0/converse"
+2026-03-23 09:01:03,161 INFO: Fibre_cost__€/T_
+2026-03-23 09:01:28,184 INFO: Steam__€/T_
+2026-03-23 09:03:18,205 INFO: Electricity__€/T_
+2026-03-23 09:04:26,179 INFO: Starch__€/T_
+2026-03-23 09:05:41,961 INFO: Fibre_cost__€/T_
+2026-03-23 09:06:05,309 INFO: Steam__€/T_
+2026-03-23 09:07:55,327 INFO: Electricity__€/T_
+2026-03-23 09:09:12,753 INFO: Starch__€/T_
+2026-03-23 09:10:48,559 INFO: Fibre_cost__€/T_
+2026-03-23 09:11:11,705 INFO: Steam__€/T_
+2026-03-23 09:12:46,170 INFO: Electricity__€/T_
+2026-03-23 09:14:01,670 INFO: Starch__€/T_
+2026-03-23 09:16:03,784 INFO: Fibre_cost__€/T_
+2026-03-23 09:16:35,455 INFO: Steam__€/T_
+2026-03-23 09:18:32,585 INFO: Electricity__€/T_
+2026-03-23 09:19:24,890 INFO: Starch__€/T_
+2026-03-23 09:20:07,036 INFO [llm] === Entering llm chunk ===
+2026-03-23 09:20:07,044 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-03-23 09:20:07,050 INFO [llm] Working directory: c:\workspace\costimiser
+2026-03-23 09:20:07,069 INFO [llm] boto3 session created
+2026-03-23 09:20:07,873 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-03-23 09:20:09,069 INFO [botocore.tokens] SSO Token refresh succeeded
+2026-03-23 09:20:10,507 INFO [llm] Credentials available: True
+2026-03-23 09:20:10,508 INFO [llm] Access key prefix: ASIA3M***
+2026-03-23 09:20:10,581 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-03-23 09:20:10,581 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-03-23 09:20:10,581 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-03-23 09:20:10,718 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-03-23 09:20:15,764 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-03-23 09:20:15,764 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-03-23 09:20:16,931 INFO [llm] === Entering summary chunk ===
+2026-03-23 09:20:16,941 INFO [llm] LANG: de
+2026-03-23 09:20:16,941 INFO [llm] descriptions count: 22
+2026-03-23 09:20:16,941 INFO [llm] non-empty descriptions count: 22
+2026-03-23 09:20:16,941 INFO [llm] prompt_body length: 8532
+2026-03-23 09:20:16,941 INFO [llm] prompt preview: Für alle betrachteten Sorten, TOTAL Kosten verzeichnete einen Rückgang of 2.91 €/t, was zu 277.09 €/t.
+
+Bei der Aufschlüsselung der gesamten Veränderung der Kosten ergibt sich, dass 0.05 €/t durch eine teurer Sortenmischung verursacht wurden und 2.96 €/t auf einer Verbesserung im Prozess zurückzuführen sind..Für alle betrachteten Sorten, TOTAL Überverarbeitung saw an Anstieg of 0.35 %, was zu 6.33 %..Für Sorte 3200115, TOTAL Kosten verzeichnete einen Rückgang of 5.66 €/t, was zu 270.97 €/t.
+
+Für Sorte 6010085, TOTAL Kosten verzeichnete einen Rückgang of 5.74 €/t, was zu 284.57 €/t.
+
+Für Sorte 6010100, TOTAL Kosten saw an Anstieg of 2.37 €/t, was zu 286.79 €/t.
+
+Für Sorte 6010120, TOTAL Kosten verzeichnete einen Rückgang of 2.55 €/t, was zu 273.32 €/t.
+
+Über alle einzelnen Sorten betrachtet der stärkste Kosten-Anstieg wurde für Sorte 6010100 beobachtet (+2.37 €/t) und der stärkste Kosten-Rückgang wurde für Sorte 6010085 beobachtet (-5.74 €/t). Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden..Für Sorte 3200115, TOTAL Überverarbeitung saw an Anstieg of 2.52 %, was zu 10.38 %.
+
+Für Sorte 6010085, TOTAL Überverarbeitung saw an Anstieg of 0.77 %, was zu 6.93 %.
+
+Für Sorte 6010100, TOTAL Überverarbeitung saw an Anstieg of 3.14 %, was zu 9.97 %.
+
+Für Sorte 6010120, TOTAL Überverarbeitung verzeichnete einen Rückgang of 0.48 %, was zu 4.18 %.
+
+Über alle einzelnen Sorten betrachtet der stärkste Überverarbeitung-Anstieg wurde für Sorte 6010100 beobachtet (+3.14 %) und der stärkste Überverarbeitung-Rückgang wurde für Sorte 6010120 beobachtet (-0.48 %). Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden..Durchschnittliche Veränderung je Komponente:
+
+- **Steam__€/T_** ist im Durchschnitt gesunken (-3.67 €/t).
+
+- **Starch__€/T_** ist im Durchschnitt gestiegen (+0.88 €/t).
+
+- **Fibre_cost__€/T_** ist im Durchschnitt gesunken (-0.39 €/t).
+
+- **Electricity__€/T_** ist im Durchschnitt gestiegen (+0.22 €/t).
+
+- **Chemicals__€/T_** ist im 
+2026-03-23 09:20:16,941 INFO [llm] final prompt length: 8774
+2026-03-23 09:20:16,941 INFO [llm] Calling rag.ask(prompt)
+2026-03-23 09:20:17,897 ERROR [llm] Failure in summary chunk
+Traceback (most recent call last):
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 118, in validate_aws_access
+    arn = _sts.get_caller_identity()["Arn"]
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 602, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 1060, in _make_api_call
+    http, parsed_response = self._make_request(
+                            ~~~~~~~~~~~~~~~~~~^
+        operation_model, request_dict, request_context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 1084, in _make_request
+    return self._endpoint.make_request(operation_model, request_dict)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 119, in make_request
+    return self._send_request(request_dict, operation_model)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 196, in _send_request
+    request = self.create_request(request_dict, operation_model)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 132, in create_request
+    self._event_emitter.emit(
+    ~~~~~~~~~~~~~~~~~~~~~~~~^
+        event_name,
+        ^^^^^^^^^^^
+        request=request,
+        ^^^^^^^^^^^^^^^^
+        operation_name=operation_model.name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 412, in emit
+    return self._emitter.emit(aliased_event_name, **kwargs)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 256, in emit
+    return self._emit(event_name, kwargs)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 239, in _emit
+    response = handler(**kwargs)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\signers.py", line 108, in handler
+    return self.sign(operation_name, request)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\signers.py", line 200, in sign
+    auth.add_auth(request)
+    ~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\auth.py", line 422, in add_auth
+    raise NoCredentialsError()
+botocore.exceptions.NoCredentialsError: Unable to locate credentials
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<string>", line 30, in <module>
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 324, in ask
+    retrieved = retrieve_context(query=query, k=k, status_cb=status_cb)
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 271, in retrieve_context
+    validate_aws_access(status_cb=status_cb)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 122, in validate_aws_access
+    raise RuntimeError(f"AWS credentials not available in this process: {e}") from e
+RuntimeError: AWS credentials not available in this process: Unable to locate credentials
+2026-03-23 09:30:58,679 INFO: Fibre_cost__€/T_
+2026-03-23 09:31:17,557 INFO: Steam__€/T_
+2026-03-23 09:32:23,672 INFO: Electricity__€/T_
+2026-03-23 09:33:22,662 INFO: Starch__€/T_
+2026-03-23 09:34:42,373 INFO: Fibre_cost__€/T_
+2026-03-23 09:34:57,439 INFO: Steam__€/T_
+2026-03-23 09:35:39,798 INFO: Electricity__€/T_
+2026-03-23 09:36:05,415 INFO: Starch__€/T_
+2026-03-23 09:36:37,729 INFO: Fibre_cost__€/T_
+2026-03-23 09:36:49,623 INFO: Steam__€/T_
+2026-03-23 09:37:25,645 INFO: Electricity__€/T_
+2026-03-23 09:37:48,588 INFO: Starch__€/T_
+2026-03-23 09:38:21,871 INFO: Fibre_cost__€/T_
+2026-03-23 09:38:35,266 INFO: Steam__€/T_
+2026-03-23 09:39:12,764 INFO: Electricity__€/T_
+2026-03-23 09:39:38,923 INFO: Starch__€/T_
+2026-03-23 09:40:01,413 INFO [llm] === Entering llm chunk ===
+2026-03-23 09:40:01,416 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-03-23 09:40:01,420 INFO [llm] Working directory: c:\workspace\costimiser
+2026-03-23 09:40:01,435 INFO [llm] boto3 session created
+2026-03-23 09:40:01,799 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-03-23 09:40:02,986 INFO [llm] Credentials available: True
+2026-03-23 09:40:02,986 INFO [llm] Access key prefix: ASIA3M***
+2026-03-23 09:40:03,019 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-03-23 09:40:03,019 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-03-23 09:40:03,019 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-03-23 09:40:03,097 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-03-23 09:40:03,602 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-03-23 09:40:03,602 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-03-23 09:40:04,102 INFO [llm] === Entering summary chunk ===
+2026-03-23 09:40:04,106 INFO [llm] LANG: de
+2026-03-23 09:40:04,107 INFO [llm] descriptions count: 22
+2026-03-23 09:40:04,107 INFO [llm] non-empty descriptions count: 22
+2026-03-23 09:40:04,107 INFO [llm] prompt_body length: 8532
+2026-03-23 09:40:04,107 INFO [llm] prompt preview: Für alle betrachteten Sorten, TOTAL Kosten verzeichnete einen Rückgang of 2.91 €/t, was zu 277.09 €/t.
+
+Bei der Aufschlüsselung der gesamten Veränderung der Kosten ergibt sich, dass 0.05 €/t durch eine teurer Sortenmischung verursacht wurden und 2.96 €/t auf einer Verbesserung im Prozess zurückzuführen sind..Für alle betrachteten Sorten, TOTAL Überverarbeitung saw an Anstieg of 0.35 %, was zu 6.33 %..Für Sorte 3200115, TOTAL Kosten verzeichnete einen Rückgang of 5.66 €/t, was zu 270.97 €/t.
+
+Für Sorte 6010085, TOTAL Kosten verzeichnete einen Rückgang of 5.74 €/t, was zu 284.57 €/t.
+
+Für Sorte 6010100, TOTAL Kosten saw an Anstieg of 2.37 €/t, was zu 286.79 €/t.
+
+Für Sorte 6010120, TOTAL Kosten verzeichnete einen Rückgang of 2.55 €/t, was zu 273.32 €/t.
+
+Über alle einzelnen Sorten betrachtet der stärkste Kosten-Anstieg wurde für Sorte 6010100 beobachtet (+2.37 €/t) und der stärkste Kosten-Rückgang wurde für Sorte 6010085 beobachtet (-5.74 €/t). Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden..Für Sorte 3200115, TOTAL Überverarbeitung saw an Anstieg of 2.52 %, was zu 10.38 %.
+
+Für Sorte 6010085, TOTAL Überverarbeitung saw an Anstieg of 0.77 %, was zu 6.93 %.
+
+Für Sorte 6010100, TOTAL Überverarbeitung saw an Anstieg of 3.14 %, was zu 9.97 %.
+
+Für Sorte 6010120, TOTAL Überverarbeitung verzeichnete einen Rückgang of 0.48 %, was zu 4.18 %.
+
+Über alle einzelnen Sorten betrachtet der stärkste Überverarbeitung-Anstieg wurde für Sorte 6010100 beobachtet (+3.14 %) und der stärkste Überverarbeitung-Rückgang wurde für Sorte 6010120 beobachtet (-0.48 %). Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden..Durchschnittliche Veränderung je Komponente:
+
+- **Steam__€/T_** ist im Durchschnitt gesunken (-3.67 €/t).
+
+- **Starch__€/T_** ist im Durchschnitt gestiegen (+0.88 €/t).
+
+- **Fibre_cost__€/T_** ist im Durchschnitt gesunken (-0.39 €/t).
+
+- **Electricity__€/T_** ist im Durchschnitt gestiegen (+0.22 €/t).
+
+- **Chemicals__€/T_** ist im 
+2026-03-23 09:40:04,107 INFO [llm] final prompt length: 8774
+2026-03-23 09:40:04,107 INFO [llm] Calling rag.ask(prompt)
+2026-03-23 09:40:04,107 ERROR [llm] Failure in summary chunk
+Traceback (most recent call last):
+  File "<string>", line 30, in <module>
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 333, in ask
+    retrieved = retrieve_context(query=query, k=k, status_cb=status_cb)
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 280, in retrieve_context
+    validate_aws_access(status_cb=status_cb)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 125, in validate_aws_access
+    _ensure_clients()
+    ~~~~~~~~~~~~~~~^^
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 99, in _ensure_clients
+    raise RuntimeError("No boto3 session has been set. Call set_boto3_session(session) first.")
+RuntimeError: No boto3 session has been set. Call set_boto3_session(session) first.
+2026-03-23 09:45:12,557 INFO: Fibre_cost__€/T_
+2026-03-23 09:45:24,466 INFO: Steam__€/T_
+2026-03-23 09:46:00,639 INFO: Electricity__€/T_
+2026-03-23 09:46:25,325 INFO: Starch__€/T_
+2026-03-23 09:46:56,459 INFO: Fibre_cost__€/T_
+2026-03-23 09:47:08,797 INFO: Steam__€/T_
+2026-03-23 09:47:46,692 INFO: Electricity__€/T_
+2026-03-23 09:48:10,421 INFO: Starch__€/T_
+2026-03-23 09:48:40,333 INFO: Fibre_cost__€/T_
+2026-03-23 09:48:51,757 INFO: Steam__€/T_
+2026-03-23 09:49:27,118 INFO: Electricity__€/T_
+2026-03-23 09:49:55,504 INFO: Starch__€/T_
+2026-03-23 09:50:29,557 INFO: Fibre_cost__€/T_
+2026-03-23 09:50:42,325 INFO: Steam__€/T_
+2026-03-23 09:51:19,906 INFO: Electricity__€/T_
+2026-03-23 09:51:45,230 INFO: Starch__€/T_
+2026-03-23 09:52:08,536 INFO [llm] === Entering llm chunk ===
+2026-03-23 09:52:08,544 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-03-23 09:52:08,549 INFO [llm] Working directory: c:\workspace\costimiser
+2026-03-23 09:52:08,567 INFO [llm] boto3 session created
+2026-03-23 09:52:08,881 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-03-23 09:52:10,203 INFO [llm] Credentials available: True
+2026-03-23 09:52:10,203 INFO [llm] Access key prefix: ASIA3M***
+2026-03-23 09:52:10,210 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-03-23 09:52:10,210 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-03-23 09:52:10,210 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-03-23 09:52:10,294 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-03-23 09:52:10,909 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-03-23 09:52:10,909 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-03-23 09:52:11,613 INFO [llm] === Entering summary chunk ===
+2026-03-23 09:52:11,619 INFO [llm] LANG: de
+2026-03-23 09:52:11,619 INFO [llm] descriptions count: 22
+2026-03-23 09:52:11,619 INFO [llm] non-empty descriptions count: 22
+2026-03-23 09:52:11,619 INFO [llm] prompt_body length: 8532
+2026-03-23 09:52:11,619 INFO [llm] prompt preview: Für alle betrachteten Sorten, TOTAL Kosten verzeichnete einen Rückgang of 2.91 €/t, was zu 277.09 €/t.
+
+Bei der Aufschlüsselung der gesamten Veränderung der Kosten ergibt sich, dass 0.05 €/t durch eine teurer Sortenmischung verursacht wurden und 2.96 €/t auf einer Verbesserung im Prozess zurückzuführen sind..Für alle betrachteten Sorten, TOTAL Überverarbeitung saw an Anstieg of 0.35 %, was zu 6.33 %..Für Sorte 3200115, TOTAL Kosten verzeichnete einen Rückgang of 5.66 €/t, was zu 270.97 €/t.
+
+Für Sorte 6010085, TOTAL Kosten verzeichnete einen Rückgang of 5.74 €/t, was zu 284.57 €/t.
+
+Für Sorte 6010100, TOTAL Kosten saw an Anstieg of 2.37 €/t, was zu 286.79 €/t.
+
+Für Sorte 6010120, TOTAL Kosten verzeichnete einen Rückgang of 2.55 €/t, was zu 273.32 €/t.
+
+Über alle einzelnen Sorten betrachtet der stärkste Kosten-Anstieg wurde für Sorte 6010100 beobachtet (+2.37 €/t) und der stärkste Kosten-Rückgang wurde für Sorte 6010085 beobachtet (-5.74 €/t). Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden..Für Sorte 3200115, TOTAL Überverarbeitung saw an Anstieg of 2.52 %, was zu 10.38 %.
+
+Für Sorte 6010085, TOTAL Überverarbeitung saw an Anstieg of 0.77 %, was zu 6.93 %.
+
+Für Sorte 6010100, TOTAL Überverarbeitung saw an Anstieg of 3.14 %, was zu 9.97 %.
+
+Für Sorte 6010120, TOTAL Überverarbeitung verzeichnete einen Rückgang of 0.48 %, was zu 4.18 %.
+
+Über alle einzelnen Sorten betrachtet der stärkste Überverarbeitung-Anstieg wurde für Sorte 6010100 beobachtet (+3.14 %) und der stärkste Überverarbeitung-Rückgang wurde für Sorte 6010120 beobachtet (-0.48 %). Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden..Durchschnittliche Veränderung je Komponente:
+
+- **Steam__€/T_** ist im Durchschnitt gesunken (-3.67 €/t).
+
+- **Starch__€/T_** ist im Durchschnitt gestiegen (+0.88 €/t).
+
+- **Fibre_cost__€/T_** ist im Durchschnitt gesunken (-0.39 €/t).
+
+- **Electricity__€/T_** ist im Durchschnitt gestiegen (+0.22 €/t).
+
+- **Chemicals__€/T_** ist im 
+2026-03-23 09:52:11,620 INFO [llm] final prompt length: 8774
+2026-03-23 09:52:11,620 INFO [llm] Calling rag.ask(prompt)
+2026-03-23 09:57:23,873 INFO [llm] rag.ask returned object type: <class 'dict'>
+2026-03-23 09:57:23,874 INFO [llm] rag.ask returned repr: {'answer': '# Zusammenfassung\n\n## Gesamtüberblick über alle Sorten\n\n**Kostenentwicklung:**\nDie TOTAL Kosten über alle betrachteten Sorten verzeichneten einen Rückgang von 2.91 €/t auf 277.09 €/t. Von dieser Gesamtveränderung entfallen 0.05 €/t auf eine teurere Sortenmischung, während 2.96 €/t auf Prozessverbesserungen zurückzuführen sind.\n\n**Überverarbeitung:**\nDie TOTAL Überverarbeitung stieg um 0.35 % auf 6.33 %.\n\n**Sortenspezifische Kostenentwicklung:**\n- Sorte 3200115: Rückgang um 5.66 €/t → 270.97 €/t\n- Sorte 6010085: Rückgang um 5.74 €/t → 284.57 €/t (stärkster Kostenrückgang)\n- Sorte 6010100: Anstieg um 2.37 €/t → 286.79 €/t (stärkster Kostenanstieg)\n- Sorte 6010120: Rückgang um 2.55 €/t → 273.32 €/t\n\n**Sortenspezifische Überverarbeitung:**\n- Sorte 3200115: Anstieg um 2.52 % → 10.38 %\n- Sorte 6010085: Anstieg um 0.77 % → 6.93 %\n- Sorte 6010100: Anstieg um 3.14 % → 9.97 % (stärkster Anstieg)\n- Sorte 6010120: Rückgang um 0.48 % → 4.18 % (einziger Rückgang)\n\n**Kostenkomponenten (Durchschnittliche Veränderung):**\n- Steam__€/T_: -3.67 €/t (größte Abnahme, stärkster Rückgang bei Sorte 3200115: -6.59 €/t)\n- Starch__€/T_: +0.88 €/t (größte Zunahme, höchster Anstieg bei Sorte 6010100: +2.69 €/t)\n- Fibre_cost__€/T_: -0.39 €/t\n- Electricity__€/T_: +0.22 €/t\n- Chemicals__€/T_: +0.07 €/t\n\n**Qualitätsparameter (Durchschnittliche Veränderung):**\n- SCT_CD: +2.06 % (größte Zunahme, höchster Anstieg bei Sorte 6010100: +4.03 %)\n- Burst: +2.04 %\n- CMT30: +0.43 %\n\n---\n\n# Diagnose\n\n## Positive Entwicklungen\n\n**Dampfkostenreduktion:**\nDie signifikante Reduktion der Dampfkosten (-3.67 €/t im Durchschnitt) ist hauptsächlich auf die Absenkung der DG4 Temperature Inlet Air zurückzuführen (Sorte 6010085: -26.80, Sorte 3200115: -28.33, Sorte 6010100: -28.22). Dies deutet auf eine verbesserte Trocknungseffizienz hin.\n\n**Prozessoptimierungen bei Sorten 6010085 und 3200115:**\n- Erhöhte Maschinengeschwindigkeit (Speed) bei Sorte 6010085 (+20.23) und Sorte 3200115 (+53.65) führte zu besserer Produktivität\n- Verbesserte Consistency white water (+0.26 bei beiden Sorten) deutet auf bessere Entwässerung hin\n- Optimierte Lip settings trugen zur Kostenreduktion bei\n\n## Problembereiche\n\n**Sorte 6010100 - Kostenanstiege:**\nDiese Sorte zeigt die ungünstigste Entwicklung mit einem Kostenanstieg von 2.37 €/t und der höchsten Überverarbeitung (+3.14 %). Haupttreiber:\n- Stärkekostenerhöhung (+2.69 €/t) durch erhöhten Starch uptake (+0.70 g/m²)\n- Geschwindigkeitsreduktion (-32.19) reduziert Produktivität\n- Erhöhte SpeedSizer Linepressure DS (+3.79)\n- Reduziertes Jet/wire ratio (-3.11)\n- Erhöhter Retention Aid mass flow (+13.87 g/T)\n\n**Sorte 6010120 - Geschwindigkeitsprobleme:**\nTrotz Kostenreduktion zeigt diese Sorte besorgniserregende Entwicklungen:\n- Drastische Geschwindigkeitsreduktion (-139.82)\n- Reduzierte Consistency white water (-0.43)\n- Erhöhter Retention Aid mass flow (+17.55 g/T)\n\n**Überverarbeitung:**\nDie Überverarbeitung stieg bei drei von vier Sorten an, was auf suboptimale Qualitätseinstellungen hindeutet. Die erhöhten Festigkeitswerte (SCT_CD, Burst) deuten darauf hin, dass über die Spezifikation hinaus produziert wird [papermaking_science_technology.pdf:d6f6f20ccb65b658:3395:0].\n\n**Stärkekosten:**\nDer durchschnittliche Anstieg der Stärkekosten (+0.88 €/t) ist besorgniserregend, insbesondere bei Sorte 6010100. Die erhöhte Concentration starch working tank 1 bei mehreren Sorten deutet auf ineffiziente Stärkeapplikation hin.\n\n---\n\n# Maßnahmenplan\n\n## Sofortmaßnahmen (0-4 Wochen)\n\n**Sorte 6010100 - Kostenoptimierung:**\n- **Stärkemanagement:** Reduzierung des Starch uptake durch Optimierung der Concentration starch working tank 1 und SpeedSizer Linepressure DS. Ziel: Rückführung auf Niveau von Sorte 6010085\n- **Geschwindigkeitsoptimierung:** Analyse der Ursachen für Geschwindigkeitsreduktion (-32.19). Prüfung von Maschineneinstellungen und Rohstoffqualität\n- **Jet/wire ratio:** 
+2026-03-23 09:57:23,874 INFO [llm] answer length: 7657
+2026-03-23 09:57:23,874 INFO [llm] answer preview: # Zusammenfassung
+
+## Gesamtüberblick über alle Sorten
+
+**Kostenentwicklung:**
+Die TOTAL Kosten über alle betrachteten Sorten verzeichneten einen Rückgang von 2.91 €/t auf 277.09 €/t. Von dieser Gesamtveränderung entfallen 0.05 €/t auf eine teurere Sortenmischung, während 2.96 €/t auf Prozessverbesserungen zurückzuführen sind.
+
+**Überverarbeitung:**
+Die TOTAL Überverarbeitung stieg um 0.35 % auf 6.33 %.
+
+**Sortenspezifische Kostenentwicklung:**
+- Sorte 3200115: Rückgang um 5.66 €/t → 270.97 €/t
+- Sorte 6010085: Rückgang um 5.74 €/t → 284.57 €/t (stärkster Kostenrückgang)
+- Sorte 6010100: Anstieg um 2.37 €/t → 286.79 €/t (stärkster Kostenanstieg)
+- Sorte 6010120: Rückgang um 2.55 €/t → 273.32 €/t
+
+**Sortenspezifische Überverarbeitung:**
+- Sorte 3200115: Anstieg um 2.52 % → 10.38 %
+- Sorte 6010085: Anstieg um 0.77 % → 6.93 %
+- Sorte 6010100: Anstieg um 3.14 % → 9.97 % (stärkster Anstieg)
+- Sorte 6010120: Rückgang um 0.48 % → 4.18 % (einziger Rückgang)
+
+**Kostenkomponenten (Durchschnittliche Veränderung):**
+- Steam__€/T_: -3.67 €/t (größte Abnahme, stärkster Rückgang bei Sorte 3200115: -6.59 €/t)
+- Starch__€/T_: +0.88 €/t (größte Zunahme, höchster Anstieg bei Sorte 6010100: +2.69 €/t)
+- Fibre_cost__€/T_: -0.39 €/t
+- Electricity__€/T_: +0.22 €/t
+- Chemicals__€/T_: +0.07 €/t
+
+**Qualitätsparameter (Durchschnittliche Veränderung):**
+- SCT_CD: +2.06 % (größte Zunahme, höchster Anstieg bei Sorte 6010100: +4.03 %)
+- Burst: +2.04 %
+- CMT30: +0.43 %
+
+---
+
+# Diagnose
+
+## Positive Entwicklungen
+
+**Dampfkostenreduktion:**
+Die signifikante Reduktion der Dampfkosten (-3.67 €/t im Durchschnitt) ist hauptsächlich auf die Absenkung der DG4 Temperature Inlet Air zurückzuführen (Sorte 6010085: -26.80, Sorte 3200115: -28.33, Sorte 6010100: -28.22). Dies deutet auf eine verbesserte Trocknungseffizienz hin.
+
+**Prozessoptimierungen bei Sorten 6010085 und 3200115:**
+- Erhöhte Maschinengeschwindigkeit (Speed) bei Sorte 6010085 (+20.23) und Sorte 3200115 (+53.65) führte zu besserer Produktivitä

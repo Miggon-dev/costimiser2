@@ -100,6 +100,103 @@ def _synthesize_knowledge_plus_analysis(execution_out: Dict[str, Any]) -> str:
  
     return "\n\n---\n\n".join(parts)
  
+def _synthesize_diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations(
+    execution_out: Dict[str, Any]
+) -> str:
+    diagnosis_text = ""
+    driver_text = ""
+    recommendation_text = ""
+    for step in execution_out["step_results"]:
+        if step["tool"] == "diagnosis":
+            diagnosis_text = _extract_text(step)
+        elif step["tool"] == "cost_driver":
+            driver_text = _extract_text(step)
+        elif step["tool"] == "recommend":
+            recommendation_text = _extract_text(step)
+    parts = []
+    if diagnosis_text:
+        parts.append(diagnosis_text)
+    if driver_text:
+        parts.append("Main contributing drivers\n\n" + driver_text)
+    if recommendation_text:
+        parts.append(recommendation_text)
+    return "\n\n---\n\n".join(parts)
+
+def _synthesize_diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations_plus_scenario(
+    execution_out: Dict[str, Any]
+) -> str:
+    diagnosis_text = ""
+    driver_text = ""
+    recommendation_text = ""
+    scenario_text = ""
+    for step in execution_out["step_results"]:
+        if step["tool"] == "diagnosis":
+            diagnosis_text = _extract_text(step)
+        elif step["tool"] == "cost_driver":
+            driver_text = _extract_text(step)
+        elif step["tool"] == "recommend":
+            recommendation_text = _extract_text(step)
+        elif step["tool"] == "scenario":
+            scenario_text = _extract_text(step)
+    parts = []
+    if diagnosis_text:
+        parts.append(diagnosis_text)
+    if driver_text:
+        parts.append("Main contributing drivers\n\n" + driver_text)
+    if recommendation_text:
+        parts.append(recommendation_text)
+    if scenario_text:
+        parts.append("Expected impact\n\n" + scenario_text)
+    return "\n\n---\n\n".join(parts)
+
+def _synthesize_diagnosis_plus_cost_driver_plus_recommendations(
+    execution_out: Dict[str, Any]
+) -> str:
+    diagnosis_text = ""
+    driver_text = ""
+    recommendation_text = ""
+    for step in execution_out["step_results"]:
+        if step["tool"] == "diagnosis":
+            diagnosis_text = _extract_text(step)
+        elif step["tool"] == "cost_driver":
+            driver_text = _extract_text(step)
+        elif step["tool"] == "recommend":
+            recommendation_text = _extract_text(step)
+    parts = []
+    if diagnosis_text:
+        parts.append(diagnosis_text)
+    if driver_text:
+        parts.append("Main contributing drivers\n\n" + driver_text)
+    if recommendation_text:
+        parts.append(recommendation_text)
+    return "\n\n---\n\n".join(parts)
+
+def _synthesize_diagnosis_plus_cost_driver_plus_recommendations_plus_scenario(
+    execution_out: Dict[str, Any]
+) -> str:
+    diagnosis_text = ""
+    driver_text = ""
+    recommendation_text = ""
+    scenario_text = ""
+    for step in execution_out["step_results"]:
+        if step["tool"] == "diagnosis":
+            diagnosis_text = _extract_text(step)
+        elif step["tool"] == "cost_driver":
+            driver_text = _extract_text(step)
+        elif step["tool"] == "recommend":
+            recommendation_text = _extract_text(step)
+        elif step["tool"] == "scenario":
+            scenario_text = _extract_text(step)
+    parts = []
+    if diagnosis_text:
+        parts.append(diagnosis_text)
+    if driver_text:
+        parts.append("Main contributing drivers\n\n" + driver_text)
+    if recommendation_text:
+        parts.append(recommendation_text)
+    if scenario_text:
+        parts.append("Expected impact\n\n" + scenario_text)
+    return "\n\n---\n\n".join(parts)
  
 def synthesize_execution(execution_out: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -152,7 +249,15 @@ def synthesize_execution(execution_out: Dict[str, Any]) -> Dict[str, Any]:
     elif final_template == "diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations_plus_scenario":
         text = _synthesize_diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations_plus_scenario(
             execution_out
-        )    
+        )
+    elif final_template == "diagnosis_plus_cost_driver_plus_recommendations":
+        text = _synthesize_diagnosis_plus_cost_driver_plus_recommendations(
+            execution_out
+        )
+    elif final_template == "diagnosis_plus_cost_driver_plus_recommendations_plus_scenario":
+        text = _synthesize_diagnosis_plus_cost_driver_plus_recommendations_plus_scenario(
+            execution_out
+        )        
  
     else:
         # generic fallback: concatenate all step texts
@@ -165,51 +270,3 @@ def synthesize_execution(execution_out: Dict[str, Any]) -> Dict[str, Any]:
         "step_results": step_results,
     }
 
-def _synthesize_diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations(
-    execution_out: Dict[str, Any]
-) -> str:
-    diagnosis_text = ""
-    driver_text = ""
-    recommendation_text = ""
-    for step in execution_out["step_results"]:
-        if step["tool"] == "diagnosis":
-            diagnosis_text = _extract_text(step)
-        elif step["tool"] == "cost_driver":
-            driver_text = _extract_text(step)
-        elif step["tool"] == "recommend":
-            recommendation_text = _extract_text(step)
-    parts = []
-    if diagnosis_text:
-        parts.append(diagnosis_text)
-    if driver_text:
-        parts.append("Main contributing drivers\n\n" + driver_text)
-    if recommendation_text:
-        parts.append(recommendation_text)
-    return "\n\n---\n\n".join(parts)
-
-def _synthesize_diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations_plus_scenario(
-    execution_out: Dict[str, Any]
-) -> str:
-    diagnosis_text = ""
-    driver_text = ""
-    recommendation_text = ""
-    scenario_text = ""
-    for step in execution_out["step_results"]:
-        if step["tool"] == "diagnosis":
-            diagnosis_text = _extract_text(step)
-        elif step["tool"] == "cost_driver":
-            driver_text = _extract_text(step)
-        elif step["tool"] == "recommend":
-            recommendation_text = _extract_text(step)
-        elif step["tool"] == "scenario":
-            scenario_text = _extract_text(step)
-    parts = []
-    if diagnosis_text:
-        parts.append(diagnosis_text)
-    if driver_text:
-        parts.append("Main contributing drivers\n\n" + driver_text)
-    if recommendation_text:
-        parts.append(recommendation_text)
-    if scenario_text:
-        parts.append("Expected impact\n\n" + scenario_text)
-    return "\n\n---\n\n".join(parts)

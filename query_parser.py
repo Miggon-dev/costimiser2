@@ -97,10 +97,24 @@ def parse_intent(query: str) -> str:
     q = query.lower()
     if any(k in q for k in ["what if", "simulate", "scenario", "if we change", "if i change"]):
         return "simulate_scenario"
-    if any(k in q for k in ["diagnosis", "diagnose", "drilldown", "root cause"]):
-        return "diagnosis"
-    # broader explanatory phrases should go through orchestration
     if any(k in q for k in [
+        "diagnosis",
+        "diagnose",
+        "drilldown",
+        "root cause",
+        "help me understand",
+        "understand why",
+        "explain why",
+        "why did",
+        "why has",
+        "why cost worsened",
+        "why cost increased",
+        "what is happening",
+        "what's happening",
+        "what is driving",
+        "what's driving",
+        "what is causing",
+        "what's causing",
         "recommend",
         "recommendation",
         "recommendations",
@@ -462,3 +476,4 @@ def parse_diagnosis_objects(query: str):
             seen.add(x)
  
     return out or None
+

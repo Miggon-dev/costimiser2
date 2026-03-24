@@ -15,6 +15,8 @@ import shap_tools as st
 import cost_driver_tools as cdt
 import query_parser as qp
 import prediction_tools as pt
+
+from process_data_tools import build_process_plot, get_feature_snapshot, select_features_from_query, DEFAULT_TIME_COL
  
  
 # -------------------------------------------------
@@ -95,43 +97,96 @@ def answer_knowledge(query: str) -> Dict[str, Any]:
  
 def answer_process_data(
     target_range=None,
-    grade: str = None,
-    lang: str = "en",
-) -> Dict[str, Any]:
- 
+    grade=None,
+    variables=None,
+    query: str = None,
+):
     import time_context as tc
- 
+    import process_data_tools as pdt
+
+    # ------------------------
+    # Resolve SINGLE range
+    # ------------------------
     resolved = tc.resolve_single_period_range(target_range=target_range)
- 
     target_range = resolved["target_range"]
     used_default = resolved["used_default"]
- 
-    df = pdt.get_feature_snapshot(
-        grade=grade,
+
+    # ------------------------
+    # Get data
+    # ------------------------
+    df = get_feature_snapshot(
         target_range=target_range,
+        grade=grade,
     )
- 
+
     if df.empty:
-        raise ValueError(f"No data found for grade {grade} in range {target_range}")
- 
-    stats = df.describe().T
- 
-    msg = tc.build_single_period_message(
+        return {
+            "type": "process_data",
+            "figure": None,
+            "text": "No data available for the selected filters.",
+            "target_range": target_range,
+        }
+
+    # ------------------------
+    # Feature selection
+    # ------------------------
+    if variables:
+        cols = variables
+        plot_prefs = {"secondary_axis": False}
+    else:
+        feature_query = pdt.extract_feature_request_phrase(query or "")
+        plot_prefs = pdt.parse_plot_preferences(query or "")
+        negative_terms = pdt.extract_negative_terms(query or "")
+
+        cols = pdt.select_features_from_query(
+            query=feature_query,
+            df_columns=df.columns.tolist(),
+            use_llm_fallback=True,
+        )
+
+        cols = pdt.filter_columns_by_negative_terms(
+            cols,
+            negative_terms,
+        )
+
+    cols = [c for c in cols if c in df.columns]
+
+    # if secondary axis requested, keep it simple/predictable
+    if plot_prefs.get("secondary_axis", False) and len(cols) > 2:
+        cols = cols[:2]
+
+    # ------------------------
+    # Plot
+    # ------------------------
+    fig = pdt.build_process_plot(
+        df=df,
+        columns=cols,
+        time_col=DEFAULT_TIME_COL,
+        secondary_axis=plot_prefs.get("secondary_axis", False),
+    )
+
+    # ------------------------
+    # Optional default message
+    # ------------------------
+    default_msg = tc.build_single_period_message(
         target_range=target_range,
         used_default=used_default,
-        lang=lang,
+        lang="en",
     )
- 
+    text = default_msg if default_msg else None
+
     return {
         "type": "process_data",
-        "grade": grade,
+        "figure": fig,
+        "data_frame": df,
+        "columns": cols,
+        "n_rows": len(df),
         "target_range": target_range,
         "used_default_range": used_default,
-        "n_rows": len(df),
-        "data": df,
-        "stats": stats,
-        "message": msg,
+        "plot_preferences": plot_prefs,
+        "text": text,
     }
+
  
  
 # -------------------------------------------------
@@ -234,6 +289,8 @@ def answer(query: str) -> Dict[str, Any]:
         return answer_process_data(
             target_range=parsed.get("target_range"),
             grade=grade,
+            variables=parsed.get("variables"),
+            query=query,  # 👈 IMPORTANT
         )
     if intent == "prediction":
         if cost_component is None or grade is None:
@@ -342,6 +399,7 @@ def answer_cost_driver_analysis(
         "df2": cost_driver_result.get("df2"),
         "top_driver_variables": cost_driver_result.get("top_driver_variables", []),
         "extreme_cluster_differences": cost_driver_result.get("extreme_cluster_differences"),
+        "figure": cost_driver_result.get("figure"),
         "summary": summary,
         "narrative": narrative,
     }
@@ -479,6 +537,11 @@ def answer_orchestrated(query: str) -> Dict[str, Any]:
     parsed = qp.parse_query(query)
     plan_bundle = ap.make_plan(parsed, raw_query=query)
     execution_out = ae.execute_plan(plan_bundle)
+    plan_bundle, execution_out = _maybe_append_scenario_step(
+        plan_bundle=plan_bundle,
+        execution_out=execution_out,
+        parsed=parsed,
+    )
     final_out = syn.synthesize_execution(execution_out)
     return {
         "text": final_out["text"],
@@ -486,3 +549,109 @@ def answer_orchestrated(query: str) -> Dict[str, Any]:
         "plan": final_out["plan"],
         "step_results": final_out["step_results"],
     }
+
+def _maybe_append_scenario_step(plan_bundle, execution_out, parsed):
+    """
+    Second-pass orchestration:
+    if the query asks for estimate/savings and recommendations produced a
+    suggested intervention, append a scenario step.
+    """
+    wants_estimate = any(
+        k in parsed.get("raw_query", "").lower()
+        for k in ["expected savings", "savings", "expected impact", "impact", "how much", "estimate"]
+    )
+    if not wants_estimate:
+        return plan_bundle, execution_out
+    plan = execution_out["plan"]
+    step_results = execution_out["step_results"]
+    # avoid duplicating scenario
+    if any(step["tool"] == "scenario" for step in plan.get("steps", [])):
+        return plan_bundle, execution_out
+    recommend_result = None
+    for step in step_results:
+        if step["tool"] == "recommend":
+            recommend_result = step["result"]
+            break
+    if not isinstance(recommend_result, dict):
+        return plan_bundle, execution_out
+    suggested_interventions = recommend_result.get("suggested_interventions", [])
+    if not suggested_interventions:
+        return plan_bundle, execution_out
+    focus = recommend_result.get("focus", {})
+    cost_component = focus.get("cost_component") or parsed.get("cost_component")
+    grade = focus.get("grade") or parsed.get("grade")
+    scenario_step = {
+        "tool": "scenario",
+        "purpose": "Estimate the expected effect of the top recommended intervention.",
+        "args": {
+            "cost_component": cost_component,
+            "grade": grade,
+            "reel_id": parsed.get("reel_id"),
+            "timestamp": parsed.get("timestamp"),
+            "interventions": [suggested_interventions[0]],
+        },
+    }
+    new_plan = dict(plan)
+    new_plan["steps"] = list(plan["steps"]) + [scenario_step]
+    final_template = plan.get("final_template")
+    if final_template == "diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations":
+        new_plan["final_template"] = "diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations_plus_scenario"
+    elif final_template == "diagnosis_plus_cost_driver_plus_recommendations":
+        new_plan["final_template"] = "diagnosis_plus_cost_driver_plus_recommendations_plus_scenario"
+    new_bundle = {
+        "planning_context": plan_bundle["planning_context"],
+        "plan": new_plan,
+    }
+    import analysis_executor as ae
+    new_execution_out = ae.execute_plan(new_bundle)
+    return new_bundle, new_execution_out
+
+def _maybe_append_scenario_step(plan_bundle, execution_out, parsed):
+    wants_estimate = any(
+        k in parsed.get("raw_query", "").lower()
+        for k in ["expected savings", "savings", "expected impact", "impact", "how much", "estimate"]
+    )
+    if not wants_estimate:
+        return plan_bundle, execution_out
+    plan = execution_out["plan"]
+    if any(step["tool"] == "scenario" for step in plan.get("steps", [])):
+        return plan_bundle, execution_out
+    recommend_result = None
+    for step in execution_out["step_results"]:
+        if step["tool"] == "recommend":
+            recommend_result = step["result"]
+            break
+    if not isinstance(recommend_result, dict):
+        return plan_bundle, execution_out
+    suggested_interventions = recommend_result.get("suggested_interventions", [])
+    if not suggested_interventions:
+        return plan_bundle, execution_out
+    focus = recommend_result.get("focus", {})
+    cost_component = focus.get("cost_component") or parsed.get("cost_component")
+    grade = focus.get("grade") or parsed.get("grade")
+    scenario_step = {
+        "tool": "scenario",
+        "purpose": "Estimate the expected effect of the top recommended intervention.",
+        "args": {
+            "cost_component": cost_component,
+            "grade": grade,
+            "reel_id": parsed.get("reel_id"),
+            "timestamp": parsed.get("timestamp"),
+            "interventions": [suggested_interventions[0]],
+        },
+    }
+    new_plan = dict(plan)
+    new_plan["steps"] = list(plan["steps"]) + [scenario_step]
+    final_template = plan.get("final_template")
+    if final_template == "diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations":
+        new_plan["final_template"] = "diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations_plus_scenario"
+    elif final_template == "diagnosis_plus_cost_driver_plus_recommendations":
+        new_plan["final_template"] = "diagnosis_plus_cost_driver_plus_recommendations_plus_scenario"
+    new_bundle = {
+        "planning_context": plan_bundle["planning_context"],
+        "plan": new_plan,
+    }
+    import analysis_executor as ae
+    new_execution_out = ae.execute_plan(new_bundle)
+    return new_bundle, new_execution_out
+

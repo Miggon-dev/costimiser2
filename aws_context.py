@@ -26,6 +26,7 @@ def set_session(session: boto3.session.Session) -> None:
     _s3 = None
     _sts = None
     _s3fs = None
+    
  
  
 def create_session(profile_name: Optional[str] = None, region_name: str = "eu-west-1"):
