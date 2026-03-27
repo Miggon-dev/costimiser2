@@ -460,6 +460,73 @@ def calibrate_interventions_for_row(
     joint_bundle: JointModelBundle,
     q_low: float = 0.10,
     q_high: float = 0.90,
+    grid_step: float = 0.01,
+    safety_pad: float = 0.05,
+    control_min: float | None = None,
+    control_max: float | None = None,
+    nonneg_control: bool = False,
+    pre_expand: float = 0.0,
+    post_expand: float = 0.0,
+    sequential: bool = True,
+) -> Dict[str, Any]:
+    """
+    Calibrate a list of interventions.
+
+    If sequential=True, each calibrated intervention is applied to the working row
+    before calibrating the next one.
+    """
+    working_row = row.copy()
+    results = []
+
+    for itv in interventions:
+        cal = calibrate_intervention_to_joint_bounds(
+            row=working_row,
+            intervention=itv,
+            joint_bundle=joint_bundle,
+            q_low=q_low,
+            q_high=q_high,
+            grid_step=grid_step,
+            safety_pad=safety_pad,
+            control_min=control_min,
+            control_max=control_max,
+            nonneg_control=nonneg_control,
+            pre_expand=pre_expand,
+            post_expand=post_expand,
+        )
+        results.append(cal)
+
+        if sequential:
+            citv = cal["calibrated_intervention"]
+            variable = citv.get("variable")
+            mode = citv.get("mode")
+            value = citv.get("value")
+
+            if variable is None or mode is None:
+                continue
+
+            if mode == "absolute":
+                working_row[variable] = value
+            elif mode == "delta":
+                working_row[variable] = float(working_row[variable]) + float(value)
+            elif mode == "relative":
+                working_row[variable] = float(working_row[variable]) * (1.0 + float(value))
+            elif mode == "review":
+                pass
+
+    return {
+        "grade": joint_bundle.grade,
+        "n_interventions": len(interventions),
+        "sequential": sequential,
+        "results": results,
+        "final_row": working_row,
+    }
+
+def calibrate_interventions_for_row_TOREMOVE(
+    row: pd.Series,
+    interventions: List[Dict[str, Any]],
+    joint_bundle: JointModelBundle,
+    q_low: float = 0.10,
+    q_high: float = 0.90,
     grid_step: int = 0.01,
 ) -> Dict[str, Any]:
     """

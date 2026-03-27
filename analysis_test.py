@@ -1171,3 +1171,48 @@ def test_router_recommendation_with_estimate_has_scenario_template():
         "tools": tools,
         "text_preview": out["text"][:800],
     }
+
+def test_build_joint_variable_set():
+    import joint_distribution_tools as jdt
+
+    baseline_row = pdt.get_feature_snapshot(grade="6010120").head(1)
+    interventions = [{"variable": "Linepressure_shoe_press__bar_", "mode": "relative", "value": 0.05}]
+    vars_out = jdt.build_joint_variable_set(
+        interventions=interventions,
+        baseline_row=baseline_row,
+        max_vars=10,
+    )
+
+    assert_true("Linepressure_shoe_press__bar_" in vars_out, f"Unexpected vars: {vars_out}")
+    assert_true(len(vars_out) <= 10, f"Too many vars: {vars_out}")
+    return vars_out
+
+def test_joint_calibrate_interventions_sequential():
+    import joint_distribution_tools as jdt
+
+    variables = [
+        "Linepressure_shoe_press__bar_",
+        "Jet/wire_ratio",
+        "DG4_Temperature_Inlet_Air",
+    ]
+
+    bundle = jdt.fit_joint_model_for_grade_from_tools(
+        grade="6010120",
+        variables=variables,
+    )
+
+    row = bundle.data_used.iloc[0]
+
+    out = jdt.calibrate_interventions_for_row(
+        row=row,
+        interventions=[
+            {"variable": "Linepressure_shoe_press__bar_", "mode": "relative", "value": 0.05},
+            {"variable": "DG4_Temperature_Inlet_Air", "mode": "relative", "value": -0.05},
+        ],
+        joint_bundle=bundle,
+        sequential=True,
+    )
+
+    assert_true(out["n_interventions"] == 2, f"Unexpected out: {out}")
+    assert_true("final_row" in out, f"Missing final_row: {out}")
+    return out

@@ -678,16 +678,28 @@ def _maybe_append_scenario_step(plan_bundle, execution_out, parsed):
     focus = recommend_result.get("focus", {})
     cost_component = focus.get("cost_component") or parsed.get("cost_component")
     grade = focus.get("grade") or parsed.get("grade")
+    # Keep only actionable interventions (exclude "review")
+    usable_interventions = [
+        itv for itv in suggested_interventions
+        if itv.get("mode") in {"relative", "absolute", "delta"}
+    ]
+
+    if not usable_interventions:
+        return plan_bundle, execution_out
+
+    # Take top-N (start with 3)
+    top_interventions = usable_interventions[:3]
+
     scenario_step = {
         "tool": "scenario",
-        "purpose": "Estimate the expected effect of the top recommended intervention.",
+        "purpose": "Estimate the expected effect of the top recommended interventions (joint scenario).",
         "args": {
             "cost_component": cost_component,
             "grade": grade,
             "reel_id": parsed.get("reel_id"),
             "timestamp": parsed.get("timestamp"),
             "target_range": parsed.get("target_range"),
-            "interventions": [suggested_interventions[0]],
+            "interventions": top_interventions,
         },
     }
     new_plan = dict(plan)

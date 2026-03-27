@@ -439,11 +439,19 @@ def simulate_turnup_scenario(
 
     try:
         # Use only relevant variables (VERY IMPORTANT)
-        joint_variables = list({
-            itv.get("variable")
-            for itv in resolved_interventions
-            if itv.get("variable") is not None
-        })
+        # joint_variables = list({
+        #     itv.get("variable")
+        #     for itv in resolved_interventions
+        #     if itv.get("variable") is not None
+        # })
+        joint_variables = jdt.build_joint_variable_set(
+            interventions=resolved_interventions,
+            baseline_row=baseline_row,
+            feature_fn=feature_fn,
+            top_driver_variables=None, # can enrich later from recommendation context
+            shap_result=None, # can enrich later if available
+            max_vars=10,
+        )
 
         # Add some extra context variables if available (optional improvement later)
         joint_variables = [v for v in joint_variables if v in baseline_row.columns]
@@ -469,6 +477,16 @@ def simulate_turnup_scenario(
     except Exception as e:
         resolution_warnings.append(f"Joint calibration failed: {str(e)}")
 
+    if joint_calibration_results is not None:
+        clipped = [
+            r for r in joint_calibration_results["results"]
+            if r.get("was_clipped")
+        ]
+        if clipped:
+            resolution_warnings.append(
+                f"{len(clipped)} intervention(s) were clipped to feasible conditional bounds."
+            )
+            
     changed_vars = {
         itv.get("variable")
         for itv in resolved_interventions
