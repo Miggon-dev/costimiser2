@@ -225,6 +225,12 @@ def run_diagnosis(
     levels = _normalize_levels(levels)
     objects = _normalize_objects(objects)
     grades = _normalize_grades(grades)
+
+    # If only one grade is selected, overall level is redundant
+    if len(grades) == 1:
+        levels = [lvl for lvl in levels if lvl != 1]
+        if not levels:
+            levels = [2]
  
     # ----------------------------
     # Load + prepare process_data

@@ -195,99 +195,6 @@ def answer_process_data(
         plot_preferences=plot_prefs,
     )
 
-def answer_process_dataTOREMOVE(
-    target_range=None,
-    grade=None,
-    variables=None,
-    query: str = None,
-):
-    import time_context as tc
-    import process_data_tools as pdt
-
-    # ------------------------
-    # Resolve SINGLE range
-    # ------------------------
-    resolved = tc.resolve_single_period_range(target_range=target_range)
-    target_range = resolved["target_range"]
-    used_default = resolved["used_default"]
-
-    # ------------------------
-    # Get data
-    # ------------------------
-    df = get_feature_snapshot(
-        target_range=target_range,
-        grade=grade,
-    )
-
-    if df.empty:
-        return {
-            "type": "process_data",
-            "figure": None,
-            "text": "No data available for the selected filters.",
-            "target_range": target_range,
-        }
-
-    # ------------------------
-    # Feature selection
-    # ------------------------
-    if variables:
-        cols = variables
-        plot_prefs = {"secondary_axis": False}
-    else:
-        feature_query = pdt.extract_feature_request_phrase(query or "")
-        plot_prefs = pdt.parse_plot_preferences(query or "")
-        negative_terms = pdt.extract_negative_terms(query or "")
-
-        cols = pdt.select_features_from_query(
-            query=feature_query,
-            df_columns=df.columns.tolist(),
-            use_llm_fallback=True,
-        )
-
-        cols = pdt.filter_columns_by_negative_terms(
-            cols,
-            negative_terms,
-        )
-
-    cols = [c for c in cols if c in df.columns]
-
-    # if secondary axis requested, keep it simple/predictable
-    if plot_prefs.get("secondary_axis", False) and len(cols) > 2:
-        cols = cols[:2]
-
-    # ------------------------
-    # Plot
-    # ------------------------
-    fig = pdt.build_process_plot(
-        df=df,
-        columns=cols,
-        time_col=DEFAULT_TIME_COL,
-        secondary_axis=plot_prefs.get("secondary_axis", False),
-    )
-
-    # ------------------------
-    # Optional default message
-    # ------------------------
-    default_msg = tc.build_single_period_message(
-        target_range=target_range,
-        used_default=used_default,
-        lang="en",
-    )
-    text = default_msg if default_msg else None
-
-    return {
-        "type": "process_data",
-        "figure": fig,
-        "data_frame": df,
-        "columns": cols,
-        "n_rows": len(df),
-        "target_range": target_range,
-        "used_default_range": used_default,
-        "plot_preferences": plot_prefs,
-        "text": text,
-    }
-
- 
  
 # -------------------------------------------------
 # SHAP workflow
@@ -371,77 +278,6 @@ def answer_shap(
         used_default_ranges=used_any_default,
     )
 
-def answer_shap_TOREMOVE(
-    component: str,
-    grade_id: str,
-    target_range=None,
-    baseline_range=None,
-    lang: str = "en",
-) -> Dict[str, Any]:
-    import time_context as tc
-    import process_data_tools as pdt
-    import shap_tools as st
-
- 
-    resolved = tc.resolve_ranges(
-        target_range=target_range,
-        baseline_range=baseline_range,
-    )
- 
-    target_range = resolved["target_range"]
-    baseline_range = resolved["baseline_range"]
-    used_any_default = resolved["used_any_default"]
- 
-    X_sample = pdt.get_feature_snapshot(
-        grade=grade_id,
-        target_range=target_range,
-    )
- 
-    X_reference = pdt.get_feature_snapshot(
-        grade=grade_id,
-        target_range=baseline_range,
-    )
- 
-    if X_sample.empty:
-        raise ValueError(f"No target data found for grade {grade_id} in range {target_range}")
- 
-    if X_reference.empty:
-        raise ValueError(f"No baseline data found for grade {grade_id} in range {baseline_range}")
- 
-    out  = st.explain_grade_component(
-        component=component,
-        grade_id=grade_id,
-        X_sample=X_sample,
-        X_reference=X_reference,
-    )
- 
-    default_msg = tc.build_default_ranges_message(
-        target_range=target_range,
-        baseline_range=baseline_range,
-        used_any_default=used_any_default,
-        lang=lang,
-    )
-
-    if grade_id is None:
-        main_msg = f"SHAP explanation for {component} using all available grades."
-    else:
-        main_msg = f"SHAP explanation for {component} and grade {grade_id}."
-
-    text = (default_msg + "\n\n" if default_msg else "") + main_msg
- 
-    return {
-        "type": "shap",
-        "text": text,
-        "figure": out.get("figure"),
-        "data_frame": out.get("data_frame"),
-        "component": component,
-        "grade": grade_id,
-        "target_range": target_range,
-        "baseline_range": baseline_range,
-        "used_default_ranges": used_any_default,
-        "raw": out,
-    }
- 
  
 # -------------------------------------------------
 # Main entry point
@@ -527,66 +363,72 @@ def answer_cost_driver_analysis(
     lang: str = "en",
     top_frac: float = 0.20,
 ) -> Dict[str, Any]:
+
     import time_context as tc
+
     resolved = tc.resolve_ranges(
         target_range=target_range,
         baseline_range=baseline_range,
     )
+
     target_range = resolved["target_range"]
     baseline_range = resolved["baseline_range"]
     used_any_default = resolved["used_any_default"]
+
     cost_driver_result = cdt.run_cost_driver_analysis(
         target_range=target_range,
         baseline_range=baseline_range,
         cost_component=cost_component,
         grade=grade,
     )
+
     shapley_contrib = cost_driver_result.get("shapley_contrib")
+
     summary = cdt.summarize_contributions(shapley_contrib)
 
     if shapley_contrib is None or shapley_contrib.empty:
         if lang == "de":
-            narrative = "Für die ausgewählte Kombination aus Zeitraum, Sorte und Kostenkomponente konnten keine belastbaren Kostentreiber bestimmt werden."
+            text = "Für die ausgewählte Kombination aus Zeitraum, Sorte und Kostenkomponente konnten keine belastbaren Kostentreiber bestimmt werden."
         else:
-            narrative = "No reliable cost-driver result could be determined for the selected period, grade, and cost component."
+            text = "No reliable cost-driver result could be determined for the selected period, grade, and cost component."
     else:
-        narrative = cdt.build_cost_driver_text(
+        text = cdt.build_cost_driver_text(
             cost_driver_result=cost_driver_result,
             lang=lang,
             top_frac=top_frac,
         )
-        
-    narrative = cdt.build_cost_driver_text(
-        cost_driver_result=cost_driver_result,
-        lang=lang,
-        top_frac=top_frac,
-    )
+
     default_msg = tc.build_default_ranges_message(
         target_range=target_range,
         baseline_range=baseline_range,
         used_any_default=used_any_default,
         lang=lang,
     )
+
     if default_msg:
-        narrative = default_msg + "\n\n" + narrative
-    return {
-        "type": "cost_driver_analysis",
-        "component": cost_component,
-        "grade": grade,
-        "target_range": target_range,
-        "baseline_range": baseline_range,
-        "used_default_ranges": used_any_default,
-        "n_rows": 0 if shapley_contrib is None else len(shapley_contrib),
-        "raw": cost_driver_result,
-        "shapley_contrib": shapley_contrib,
-        "df1": cost_driver_result.get("df1"),
-        "df2": cost_driver_result.get("df2"),
-        "top_driver_variables": cost_driver_result.get("top_driver_variables", []),
-        "extreme_cluster_differences": cost_driver_result.get("extreme_cluster_differences"),
-        "figure": cost_driver_result.get("figure"),
-        "summary": summary,
-        "narrative": narrative,
-    }
+        text = default_msg + "\n\n" + text
+
+    return make_standard_response(
+        type_="cost_driver_analysis",
+        text=text,
+        figure=cost_driver_result.get("figure"),
+        data_frame=shapley_contrib,
+        blocks=[],
+        raw=cost_driver_result,
+        component=cost_component,
+        grade=grade,
+        target_range=target_range,
+        baseline_range=baseline_range,
+        used_default_ranges=used_any_default,
+        n_rows=0 if shapley_contrib is None else len(shapley_contrib),
+        shapley_contrib=shapley_contrib,
+        df1=cost_driver_result.get("df1"),
+        df2=cost_driver_result.get("df2"),
+        top_driver_variables=cost_driver_result.get("top_driver_variables", []),
+        extreme_cluster_differences=cost_driver_result.get("extreme_cluster_differences"),
+        summary=summary,
+        narrative=text, # optional backward compatibility
+    )
 
 def answer_prediction(
     cost_component: str,
@@ -683,7 +525,7 @@ def answer_scenario(
         "data": sim,
     }
 
-def answer_diagnosis_TOREMOVE(
+def answer_diagnosis(
     target_range,
     baseline_range,
     grades=None,
@@ -756,26 +598,6 @@ def answer_orchestrated(query: str) -> Dict[str, Any]:
     # keep parsed as extra metadata, but preserve standardized structure
     final_out["parsed"] = parsed
     return final_out
-
-def answer_orchestrated_TOREMOVE(query: str) -> Dict[str, Any]:
-    import analysis_planner as ap
-    import analysis_executor as ae
-    import analysis_synthesizer as syn
-    parsed = qp.parse_query(query)
-    plan_bundle = ap.make_plan(parsed, raw_query=query)
-    execution_out = ae.execute_plan(plan_bundle)
-    plan_bundle, execution_out = _maybe_append_scenario_step(
-        plan_bundle=plan_bundle,
-        execution_out=execution_out,
-        parsed=parsed,
-    )
-    final_out = syn.synthesize_execution(execution_out)
-    return {
-        "text": final_out["text"],
-        "parsed": parsed,
-        "plan": final_out["plan"],
-        "step_results": final_out["step_results"],
-    }
 
 def _maybe_append_scenario_step(plan_bundle, execution_out, parsed):
     """

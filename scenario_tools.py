@@ -394,13 +394,13 @@ def simulate_turnup_scenario(
 ) -> Dict[str, Any]:
     """
     Simulate a scenario for a selected cost component.
- 
+
     If row_df is not provided, the reference row is selected internally.
     If target_range is provided, the reference selection is restricted to that period.
     """
     schema = _get_schema(schema)
     cost_fn, feature_fn, resolved_component = _resolve_cost_component(cost_component)
- 
+
     if row_df is None:
         ref = get_reference_turnup(
             reel_id=reel_id,
@@ -424,21 +424,31 @@ def simulate_turnup_scenario(
             "requested_target_range": target_range,
         }
         reference_warnings = []
- 
-    changed_vars = {itv.get("variable") for itv in interventions if itv.get("variable") is not None}
+
+    resolved_interventions, resolution_warnings = normalize_interventions(
+        interventions=interventions,
+        df_columns=baseline_row.columns.tolist(),
+    )
+
+    changed_vars = {
+        itv.get("variable")
+        for itv in resolved_interventions
+        if itv.get("variable") is not None
+    }
+
     feature_cols = set(feature_fn())
     unused_changed_vars = sorted(v for v in changed_vars if v not in feature_cols)
- 
+
     baseline_series = baseline_row.iloc[0]
     baseline_prediction = float(cost_fn(baseline_series))
- 
-    mod = apply_interventions(baseline_row, interventions)
+
+    mod = apply_interventions(baseline_row, resolved_interventions)
     scenario_row = mod["row"]
     scenario_series = scenario_row.iloc[0]
     scenario_prediction = float(cost_fn(scenario_series))
- 
-    warnings = reference_warnings + list(mod["warnings"])
- 
+
+    warnings = reference_warnings + resolution_warnings + list(mod["warnings"])
+
     if changed_vars:
         if len(unused_changed_vars) == len(changed_vars):
             warnings.append(
@@ -450,7 +460,7 @@ def simulate_turnup_scenario(
                 f"Some modified variables are not used by the {resolved_component} model: "
                 f"{unused_changed_vars}"
             )
- 
+
     return {
         "cost_component": resolved_component,
         "reference": reference_meta,
@@ -496,3 +506,69 @@ def describe_scenario_result(sim_out: Dict[str, Any], decimals: int = 6) -> str:
         lines.append("Warnings: " + " | ".join(warnings))
  
     return "\n".join(lines)
+
+def resolve_scenario_variable(
+    variable_phrase: str,
+    df_columns: list[str],
+) -> str:
+    import process_data_tools as pdt
+
+    if variable_phrase in df_columns:
+        return variable_phrase
+
+    cols = pdt.select_features_from_query(
+        query=variable_phrase,
+        df_columns=df_columns,
+        use_llm_fallback=True,
+        max_return=5,
+    )
+
+    if not cols:
+        raise ValueError(f"No variable found matching: {variable_phrase}")
+
+    if len(cols) == 1:
+        return cols[0]
+
+    raise ValueError(
+        f"Ambiguous variable phrase '{variable_phrase}'. Candidate matches: {cols}"
+    )
+
+
+def normalize_interventions(
+    interventions: list[dict],
+    df_columns: list[str],
+) -> tuple[list[dict], list[str]]:
+    """
+    Resolve user-written variable phrases into exact dataframe columns.
+
+    Returns
+    -------
+    normalized_interventions, warnings
+    """
+    normalized = []
+    warnings = []
+
+    for itv in interventions:
+        variable_phrase = itv.get("variable")
+        if variable_phrase is None:
+            normalized.append(dict(itv))
+            continue
+
+        resolved_variable = resolve_scenario_variable(
+            variable_phrase=str(variable_phrase),
+            df_columns=df_columns,
+        )
+
+        new_itv = dict(itv)
+        new_itv["variable_phrase"] = variable_phrase
+        new_itv["variable"] = resolved_variable
+
+        if resolved_variable != variable_phrase:
+            warnings.append(
+                f"Resolved variable '{variable_phrase}' to '{resolved_variable}'"
+            )
+
+        normalized.append(new_itv)
+
+    return normalized, warnings
+

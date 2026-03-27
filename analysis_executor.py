@@ -39,24 +39,35 @@ def _execute_step(
         )
     elif tool == "recommend":
         import recommendation_tools as rt
+
         diagnosis_result = None
         cost_driver_result = None
+        shap_result = None
         knowledge_result = None
+
         for prev in executed_steps_so_far:
             if prev["tool"] == "diagnosis":
                 diagnosis_result = prev["result"]
+
             elif prev["tool"] == "cost_driver":
                 if isinstance(prev["result"], dict):
                     cost_driver_result = prev["result"].get("raw", prev["result"])
                 else:
                     cost_driver_result = prev["result"]
+
+            elif prev["tool"] == "shap":
+                shap_result = prev["result"]
+
             elif prev["tool"] == "knowledge":
                 knowledge_result = prev["result"]
+
         if cost_driver_result is None:
             raise ValueError("Recommendation step requires a prior cost_driver result")
+
         result = rt.build_recommendations(
             cost_driver_result=cost_driver_result,
             diagnosis_result=diagnosis_result,
+            shap_result=shap_result,
             knowledge_result=knowledge_result,
             lang=args.get("lang", "en"),
         )
@@ -76,17 +87,29 @@ def _execute_step(
         )
     elif tool == "knowledge":
         import recommendation_tools as rt
+
         cost_driver_result = None
+        shap_result = None
+
         for prev in executed_steps_so_far:
             if prev["tool"] == "cost_driver":
                 if isinstance(prev["result"], dict):
                     cost_driver_result = prev["result"].get("raw", prev["result"])
                 else:
                     cost_driver_result = prev["result"]
+
+            elif prev["tool"] == "shap":
+                shap_result = prev["result"]
+
         if cost_driver_result is not None:
-            query_text = rt.build_knowledge_query_from_drivers(cost_driver_result)
+            query_text = rt.build_knowledge_query_from_drivers(
+                cost_driver_result=cost_driver_result,
+                shap_result=shap_result,
+            )
         else:
             query_text = args.get("query", raw_query)
+
+        # print("RAG",query_text)
         result = ar.answer_knowledge(query_text)
     else:
         raise ValueError(f"Unsupported tool in executor: {tool!r}")

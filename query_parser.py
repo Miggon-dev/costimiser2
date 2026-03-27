@@ -137,103 +137,122 @@ def parse_intent(query: str) -> str:
     return "knowledge"
  
  
-def parse_interventions(query: str) -> List[Dict[str, Any]]:
-    """
-    Very first version:
-    expects exact variable names in the query.
- 
-    Supported examples:
-    - if Starch_uptake__g/m2_ is reduced by 10%
-    - if Starch_uptake__g/m2_ decreases by 10%
-    - if Starch_uptake__g/m2_ is increased by 0.5
-    - set Starch_uptake__g/m2_ to 4.2
-    """
- 
-    out: List[Dict[str, Any]] = []
-    q = query
- 
-    # set VARIABLE to X
-    m = re.search(
-        r"\bset\s+([A-Za-z0-9_/\-\.%]+)\s+to\s+(-?\d+(?:\.\d+)?)\b",
-        q,
-        flags=re.IGNORECASE,
-    )
-    if m:
-        out.append(
-            {
-                "variable": m.group(1),
-                "mode": "absolute",
-                "value": float(m.group(2)),
-            }
-        )
-        return out
- 
-    # VARIABLE is reduced by 10%
-    m = re.search(
-        r"\b([A-Za-z0-9_/\-\.%]+)\s+(?:is\s+)?(?:reduced|decreased|lowered)\s+by\s+(\d+(?:\.\d+)?)\s*%\b",
-        q,
-        flags=re.IGNORECASE,
-    )
-    if m:
-        out.append(
-            {
-                "variable": m.group(1),
+def parse_interventions(query: str):
+    q = query.lower()
+
+    if " if " not in q:
+        return []
+
+    tail = q.split(" if ", 1)[1].strip()
+
+    interventions = []
+
+    # -------------------------------------------------
+    # 1. GROUPED VARIABLES (are reduced / increased / set)
+    # -------------------------------------------------
+    grouped_patterns = [
+        # reduced by %
+        (r"(.+?)\s+are\s+reduced\s+by\s+(\d+(?:\.\d+)?)\s*%", "relative", -1, "%"),
+        # increased by %
+        (r"(.+?)\s+are\s+increased\s+by\s+(\d+(?:\.\d+)?)\s*%", "relative", +1, "%"),
+        # reduced absolute
+        (r"(.+?)\s+are\s+reduced\s+by\s+(\d+(?:\.\d+)?)$", "delta", -1, None),
+        # increased absolute
+        (r"(.+?)\s+are\s+increased\s+by\s+(\d+(?:\.\d+)?)$", "delta", +1, None),
+    ]
+
+    consumed_spans = []
+
+    for pattern, mode, sign, unit in grouped_patterns:
+        for m in re.finditer(pattern, tail):
+            var_block = m.group(1).strip()
+            raw_value = float(m.group(2))
+
+            if unit == "%":
+                value = sign * raw_value / 100.0
+            else:
+                value = sign * raw_value
+
+            # split variables inside the group
+            variables = [
+                v.strip()
+                for v in re.split(r"\band\b|,", var_block)
+                if v.strip()
+            ]
+
+            for var in variables:
+                interventions.append({
+                    "variable": var,
+                    "mode": mode,
+                    "value": value,
+                })
+
+            consumed_spans.append(m.span())
+
+    # -------------------------------------------------
+    # 2. REMOVE GROUPED PARTS FROM TEXT
+    # -------------------------------------------------
+    cleaned_tail = tail
+    for start, end in reversed(consumed_spans):
+        cleaned_tail = cleaned_tail[:start] + cleaned_tail[end:]
+
+    # -------------------------------------------------
+    # 3. SINGLE VARIABLE CLAUSES (existing logic)
+    # -------------------------------------------------
+    clauses = [
+        c.strip()
+        for c in re.split(r",|\band\b", cleaned_tail)
+        if c.strip()
+    ]
+
+    for clause in clauses:
+        m = re.match(r"(.+?)\s+is\s+reduced\s+by\s+(\d+(?:\.\d+)?)\s*%", clause)
+        if m:
+            interventions.append({
+                "variable": m.group(1).strip(),
                 "mode": "relative",
                 "value": -float(m.group(2)) / 100.0,
-            }
-        )
-        return out
- 
-    # VARIABLE is increased by 10%
-    m = re.search(
-        r"\b([A-Za-z0-9_/\-\.%]+)\s+(?:is\s+)?(?:increased|raised)\s+by\s+(\d+(?:\.\d+)?)\s*%\b",
-        q,
-        flags=re.IGNORECASE,
-    )
-    if m:
-        out.append(
-            {
-                "variable": m.group(1),
+            })
+            continue
+
+        m = re.match(r"(.+?)\s+is\s+increased\s+by\s+(\d+(?:\.\d+)?)\s*%", clause)
+        if m:
+            interventions.append({
+                "variable": m.group(1).strip(),
                 "mode": "relative",
                 "value": float(m.group(2)) / 100.0,
-            }
-        )
-        return out
- 
-    # VARIABLE reduced by 0.5
-    m = re.search(
-        r"\b([A-Za-z0-9_/\-\.%]+)\s+(?:is\s+)?(?:reduced|decreased|lowered)\s+by\s+(-?\d+(?:\.\d+)?)\b",
-        q,
-        flags=re.IGNORECASE,
-    )
-    if m:
-        out.append(
-            {
-                "variable": m.group(1),
+            })
+            continue
+
+        m = re.match(r"(.+?)\s+is\s+reduced\s+by\s+(\d+(?:\.\d+)?)$", clause)
+        if m:
+            interventions.append({
+                "variable": m.group(1).strip(),
                 "mode": "delta",
                 "value": -float(m.group(2)),
-            }
-        )
-        return out
- 
-    # VARIABLE increased by 0.5
-    m = re.search(
-        r"\b([A-Za-z0-9_/\-\.%]+)\s+(?:is\s+)?(?:increased|raised)\s+by\s+(-?\d+(?:\.\d+)?)\b",
-        q,
-        flags=re.IGNORECASE,
-    )
-    if m:
-        out.append(
-            {
-                "variable": m.group(1),
+            })
+            continue
+
+        m = re.match(r"(.+?)\s+is\s+increased\s+by\s+(\d+(?:\.\d+)?)$", clause)
+        if m:
+            interventions.append({
+                "variable": m.group(1).strip(),
                 "mode": "delta",
                 "value": float(m.group(2)),
-            }
-        )
-        return out
- 
-    return out
- 
+            })
+            continue
+
+        m = re.match(r"(.+?)\s+is\s+set\s+to\s+(\d+(?:\.\d+)?)$", clause)
+        if m:
+            interventions.append({
+                "variable": m.group(1).strip(),
+                "mode": "absolute",
+                "value": float(m.group(2)),
+            })
+            continue
+
+    return interventions
+
  
 def parse_query(query: str) -> Dict[str, Any]:
     import pandas as pd

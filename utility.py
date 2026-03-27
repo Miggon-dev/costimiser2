@@ -1379,6 +1379,201 @@ def shapley_for_pair_mc(
  
     return contrib
 
+def shapley_for_pair_filtered(
+    row1,
+    row2,
+    cost,
+    features,
+    process_data,
+    M=500,
+    random_state=None,
+    cost_variable=None,
+    add_unknown=False,
+    unknown_name="unknown",
+    min_delta_over_std=0.25,
+    min_delta_over_range=0.05,
+    min_abs_delta=None,
+    keep_top_n=None,
+    return_details=False,
+):    
+    """
+    Compute Monte Carlo Shapley values for a pair of rows, then filter features
+    whose observed change appears too small to be materially relevant.
+
+    Parameters
+    ----------
+    row1, row2 : mapping-like / pd.Series
+        Baseline and target rows.
+    cost : callable
+        Model prediction function accepting a dict-like row of feature values.
+    features : list[str]
+        Features used by the model.
+    process_data : pd.DataFrame
+        Full process dataframe used to estimate relevance statistics.
+    M : int
+        Number of Monte Carlo permutations.
+    random_state : int or None
+        Random seed.
+    cost_variable : str or None
+        Optional observed cost variable for unknown contribution.
+    add_unknown : bool
+        Whether to add unknown contribution.
+    unknown_name : str
+        Name of the unknown contribution key.
+    min_delta_over_std : float
+        Minimum |delta| / std threshold to keep a variable.
+    min_delta_over_range : float
+        Minimum |delta| / (p95 - p05) threshold to keep a variable.
+    min_abs_delta : float or dict or None
+        Optional minimum absolute delta threshold. Can be:
+        - None
+        - scalar
+        - dict {feature_name: threshold}
+    keep_top_n : int or None
+        Optionally keep top N variables by absolute contribution after filtering.
+    return_details : bool
+        If True, return a dict with contrib + diagnostics.
+        If False, return only filtered contributions dict.
+
+    Returns
+    -------
+    dict
+        If return_details=False:
+            {feature: contribution, ...}
+        If return_details=True:
+            {
+                "contrib_all": ...,
+                "contrib_filtered": ...,
+                "diagnostics": pd.DataFrame,
+            }
+    """
+    import math
+    import numpy as np
+    import pandas as pd
+
+    # ----------------------------
+    # 1. Raw Shapley contributions
+    # ----------------------------
+    contrib_all = shapley_for_pair_mc(
+        row1=row1,
+        row2=row2,
+        cost=cost,
+        features=features,
+        M=M,
+        random_state=random_state,
+        cost_variable=cost_variable,
+        add_unknown=add_unknown,
+        unknown_name=unknown_name,
+    )
+
+    # ----------------------------
+    # 2. Feature relevance diagnostics
+    # ----------------------------
+    rows = []
+
+    for f in features:
+        x1 = float(row1[f])
+        x2 = float(row2[f])
+        delta = x2 - x1
+
+        if f not in process_data.columns:
+            std = np.nan
+            p05 = np.nan
+            p95 = np.nan
+            delta_over_std = np.nan
+            delta_over_range = np.nan
+            keep = True
+        else:
+            s = pd.to_numeric(process_data[f], errors="coerce").dropna()
+
+            if len(s) == 0:
+                std = np.nan
+                p05 = np.nan
+                p95 = np.nan
+                delta_over_std = np.nan
+                delta_over_range = np.nan
+                keep = True
+            else:
+                std = float(s.std(ddof=1)) if len(s) > 1 else 0.0
+                p05 = float(s.quantile(0.05))
+                p95 = float(s.quantile(0.95))
+                robust_range = p95 - p05
+
+                if std is None or math.isnan(std) or std <= 0:
+                    delta_over_std = np.nan
+                else:
+                    delta_over_std = abs(delta) / std
+
+                if robust_range is None or math.isnan(robust_range) or robust_range <= 0:
+                    delta_over_range = np.nan
+                else:
+                    delta_over_range = abs(delta) / robust_range
+
+                keep = True
+
+                # absolute threshold
+                if min_abs_delta is not None:
+                    if isinstance(min_abs_delta, dict):
+                        abs_thr = min_abs_delta.get(f, None)
+                    else:
+                        abs_thr = float(min_abs_delta)
+
+                    if abs_thr is not None and abs(delta) < abs_thr:
+                        keep = False
+
+                # relative thresholds
+                if not pd.isna(delta_over_std) and delta_over_std < min_delta_over_std:
+                    keep = False
+
+                if not pd.isna(delta_over_range) and delta_over_range < min_delta_over_range:
+                    keep = False
+
+        rows.append(
+            {
+                "variable": f,
+                "value_row1": x1,
+                "value_row2": x2,
+                "delta": delta,
+                "abs_delta": abs(delta),
+                "std": std,
+                "p05": p05,
+                "p95": p95,
+                "delta_over_std": delta_over_std,
+                "delta_over_range": delta_over_range,
+                "contribution": contrib_all.get(f, 0.0),
+                "abs_contribution": abs(contrib_all.get(f, 0.0)),
+                "keep": keep,
+            }
+        )
+
+    diagnostics = pd.DataFrame(rows)
+
+    # ----------------------------
+    # 3. Filter contributions
+    # ----------------------------
+    diagnostics_f = diagnostics[diagnostics["keep"]].copy()
+
+    if keep_top_n is not None and keep_top_n > 0 and not diagnostics_f.empty:
+        diagnostics_f = diagnostics_f.sort_values(
+            "abs_contribution", ascending=False
+        ).head(keep_top_n)
+
+    kept_features = diagnostics_f["variable"].tolist()
+    contrib_filtered = {f: contrib_all[f] for f in kept_features}
+
+    # keep unknown if requested
+    if add_unknown and unknown_name in contrib_all:
+        contrib_filtered[unknown_name] = contrib_all[unknown_name]
+
+    if return_details:
+        return {
+            "contrib_all": contrib_all,
+            "contrib_filtered": contrib_filtered,
+            "diagnostics": diagnostics.sort_values("abs_contribution", ascending=False),
+        }
+
+    return contrib_filtered
+
 def make_model_cost(model, feature_fn):
     cols = feature_fn()
     df = pd.DataFrame([[0.0] * len(cols)], columns=cols)  # allocate ONCE
@@ -2032,7 +2227,7 @@ def shapley_contribution(df1, df2, cost_component, fibre_cost, steam_cost, elect
       row2 = df2.loc[idx]
       if cost_component=='Fibre_cost__€/T_':
           logger.info(cost_component)
-          contrib = shapley_for_pair(row1, row2, fibre_cost, fibre_feats,cost_variable=cost_component)
+          contrib = shapley_for_pair_mc(row1, row2, fibre_cost, fibre_feats,cost_variable=cost_component)
       elif cost_component=='Steam__€/T_':
           logger.info(cost_component)
           contrib = shapley_for_pair_mc(row1, row2, steam_cost, steam_feats,cost_variable=cost_component)
@@ -2052,6 +2247,42 @@ def shapley_contribution(df1, df2, cost_component, fibre_cost, steam_cost, elect
   shapley_df = pd.DataFrame(results).set_index("id")
   return shapley_df
 
+def shapley_contribution_filtered(process_data,df1, df2, cost_component, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features):
+  
+
+  steam_feats = steam_features()
+  elec_feats = electricity_features()
+  starch_feats = starch_features()
+  fibre_feats = fibre_features()
+
+  results = []
+  for idx in list(set(df1.index) & set(df2.index)):
+      row1 = df1.loc[idx]
+      row2 = df2.loc[idx]
+      if cost_component=='Fibre_cost__€/T_':
+          logger.info(cost_component)
+          contrib_full = shapley_for_pair_filtered(row1, row2, fibre_cost, fibre_feats, process_data, cost_variable=cost_component, return_details=True)
+      elif cost_component=='Steam__€/T_':
+          logger.info(cost_component)
+          contrib_full = shapley_for_pair_filtered(row1, row2, steam_cost, steam_feats, process_data, cost_variable=cost_component, return_details=True)
+      elif cost_component=='Electricity__€/T_':
+          logger.info(cost_component)
+          contrib_full = shapley_for_pair_filtered(row1, row2, electricity_cost, elec_feats, process_data, cost_variable=cost_component, return_details=True)
+      elif cost_component=='Starch__€/T_':
+          logger.info(cost_component)
+          contrib_full = shapley_for_pair_filtered(row1, row2, starch_cost, starch_feats, process_data, cost_variable=cost_component, return_details=True)
+      else:
+          return None            
+      
+      contrib = contrib_full["contrib_filtered"]      
+      delta_cost = sum(contrib.values())  # should equal cost2 - cost1
+      contrib["id"] = idx
+      contrib["delta_cost"] = delta_cost
+      results.append(contrib)
+
+  shapley_df = pd.DataFrame(results).set_index("id")
+  return shapley_df, contrib_full["contrib_all"], contrib_full["diagnostics"]
+
 def _shapley_contrib(data_version, df1, df2, cost_component, grade, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features):
   df1 = df1.groupby("AB_Grade_ID").mean()
   df2 = df2.groupby("AB_Grade_ID").mean()
@@ -2063,6 +2294,20 @@ def _shapley_contrib(data_version, df1, df2, cost_component, grade, fibre_cost, 
 
   df = pd.melt(shapley_df.drop("delta_cost",axis=1).div(shapley_df["delta_cost"].abs(),axis=0).reset_index(), id_vars="id", value_name="contribution").rename(columns={"id":"AB_Grade_ID"}).merge(pd.melt(df, id_vars="AB_Grade_ID", value_name="value_change"), on=["AB_Grade_ID","variable"], how="left")
   return df
+
+
+def _shapley_contrib_filtered(data_version, process_data, df1, df2, cost_component, grade, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features):
+  
+  df1 = df1.groupby("AB_Grade_ID").mean()
+  df2 = df2.groupby("AB_Grade_ID").mean()
+    
+  shapley_df, contrib_filtered, diagnostics = shapley_contribution_filtered(process_data,df1, df2, cost_component, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  
+  df = df2.subtract(df1, axis=0).reset_index()
+  df = df[df.AB_Grade_ID.isin(shapley_df.index.unique())]
+
+  df = pd.melt(shapley_df.drop("delta_cost",axis=1).div(shapley_df["delta_cost"].abs(),axis=0).reset_index(), id_vars="id", value_name="contribution").rename(columns={"id":"AB_Grade_ID"}).merge(pd.melt(df, id_vars="AB_Grade_ID", value_name="value_change"), on=["AB_Grade_ID","variable"], how="left")
+  return df, contrib_filtered, diagnostics
 
 def _process_data_clustered(data_version, process_data, cost_component, grade, cost_component_features):
   turnup_process = process_data

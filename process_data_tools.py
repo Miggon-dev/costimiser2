@@ -462,7 +462,7 @@ def get_feature_snapshot(
 
 
 
-def build_process_plot_TOREMOVE(
+def build_process_plot(
     df: pd.DataFrame,
     columns: List[str],
     time_col: str,

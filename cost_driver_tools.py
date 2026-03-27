@@ -13,7 +13,7 @@ from utility import (
     _process_data,
     _process_data_clustered,
     _process_data_clustered_summary,
-    _shapley_contrib,
+    _shapley_contrib_filtered,
     _cost_driver_plot,
     setpoint_df,
     build_shapley_text,
@@ -83,8 +83,10 @@ def _normalize_range(date_range):
 
 def extract_top_driver_variables(
     shapley_contrib: pd.DataFrame,
-    top_n: int = 3,
-    positive_only: bool = True,
+    top_n: int = 7,
+    positive_only: bool = False,
+    priority_score: bool = True,
+
 ) -> List[str]:
     """
     Extract top driver variable names from shapley contribution output.
@@ -99,11 +101,15 @@ def extract_top_driver_variables(
     df = shapley_contrib.copy()
     if "variable" not in df.columns or "contribution" not in df.columns:
         return []
-    if positive_only:
-        df = df[df["contribution"] > 0]
+    
     if df.empty:
         return []
-    df = df.sort_values("contribution", ascending=False)
+    if priority_score:
+        df = df.sort_values("priority_score", ascending=False)
+    elif positive_only:
+        df = df.sort_values("contribution", ascending=False)
+    else:
+        df = df.sort_values("abs_contribution", ascending=False)
     return df["variable"].astype(str).head(top_n).tolist()
 
 def summarize_extreme_cluster_differences(
@@ -269,8 +275,9 @@ def run_cost_driver_analysis(
             "figure":None,
         }
     # 7. SHAP contribution between periods
-    shapley_contrib = _shapley_contrib(
+    shapley_contrib, contrib_filtered, diagnostics = _shapley_contrib_filtered(
         "",
+        turnup_data,
         df1,
         df2,
         component_full_name,
@@ -284,6 +291,16 @@ def run_cost_driver_analysis(
         starch_features,
         fibre_features,
     )
+
+    diagnostics = diagnostics[diagnostics.keep]
+    diagnostics["priority_score"] = (
+        diagnostics["abs_contribution"]
+        * diagnostics["delta_over_std"].fillna(0).clip(upper=1.0)
+        * diagnostics["delta_over_range"].fillna(0).clip(upper=1.0)
+    )
+    diagnostics = diagnostics.sort_values("priority_score", ascending=False)
+    shapley_contrib = shapley_contrib.merge(diagnostics.drop(["contribution"], axis=1), on="variable").sort_values("priority_score", ascending=False)
+
     if shapley_contrib is None:
         shapley_contrib = pd.DataFrame()
     figure = None
@@ -291,8 +308,9 @@ def run_cost_driver_analysis(
         figure = _cost_driver_plot(shapley_contrib)
     top_driver_variables = extract_top_driver_variables(
         shapley_contrib=shapley_contrib,
-        top_n=3,
-        positive_only=True,
+        top_n=7,
+        positive_only=False,
+        priority_score=True,
     )
     extreme_cluster_differences = summarize_extreme_cluster_differences(
         df1=df1,
