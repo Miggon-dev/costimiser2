@@ -430,6 +430,45 @@ def simulate_turnup_scenario(
         df_columns=baseline_row.columns.tolist(),
     )
 
+    # ------------------------------------------------------------------
+    # Joint distribution calibration (feasibility layer)
+    # ------------------------------------------------------------------
+    import joint_distribution_tools as jdt
+
+    joint_calibration_results = None
+
+    try:
+        # Use only relevant variables (VERY IMPORTANT)
+        joint_variables = list({
+            itv.get("variable")
+            for itv in resolved_interventions
+            if itv.get("variable") is not None
+        })
+
+        # Add some extra context variables if available (optional improvement later)
+        joint_variables = [v for v in joint_variables if v in baseline_row.columns]
+
+        if len(joint_variables) > 0:
+            joint_bundle = jdt.fit_joint_model_for_grade_from_tools(
+                grade=str(reference_meta.get("matched_grade") or grade),
+                variables=joint_variables,
+            )
+
+            joint_calibration_results = jdt.calibrate_interventions_for_row(
+                row=baseline_row.iloc[0],
+                interventions=resolved_interventions,
+                joint_bundle=joint_bundle,
+            )
+
+            # Replace interventions with calibrated ones
+            resolved_interventions = [
+                x["calibrated_intervention"]
+                for x in joint_calibration_results["results"]
+            ]
+
+    except Exception as e:
+        resolution_warnings.append(f"Joint calibration failed: {str(e)}")
+
     changed_vars = {
         itv.get("variable")
         for itv in resolved_interventions
@@ -471,6 +510,7 @@ def simulate_turnup_scenario(
         "scenario_row": scenario_row,
         "applied_interventions": mod["applied_interventions"],
         "warnings": warnings,
+        "joint_calibration":joint_calibration_results
     }
  
  

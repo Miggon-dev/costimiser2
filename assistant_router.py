@@ -599,7 +599,7 @@ def answer_orchestrated(query: str) -> Dict[str, Any]:
     final_out["parsed"] = parsed
     return final_out
 
-def _maybe_append_scenario_step(plan_bundle, execution_out, parsed):
+def _maybe_append_scenario_step_TOREMOVE(plan_bundle, execution_out, parsed):
     """
     Second-pass orchestration:
     if the query asks for estimate/savings and recommendations produced a
@@ -686,6 +686,7 @@ def _maybe_append_scenario_step(plan_bundle, execution_out, parsed):
             "grade": grade,
             "reel_id": parsed.get("reel_id"),
             "timestamp": parsed.get("timestamp"),
+            "target_range": parsed.get("target_range"),
             "interventions": [suggested_interventions[0]],
         },
     }
@@ -696,6 +697,11 @@ def _maybe_append_scenario_step(plan_bundle, execution_out, parsed):
         new_plan["final_template"] = "diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations_plus_scenario"
     elif final_template == "diagnosis_plus_cost_driver_plus_recommendations":
         new_plan["final_template"] = "diagnosis_plus_cost_driver_plus_recommendations_plus_scenario"
+    elif final_template == "diagnosis_plus_cost_driver_plus_shap_plus_knowledge_plus_recommendations":
+        new_plan["final_template"] = "diagnosis_plus_cost_driver_plus_shap_plus_knowledge_plus_recommendations_plus_scenario"
+    
+    
+
     new_bundle = {
         "planning_context": plan_bundle["planning_context"],
         "plan": new_plan,

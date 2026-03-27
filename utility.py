@@ -6147,3 +6147,314 @@ def update_turnup_grammage(
     turnup.loc[mask_wrong, "grammage"] = turnup.loc[mask_wrong, "basis_weight_cat"]
 
     return turnup
+
+def ewm_reset(s):
+    out = s.ewm(halflife="120min", times=s.index, adjust=True).mean()
+    if len(s) >= 2:
+        out.iloc[0] = (s.iloc[0] + s.iloc[1]) / 2.0   # softer start
+    return out
+
+class ContinuousMarginal:
+    import numpy as np
+
+    def __init__(self, bandwidth: float | None = None, eps: float = 1e-6):
+        self.bandwidth = bandwidth
+        self.eps = eps
+        self.x_ = None
+        self.cdf_y_ = None
+        self.kde_ = None
+
+    def fit(self, x: np.ndarray):
+        from sklearn.neighbors import KernelDensity
+
+        x = np.asarray(x, dtype=float)
+        x = x[np.isfinite(x)]
+        if x.size < 5:
+            raise ValueError("Not enough data to fit marginal.")
+        xs = np.sort(x)
+        uniq, counts = np.unique(xs, return_counts=True)
+        cum = np.cumsum(counts)
+        mids = (cum - counts/2) / xs.size
+        self.x_, self.cdf_y_ = uniq, mids
+        if self.bandwidth is None:
+            std = np.std(x, ddof=1)
+            bw = 1.06 * std * x.size ** (-1/5) if std > 0 else 0.1
+        else:
+            bw = float(self.bandwidth)
+        self.kde_ = KernelDensity(kernel="gaussian", bandwidth=max(bw, 1e-3)).fit(x[:, None])
+        return self
+
+    def cdf(self, x: np.ndarray) -> np.ndarray:
+        u = np.interp(x, self.x_, self.cdf_y_, left=self.cdf_y_[0], right=self.cdf_y_[-1])
+        return np.clip(u, self.eps, 1 - self.eps)
+
+    def inv_cdf(self, u: np.ndarray) -> np.ndarray:
+        u = np.clip(u, self.eps, 1 - self.eps)
+        return np.interp(u, self.cdf_y_, self.x_, left=self.x_[0], right=self.x_[-1])
+
+    def log_pdf(self, x: np.ndarray) -> np.ndarray:
+        return self.kde_.score_samples(np.asarray(x, dtype=float)[:, None])
+
+
+class GaussianCopulaContinuous:
+    import numpy as np
+    
+
+    def __init__(self, bandwidth: float | None = None, random_state: int | None = None, eps: float = 1e-6):
+        self.bandwidth = bandwidth
+        self.random_state = random_state
+        self.eps = eps
+        self.columns_ = None
+        self.marginals_ = None
+        self.R_ = None
+        self.R_inv_ = None
+        self.logdet_R_ = None
+        self._rng = np.random.default_rng(random_state)
+
+    def fit(self, X: pd.DataFrame):
+        from scipy.stats import norm
+        from sklearn.covariance import LedoitWolf
+
+        if not np.all([pd.api.types.is_numeric_dtype(X[c]) for c in X.columns]):
+            raise ValueError("All columns must be numeric.")
+        df = X.copy()
+        self.columns_ = list(df.columns)
+        for c in self.columns_:
+            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(df[c].median())
+        self.marginals_ = {c: ContinuousMarginal(self.bandwidth, self.eps).fit(df[c].to_numpy())
+                           for c in self.columns_}
+        U = np.column_stack([self.marginals_[c].cdf(df[c].to_numpy()) for c in self.columns_])
+        Z = norm.ppf(np.clip(U, self.eps, 1 - self.eps))
+        lw = LedoitWolf().fit(Z)
+        Sigma = lw.covariance_
+        d = np.sqrt(np.diag(Sigma)); d[d == 0] = 1.0
+        R = Sigma / np.outer(d, d)
+        R = (R + R.T) / 2.0
+        self.R_ = R
+        self.R_inv_ = np.linalg.inv(R)
+        sign, logdet = np.linalg.slogdet(R)
+        if sign <= 0:
+            raise RuntimeError("Estimated correlation not PD.")
+        self.logdet_R_ = logdet
+        return self
+
+    def _check(self):
+        if self.R_ is None or self.marginals_ is None or self.columns_ is None:
+            raise RuntimeError("Model not fitted.")
+
+    def _to_Z(self, X: pd.DataFrame) -> np.ndarray:
+        from scipy.stats import norm
+
+        df = X[self.columns_].copy()
+        for c in self.columns_:
+            df[c] = pd.to_numeric(df[c], errors="coerce").fillna(df[c].median())
+        U = np.column_stack([self.marginals_[c].cdf(df[c].to_numpy()) for c in self.columns_])
+        return norm.ppf(np.clip(U, self.eps, 1 - self.eps))
+
+    def _log_copula_density(self, Z: np.ndarray) -> np.ndarray:
+        q1 = np.einsum("...i,ij,...j->...", Z, self.R_inv_, Z)
+        q0 = np.einsum("...i,...i->...", Z, Z)
+        return -0.5 * self.logdet_R_ - 0.5 * (q1 - q0)
+
+    def score_samples(self, X: pd.DataFrame) -> np.ndarray:
+        self._check()
+        Z = self._to_Z(X)
+        log_m = 0.0
+        for c in self.columns_:
+            log_m += self.marginals_[c].log_pdf(np.asarray(X[c], dtype=float))
+        return self._log_copula_density(Z) + log_m
+
+    def sample(self, n: int) -> pd.DataFrame:
+        from scipy.stats import norm
+
+        self._check()
+        L = np.linalg.cholesky(self.R_)
+        Z = self._rng.standard_normal(size=(n, len(self.columns_))) @ L.T
+        U = norm.cdf(Z)
+        data = {c: self.marginals_[c].inv_cdf(U[:, j]) for j, c in enumerate(self.columns_)}
+        return pd.DataFrame(data, columns=self.columns_)
+
+    # ---- conditional utilities ----
+    def conditional_params(self, target: str, given_df: pd.DataFrame | dict) -> tuple[float, float]:
+        self._check()
+        if isinstance(given_df, dict):
+            given_df = pd.DataFrame([given_df])
+        if len(given_df) != 1:
+            raise ValueError("given_df must be single-row.")
+        cols = self.columns_
+        if target not in cols:
+            raise KeyError(f"Target '{target}' not in columns.")
+        t_idx = cols.index(target)
+        given_cols = [c for c in cols if c in given_df.columns and c != target]
+        if not given_cols:
+            return 0.0, 1.0
+        g_idx = [cols.index(c) for c in given_cols]
+        tpl = pd.Series({c: given_df.iloc[0][c] if c in given_cols else 0.0 for c in cols}, dtype=float)
+        Z_all = self._to_Z(pd.DataFrame([tpl], columns=cols))
+        z_g = Z_all[0, g_idx]
+        R = self.R_
+        R_gg = R[np.ix_(g_idx, g_idx)]
+        R_tg = R[t_idx, g_idx]
+        R_gg_inv = np.linalg.inv(R_gg)
+        mu = float(R_tg @ R_gg_inv @ z_g)
+        var = float(1.0 - R_tg @ R_gg_inv @ R_tg.T)
+        return mu, max(var, 1e-9)
+
+    def conditional_sample(self, target: str, given_df: pd.DataFrame | dict, n: int = 50_000) -> np.ndarray:
+        from scipy.stats import norm
+        
+        mu, var = self.conditional_params(target, given_df)
+        z = np.random.default_rng().normal(loc=mu, scale=np.sqrt(var), size=n)
+        u = norm.cdf(z)
+        return self.marginals_[target].inv_cdf(u)
+
+    def conditional_summary(self, target: str, given_df: pd.DataFrame | dict, n: int = 100_000,
+                            quantiles=(0.05, 0.5, 0.95)) -> dict:
+        xs = self.conditional_sample(target, given_df, n=n)
+        out = {"mean": float(np.mean(xs)), "std": float(np.std(xs, ddof=1))}
+        for q in quantiles:
+            out[f"q{int(q*100):02d}"] = float(np.quantile(xs, q))
+        return out
+
+def _numeric(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy().apply(pd.to_numeric, errors="coerce")
+    return df.fillna(df.median(numeric_only=True))
+
+def model_feature_names(model, fallback_cols) -> list[str]:
+    if hasattr(model, "feature_names_in_"):
+        return list(model.feature_names_in_)
+    if hasattr(model, "best_estimator_") and hasattr(model.best_estimator_, "feature_names_in_"):
+        return list(model.best_estimator_.feature_names_in_)
+    return list(fallback_cols)
+
+def build_template(df_hist: pd.DataFrame, required_cols: list[str]) -> pd.Series:
+    med = _numeric(df_hist).median(numeric_only=True)
+    tpl = pd.Series(0.0, index=required_cols, dtype=float)
+    common = med.index.intersection(tpl.index)
+    tpl.loc[common] = med.loc[common].astype(float)
+    return tpl
+    
+def conditional_bounds_from_joint(
+    free_variable,
+    df_hist: pd.DataFrame,
+    joint: GaussianCopulaContinuous,
+    df_fixed: pd.DataFrame | dict,
+    q_bounds=(0.01, 0.99),
+    grid_step: float = 0.01,
+    safety_pad: float = 0.05,
+    control_min: float | None = None,
+    control_max: float | None = None,
+    nonneg_control: bool = True,
+    pre_expand: float = 0.0,                       # expand the grid range before quantiles
+    post_expand: float = 0.0                       # expand final [lo,hi] after quantiles
+) -> tuple[float, float, pd.DataFrame]:
+    # normalize df_fixed
+    if isinstance(df_fixed, dict):
+        df_fixed = pd.DataFrame([df_fixed])
+    df_fixed = df_fixed.iloc[[0]]
+
+    # numeric history (for empirical envelope)
+    df_num = df_hist.copy().apply(pd.to_numeric, errors="coerce")
+    df_num = df_num.fillna(df_num.median(numeric_only=True))
+
+    # wide empirical envelope for starch
+    s_hist = pd.to_numeric(df_hist[free_variable], errors="coerce").dropna().to_numpy()
+    
+    if s_hist.size:
+        q_lo_emp, q_hi_emp = np.quantile(s_hist, [0.01, 0.99])
+    else:
+        q_lo_emp, q_hi_emp = (0.0, 1.0)
+   
+    span = max(q_hi_emp - q_lo_emp, 1.0)
+    lo_emp = q_lo_emp - safety_pad * span
+    hi_emp = q_hi_emp + safety_pad * span
+    if nonneg_control: lo_emp = max(0.0, lo_emp)
+    if control_min is not None: lo_emp = max(lo_emp, float(control_min))
+    if control_max is not None: hi_emp = min(hi_emp, float(control_max))
+    if hi_emp <= lo_emp:
+        hi_emp = lo_emp + max(1.0, grid_step)
+
+    # slice along starch given df_fixed
+    cols = joint.columns_
+    tpl = df_num.median(numeric_only=True).reindex(cols, fill_value=0.0).astype(float)
+    for c in df_fixed.columns.intersection(cols):
+        v = pd.to_numeric(df_fixed.iloc[0][c], errors="coerce")
+        if pd.notna(v): tpl[c] = float(v)
+
+    # Pre-expand the grid window 
+    base_span = hi_emp - lo_emp
+    lo_grid = lo_emp - pre_expand * base_span
+    hi_grid = hi_emp + pre_expand * base_span
+    if nonneg_control: lo_grid = max(0.0, lo_grid)
+    if control_min is not None: lo_grid = max(lo_grid, float(control_min))
+    if control_max is not None: hi_grid = min(hi_grid, float(control_max))
+    if hi_grid <= lo_grid: hi_grid = lo_grid + max(1.0, grid_step)    
+
+    grid = np.arange(lo_emp, hi_emp + 1e-12, grid_step, dtype=float)
+    rows = []
+    for s in grid:
+        r = tpl.copy(); r[free_variable] = float(s)
+        rows.append(r)
+    slice_df = pd.DataFrame(rows, columns=cols)
+
+    # logpdf from joint (all columns)
+    logpdf = np.asarray(joint.score_samples(slice_df), dtype=float)
+    # stabilize & normalize to conditional pdf over starch
+    logpdf_stab = logpdf - np.max(logpdf)
+    unnorm = np.exp(logpdf_stab)
+    if not np.isfinite(unnorm).any() or unnorm.sum() == 0:
+        unnorm = np.ones_like(unnorm)
+    Z = np.trapz(unnorm, grid)
+    pdf = unnorm / max(Z, np.finfo(float).tiny)
+    cdf = np.cumsum((pdf[:-1] + pdf[1:]) / 2 * np.diff(grid))
+    cdf = np.concatenate([[0.0], cdf]); cdf = np.clip(cdf, 0.0, 1.0)
+
+    q_lo, q_hi = q_bounds
+    lo = float(np.interp(q_lo, cdf, grid))
+    hi = float(np.interp(q_hi, cdf, grid))
+
+    # post-expand the final bounds --------
+    span_final = max(hi - lo, grid_step)
+    
+    lo_ext = lo - post_expand * span_final
+    hi_ext = hi + post_expand * span_final
+    # clamp to the grid range (so we don't exceed evaluated domain)
+    lo_ext = max(lo_grid, lo_ext)
+    hi_ext = min(hi_grid, hi_ext)
+
+    profile = pd.DataFrame({free_variable: grid, "logpdf": logpdf, "pdf": pdf, "cdf": cdf})
+    return lo_ext, hi_ext, profile
+
+import numpy as np
+from scipy.optimize import Bounds
+
+def bounds_to_cobyla_constraints(bounds, n_vars=None):
+    """
+    Convert SciPy bounds (Bounds or list of (lo,hi)) into COBYLA-style
+    inequality constraints g(x) >= 0.
+    Returns a list suitable for minimize(..., method="COBYLA", constraints=...).
+    """
+    # Normalize to arrays lb, ub
+    if isinstance(bounds, Bounds):
+        lb = np.asarray(bounds.lb, dtype=float)
+        ub = np.asarray(bounds.ub, dtype=float)
+    else:
+        # sequence of (lo, hi)
+        pairs = list(bounds)
+        lb = np.array([(-np.inf if lo is None else lo) for lo, _ in pairs], dtype=float)
+        ub = np.array([( np.inf if hi is None else hi) for _, hi in pairs], dtype=float)
+
+    if n_vars is None:
+        n_vars = len(lb)
+
+    cons = []
+    for i in range(n_vars):
+        lo = lb[i]
+        hi = ub[i]
+        if np.isfinite(lo):
+            # x[i] - lo >= 0
+            cons.append({"type": "ineq", "fun": (lambda i=i, lo=lo: lambda x: x[i] - lo)()})
+        if np.isfinite(hi):
+            # hi - x[i] >= 0
+            cons.append({"type": "ineq", "fun": (lambda i=i, hi=hi: lambda x: hi - x[i])()})
+    return cons

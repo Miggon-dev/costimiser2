@@ -1150,3 +1150,24 @@ def test_recommendation_has_suggested_interventions():
         assert_true(itv["mode"] in allowed_modes, f"Unexpected mode: {itv}")
 
     return suggested
+
+def test_router_recommendation_with_estimate_has_scenario_template():
+    q = "what are the recommendations to improve the steam cost for grade 6010120 in week 11 and what are the expected savings"
+    out = ar.answer(q)
+
+    assert_true(
+        out["plan"]["final_template"] == "diagnosis_plus_cost_driver_plus_shap_plus_knowledge_plus_recommendations_plus_scenario",
+        f"Unexpected final_template: {out['plan']['final_template']}"
+    )
+
+    tools = [s["tool"] for s in out["plan"]["steps"]]
+    assert_true(
+        tools == ["diagnosis", "cost_driver", "shap", "knowledge", "recommend", "scenario"],
+        f"Unexpected tools: {tools}"
+    )
+
+    return {
+        "final_template": out["plan"]["final_template"],
+        "tools": tools,
+        "text_preview": out["text"][:800],
+    }
