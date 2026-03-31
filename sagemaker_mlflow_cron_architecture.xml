@@ -1,0 +1,175 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36" version="29.6.6">
+  <diagram id="aws-sagemaker-mlflow-cron-v2" name="SageMaker + MLflow + Cron Jobs v2">
+    <mxGraphModel dx="2852" dy="1486" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="2400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;" value="SageMaker training automation with MLflow registry and cron-based monitoring" vertex="1">
+          <mxGeometry height="40" width="1280" x="560" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=13;fontColor=#666666;" value="Training job decides whether to register model in MLflow; scoring cron job loads registered model" vertex="1">
+          <mxGeometry height="24" width="1100" x="650" y="58" as="geometry" />
+        </mxCell>
+        <mxCell id="s3data" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;strokeWidth=5;" value="Amazon S3&#xa;training data&#xa;turnup parquet files" vertex="1">
+          <mxGeometry height="85" width="230" x="50" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="s3artifacts" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;strokeWidth=5;" value="Amazon S3&#xa;model artifacts&#xa;training outputs / model.tar.gz" vertex="1">
+          <mxGeometry height="85" width="230" x="1404" y="870" as="geometry" />
+        </mxCell>
+        <mxCell id="notebook" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;strokeWidth=5;" value="SageMaker Notebook / Studio&#xa;current manual launcher&#xa;builds hyperparameters&#xa;calls ModelTrainer.train()" vertex="1">
+          <mxGeometry height="95" width="250" x="1380" y="175" as="geometry" />
+        </mxCell>
+        <mxCell id="schedule" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=14;" value="EventBridge Schedule&#xa;periodic retraining&#xa;daily / weekly / monthly" vertex="1">
+          <mxGeometry height="85" width="230" x="360" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="s3event" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=14;" value="S3 Object Change Event&#xa;optional data-arrival trigger" vertex="1">
+          <mxGeometry height="85" width="230" x="360" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="triggerlambda" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;fontStyle=1;" value="Trigger Lambda&#xa;recommended retraining trigger&#xa;validate event, apply cooldown / dedup,&#xa;start SageMaker training workflow" vertex="1">
+          <mxGeometry height="105" width="300" x="680" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="s3alt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;" value="Alternative trigger (less preferred)&#xa;monitor job writes S3 flag object&#xa;S3 event invokes Lambda" vertex="1">
+          <mxGeometry height="85" width="300" x="350" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="stepfn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;" value="Step Functions (optional)&#xa;retries / branching / notifications&#xa;orchestrate train" vertex="1">
+          <mxGeometry height="95" width="260" x="1055" y="235" as="geometry" />
+        </mxCell>
+        <mxCell id="training" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=15;fontStyle=1;strokeWidth=5;" value="SageMaker Training Job&#xa;prebuilt training image&#xa;runs train_uoc.py in container&#xa;evaluates and decides whether to register" vertex="1">
+          <mxGeometry height="115" width="310" x="1030" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="sourcebundle" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;" value="Source bundle&#xa;src/ + train_uoc.py + requirements.txt" vertex="1">
+          <mxGeometry height="70" width="270" x="780" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="inputmount" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;" value="/opt/ml/input/data/train&#xa;costimiser_continuous.parquet&#xa;phd.parquet" vertex="1">
+          <mxGeometry height="75" width="240" x="1400" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="modeldir" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;strokeWidth=5;" value="/opt/ml/model (SM_MODEL_DIR)&#xa;ucm_results.pkl&#xa;selected_features.json&#xa;mlflow_model/" vertex="1">
+          <mxGeometry height="90" width="240" x="1400" y="705" as="geometry" />
+        </mxCell>
+        <mxCell id="mlflow" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;fontStyle=1;strokeWidth=5;" value="Managed MLflow Tracking Server&#xa;run tracking + registered models&#xa;training job registers chosen model here" vertex="1">
+          <mxGeometry height="100" width="310" x="1705" y="585" as="geometry" />
+        </mxCell>
+        <mxCell id="scoringcron" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" value="Cron job: batch scoring&#xa;loads registered model from MLflow&#xa;runs scheduled inference" vertex="1">
+          <mxGeometry height="95" width="300" x="1710" y="175" as="geometry" />
+        </mxCell>
+        <mxCell id="monitorcron" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;" value="Cron job: performance monitoring&#xa;measures quality / drift / error&#xa;decides whether retraining is needed" vertex="1">
+          <mxGeometry height="105" width="300" x="1400" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="cloudwatch" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;" value="CloudWatch Logs / alarms&#xa;Lambda and training observability" vertex="1">
+          <mxGeometry height="70" width="260" x="810" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="notebook" style="endArrow=block;html=1;strokeWidth=2;" target="training">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="schedule" style="endArrow=block;html=1;strokeWidth=2;" target="triggerlambda">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="s3data" style="endArrow=block;html=1;strokeWidth=2;" target="s3event">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="s3event" style="endArrow=block;html=1;strokeWidth=2;" target="triggerlambda">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="monitorcron" style="endArrow=block;html=1;strokeWidth=2;fontStyle=1;" target="triggerlambda" value="recommended: direct invoke">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="monitorcron" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="s3alt" value="alternative: write trigger object">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="s3alt" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="triggerlambda">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="triggerlambda" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="stepfn" value="optional">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="stepfn" style="endArrow=block;html=1;strokeWidth=2;" target="training" value="start training">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="triggerlambda" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="training" value="or directly start training">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="s3data" style="endArrow=block;html=1;strokeWidth=2;" target="training" value="training input channel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="sourcebundle" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="training">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="training" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="inputmount">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" edge="1" parent="1" source="training" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="modeldir">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" edge="1" parent="1" source="modeldir" style="endArrow=block;html=1;strokeWidth=2;" target="s3artifacts" value="artifacts uploaded to S3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" edge="1" parent="1" source="training" style="endArrow=block;html=1;strokeWidth=2;" target="mlflow" value="log run / metrics / model">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" edge="1" parent="1" source="training" style="endArrow=block;html=1;strokeWidth=2;fontStyle=1;" target="mlflow" value="register chosen model">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e18" edge="1" parent="1" source="mlflow" style="endArrow=block;html=1;strokeWidth=2;" target="scoringcron" value="load registered model">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e19" edge="1" parent="1" source="scoringcron" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="monitorcron" value="predictions / scores">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e20" edge="1" parent="1" source="triggerlambda" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="cloudwatch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e21" edge="1" parent="1" source="training" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="cloudwatch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-37" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;strokeWidth=5;" value="Amazon S3&#xa;training data&#xa;turnup parquet files" vertex="1">
+          <mxGeometry height="85" width="230" x="45" y="1230" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-38" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;strokeWidth=5;" value="Amazon S3&#xa;model artifacts&#xa;training outputs / model.tar.gz" vertex="1">
+          <mxGeometry height="85" width="230" x="1400" y="1810" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-39" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;strokeWidth=5;" value="SageMaker Notebook / Studio&#xa;current manual launcher&#xa;builds hyperparameters&#xa;calls ModelTrainer.train()" vertex="1">
+          <mxGeometry height="95" width="250" x="1375" y="1115" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-45" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=15;fontStyle=1;strokeWidth=5;" value="SageMaker Training Job&#xa;prebuilt training image&#xa;runs train_uoc.py in container&#xa;evaluates and decides whether to register" vertex="1">
+          <mxGeometry height="115" width="310" x="1025" y="1520" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-46" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;" value="Source bundle&#xa;src/ + train_uoc.py + requirements.txt" vertex="1">
+          <mxGeometry height="70" width="270" x="775" y="1720" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-47" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;" value="/opt/ml/input/data/train&#xa;costimiser_continuous.parquet&#xa;phd.parquet" vertex="1">
+          <mxGeometry height="75" width="240" x="1395" y="1450" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-48" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;strokeWidth=5;" value="/opt/ml/model (SM_MODEL_DIR)&#xa;ucm_results.pkl&#xa;selected_features.json&#xa;mlflow_model/" vertex="1">
+          <mxGeometry height="90" width="240" x="1395" y="1645" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-49" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;fontStyle=1;strokeWidth=5;" value="Managed MLflow Tracking Server&#xa;run tracking + registered models&#xa;training job registers chosen model here" vertex="1">
+          <mxGeometry height="100" width="310" x="1700" y="1525" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-53" edge="1" parent="1" source="v1VWjxdRcokD45Kn6Zp4-39" style="endArrow=block;html=1;strokeWidth=2;" target="v1VWjxdRcokD45Kn6Zp4-45">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-63" edge="1" parent="1" source="v1VWjxdRcokD45Kn6Zp4-37" style="endArrow=block;html=1;strokeWidth=2;" target="v1VWjxdRcokD45Kn6Zp4-45" value="training input channel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-64" edge="1" parent="1" source="v1VWjxdRcokD45Kn6Zp4-46" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="v1VWjxdRcokD45Kn6Zp4-45">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-65" edge="1" parent="1" source="v1VWjxdRcokD45Kn6Zp4-45" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="v1VWjxdRcokD45Kn6Zp4-47">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-66" edge="1" parent="1" source="v1VWjxdRcokD45Kn6Zp4-45" style="endArrow=block;html=1;strokeWidth=2;dashed=1;" target="v1VWjxdRcokD45Kn6Zp4-48">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-67" edge="1" parent="1" source="v1VWjxdRcokD45Kn6Zp4-48" style="endArrow=block;html=1;strokeWidth=2;" target="v1VWjxdRcokD45Kn6Zp4-38" value="artifacts uploaded to S3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-68" edge="1" parent="1" source="v1VWjxdRcokD45Kn6Zp4-45" style="endArrow=block;html=1;strokeWidth=2;" target="v1VWjxdRcokD45Kn6Zp4-49" value="log run / metrics / model">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="v1VWjxdRcokD45Kn6Zp4-69" edge="1" parent="1" source="v1VWjxdRcokD45Kn6Zp4-45" style="endArrow=block;html=1;strokeWidth=2;fontStyle=1;" target="v1VWjxdRcokD45Kn6Zp4-49" value="register chosen model">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

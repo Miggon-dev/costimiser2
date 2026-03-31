@@ -1,6 +1,6 @@
 ---
-#title: "Cost Analysis"
-title: "Kostenanalyse"
+title: "Cost Analysis"
+#title: "Kostenanalyse"
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 output:
   pdf_document:
@@ -10,7 +10,7 @@ output:
 fontsize: 11pt
 geometry: margin=1in
 params:
-  lang: "de"
+  lang: "en"
 
 ---
 
@@ -256,35 +256,6 @@ if (visualize_plots) {
 
  `r py$descriptions_md`
  
-```{python drilldown_analysis_plot_overprocessing_1}
-from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
-
-level = 1
-object_drilldown = "overprocessing"
-reference = "baseline"
-
-drilldown = drilldown_df(process_data[process_data.AB_Grade_ID.isin(grades_summary)], level , object_drilldown, reference)
-mix_contribution = mix_effect(object_drilldown, reference, grades_summary, process_data)
-
-
-descriptions_md = build_drilldown_text(drilldown.rename(columns={"cost":object_drilldown}), lang=LANG)
-descriptions.append(descriptions_md)
-
-fig = _drilldown_analysis_plot(drilldown, mix_contribution,  level, object_drilldown, reference)
-fig = fig.update_layout(
-            title="",
-        )
-
-pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
-```
-
-```{r}
-if (visualize_plots) {
-  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 1000, vheight = 400, zoom = 2)
-}
-```
-
- `r py$descriptions_md`
 
 ```{python drilldown_analysis_plot_cost_2}
 from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
@@ -316,35 +287,6 @@ if (visualize_plots) {
 
  `r py$descriptions_md`
 
-```{python drilldown_analysis_plot_overprocessing_2}
-from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
-
-level = 2
-object_drilldown = "overprocessing"
-reference = "baseline"
-
-drilldown = drilldown_df(process_data[process_data.AB_Grade_ID.isin(grades_summary)], level , object_drilldown, reference)
-mix_contribution = mix_effect(object_drilldown, reference, grades_summary, process_data)
-
-
-descriptions_md = build_drilldown_text(drilldown.rename(columns={"cost":object_drilldown}), lang=LANG)
-descriptions.append(descriptions_md)
-
-fig = _drilldown_analysis_plot(drilldown, mix_contribution,  level, object_drilldown, reference)
-fig = fig.update_layout(
-            title="",
-        )
-
-pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
-```
-
-```{r}
-if (visualize_plots) {
-  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 1000, vheight = 400, zoom = 2)
-}
-```
-
- `r py$descriptions_md`
 
 ```{python drilldown_analysis_plot_cost_3}
 from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
@@ -375,6 +317,66 @@ if (visualize_plots) {
 
  `r py$descriptions_md`
 
+```{python drilldown_analysis_plot_overprocessing_1}
+from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
+
+level = 1
+object_drilldown = "overprocessing"
+reference = "baseline"
+
+drilldown = drilldown_df(process_data[process_data.AB_Grade_ID.isin(grades_summary)], level , object_drilldown, reference)
+mix_contribution = mix_effect(object_drilldown, reference, grades_summary, process_data)
+
+
+descriptions_md = build_drilldown_text(drilldown.rename(columns={"cost":object_drilldown}), lang=LANG)
+descriptions.append(descriptions_md)
+
+fig = _drilldown_analysis_plot(drilldown, mix_contribution,  level, object_drilldown, reference)
+fig = fig.update_layout(
+            title="",
+        )
+
+pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+```
+
+```{r}
+if (visualize_plots) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 1000, vheight = 400, zoom = 2)
+}
+```
+
+ `r py$descriptions_md`
+ 
+```{python drilldown_analysis_plot_overprocessing_2}
+from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
+
+level = 2
+object_drilldown = "overprocessing"
+reference = "baseline"
+
+drilldown = drilldown_df(process_data[process_data.AB_Grade_ID.isin(grades_summary)], level , object_drilldown, reference)
+mix_contribution = mix_effect(object_drilldown, reference, grades_summary, process_data)
+
+
+descriptions_md = build_drilldown_text(drilldown.rename(columns={"cost":object_drilldown}), lang=LANG)
+descriptions.append(descriptions_md)
+
+fig = _drilldown_analysis_plot(drilldown, mix_contribution,  level, object_drilldown, reference)
+fig = fig.update_layout(
+            title="",
+        )
+
+pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+```
+
+```{r}
+if (visualize_plots) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 1000, vheight = 400, zoom = 2)
+}
+```
+
+ `r py$descriptions_md`
+ 
 ```{python drilldown_analysis_plot_overprocessing_3}
 from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
 
@@ -427,7 +429,7 @@ if(py$current_enabled){
 ```
 
 ```{python drilldown_analysis_plot_fibre_6010085_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 
 if current_enabled:
   cost_component_drilldown = 'Fibre_cost__€/T_'
@@ -436,7 +438,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, fibre_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -476,7 +478,7 @@ if(py$current_enabled){
 ```
 
 ```{python drilldown_analysis_plot_steam_6010085_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 if current_enabled:
   cost_component_drilldown = 'Steam__€/T_'
   grade_drilldown = "6010085"
@@ -484,7 +486,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, steam_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -524,7 +526,7 @@ if (py$current_enabled){
 ```
 
 ```{python drilldown_analysis_plot_electricity_6010085_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 if current_enabled:
   cost_component_drilldown = 'Electricity__€/T_'
   grade_drilldown = "6010085"
@@ -532,7 +534,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, electricity_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -572,7 +574,7 @@ if (py$current_enabled){
 ```
 
 ```{python drilldown_analysis_plot_starch_6010085_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 if current_enabled:
   cost_component_drilldown = 'Starch__€/T_'
   grade_drilldown = "6010085"
@@ -580,7 +582,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, starch_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -630,7 +632,7 @@ if(py$current_enabled){
 ```
 
 ```{python drilldown_analysis_plot_fibre_3200115_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 
 if current_enabled:
   cost_component_drilldown = 'Fibre_cost__€/T_'
@@ -640,7 +642,7 @@ if current_enabled:
 
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -679,7 +681,7 @@ if(py$current_enabled){
 ```
 
 ```{python drilldown_analysis_plot_steam_3200115_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 
 if current_enabled:
   cost_component_drilldown = 'Steam__€/T_'
@@ -688,7 +690,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, steam_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -728,7 +730,7 @@ if (py$current_enabled) {
 ```
 
 ```{python drilldown_analysis_plot_electricity_3200115_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 
 if current_enabled:
   cost_component_drilldown = 'Electricity__€/T_'
@@ -737,7 +739,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, electricity_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -777,7 +779,7 @@ if (py$current_enabled){
 ```
 
 ```{python drilldown_analysis_plot_starch_3200115_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 
 if current_enabled:
   cost_component_drilldown = 'Starch__€/T_'
@@ -786,7 +788,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, starch_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -836,7 +838,7 @@ if (py$current_enabled){
 
 
 ```{python drilldown_analysis_plot_fibre_6010100_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 
 if current_enabled:
   cost_component_drilldown = 'Fibre_cost__€/T_'
@@ -845,7 +847,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, fibre_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -885,7 +887,7 @@ if(py$current_enabled){
 ```
 
 ```{python drilldown_analysis_plot_steam_6010100_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 
 if current_enabled:
   cost_component_drilldown = 'Steam__€/T_'
@@ -894,7 +896,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, steam_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -934,7 +936,7 @@ if(py$current_enabled){
 ```
 
 ```{python drilldown_analysis_plot_electricity_6010100_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 
 if current_enabled:
   cost_component_drilldown = 'Electricity__€/T_'
@@ -943,7 +945,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, electricity_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -983,7 +985,7 @@ if(py$current_enabled){
 ```
 
 ```{python drilldown_analysis_plot_starch_6010100_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 
 if current_enabled:
   cost_component_drilldown = 'Starch__€/T_'
@@ -992,7 +994,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, starch_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -1042,7 +1044,7 @@ if(py$current_enabled){
 
 
 ```{python drilldown_analysis_plot_fibre_6010120_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 
 if current_enabled:
   cost_component_drilldown = 'Fibre_cost__€/T_'
@@ -1051,7 +1053,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, fibre_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -1092,7 +1094,7 @@ if(py$current_enabled){
 ```
 
 ```{python drilldown_analysis_plot_steam_6010120_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 
 if current_enabled:
   cost_component_drilldown = 'Steam__€/T_'
@@ -1101,7 +1103,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, steam_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -1142,7 +1144,7 @@ if(py$current_enabled){
 ```
 
 ```{python drilldown_analysis_plot_electricity_6010120_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 
 if current_enabled:
   cost_component_drilldown = 'Electricity__€/T_'
@@ -1151,7 +1153,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, electricity_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -1192,7 +1194,7 @@ if (py$current_enabled){
 ```
 
 ```{python drilldown_analysis_plot_starch_6010120_cost_driver}
-from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
 
 if current_enabled:
   cost_component_drilldown = 'Starch__€/T_'
@@ -1201,7 +1203,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, starch_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)

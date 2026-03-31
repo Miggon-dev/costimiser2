@@ -253,8 +253,104 @@ def parse_interventions(query: str):
 
     return interventions
 
- 
 def parse_query(query: str) -> Dict[str, Any]:
+    import pandas as pd
+
+    # ----------------------------
+    # RULE-BASED PARSING (your current logic)
+    # ----------------------------
+    intent = parse_intent(query)
+
+    target_range, baseline_range = parse_date_ranges(query)
+    target_kind = None
+
+    if target_range is None:
+        from_to = parse_from_to_range(query)
+        if from_to is not None:
+            target_range = from_to
+            target_kind = "single"
+
+    if target_range is None:
+        day_range = parse_day_range(query)
+        if day_range is not None:
+            target_range = day_range
+            target_kind = "day"
+
+    if target_range is None:
+        week_range = parse_week_range(query)
+        if week_range is not None:
+            target_range = week_range
+            target_kind = "week"
+
+    if target_range is None:
+        month_range = parse_month_range(query)
+        if month_range is not None:
+            target_range = month_range
+            target_kind = "month"
+
+    if target_range is not None and baseline_range is None:
+        start = pd.to_datetime(target_range[0])
+
+        if target_kind == "month":
+            baseline_end = start
+            baseline_start = start - pd.offsets.MonthBegin(1)
+            baseline_range = (baseline_start.date(), baseline_end.date())
+        elif target_kind in ("day", "week", "single"):
+            baseline_end = start
+            baseline_start = start - pd.Timedelta(weeks=4)
+            baseline_range = (baseline_start.date(), baseline_end.date())
+
+    parsed = {
+        "intent": intent,
+        "cost_component": parse_cost_component(query),
+        "grade": parse_grade(query),
+        "reel_id": parse_reel_id(query),
+        "timestamp": parse_reference_timestamp(query),
+        "target_range": target_range,
+        "baseline_range": baseline_range,
+        "interventions": parse_interventions(query) if intent == "simulate_scenario" else [],
+        "raw_query": query,
+        "levels": parse_levels(query) if intent == "diagnosis" else None,
+        "objects": parse_diagnosis_objects(query) if intent == "diagnosis" else None,
+    }
+
+    # ----------------------------
+    # LLM FALLBACK (only if needed)
+    # ----------------------------
+    needs_llm = (
+        parsed["intent"] in [None, "unknown"]
+        or parsed["grade"] is None
+        or parsed["cost_component"] is None
+        or (parsed["levels"] is None and "diagnos" in query.lower())
+        or (parsed["objects"] is None and "cost" in query.lower())
+        or (parsed["interventions"] == [] and contains_intervention_language(query))
+    )
+
+    if not needs_llm:
+        return parsed
+
+    print("Needs LLM")
+    from query_parser_llm import parse_query_llm, merge_rule_and_llm_parse
+
+    llm_parsed = parse_query_llm(query)
+    parsed = merge_rule_and_llm_parse(parsed, llm_parsed)
+
+    # ----------------------------
+    # RESOLVE TIME FROM LLM TEXT (optional but important)
+    # ----------------------------
+    if parsed.get("target_range") is None and parsed.get("target_range_text"):
+        tr = resolve_time_range_text(parsed["target_range_text"])
+        if tr is not None:
+            parsed["target_range"] = tr
+
+    if parsed.get("baseline_range") is None and parsed.get("baseline_range_text"):
+        br = resolve_time_range_text(parsed["baseline_range_text"])
+        if br is not None:
+            parsed["baseline_range"] = br
+
+    return parsed
+ 
+def parse_query_TOREMOVE(query: str) -> Dict[str, Any]:
     import pandas as pd
  
     intent = parse_intent(query)
@@ -496,3 +592,44 @@ def parse_diagnosis_objects(query: str):
  
     return out or None
 
+
+def contains_intervention_language(query: str) -> bool:
+    q = query.lower()
+    return any(x in q for x in [
+        "if",
+        "increase",
+        "decrease",
+        "reduce",
+        "raise",
+        "lower",
+    ])
+
+def resolve_time_range_text(range_text: str):
+    """
+    Resolve a natural-language time phrase into a date range using the
+    existing rule-based parsers.
+    """
+    if not range_text:
+        return None
+
+    out = parse_date_ranges(range_text)
+    if out is not None and out[0] is not None:
+        return out[0]
+
+    from_to = parse_from_to_range(range_text)
+    if from_to is not None:
+        return from_to
+
+    day_range = parse_day_range(range_text)
+    if day_range is not None:
+        return day_range
+
+    week_range = parse_week_range(range_text)
+    if week_range is not None:
+        return week_range
+
+    month_range = parse_month_range(range_text)
+    if month_range is not None:
+        return month_range
+
+    return None

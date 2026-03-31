@@ -1993,6 +1993,8 @@ def _feature_engineering(turnup, setpoint_df, steam_null):
     paper_type = pd.get_dummies(turnup["paper_type"])
     turnup = pd.concat([turnup, paper_type], axis=1)
 
+    
+
     for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
         if any(e in v.lower() for e in ["€","g/m2","g/t","mbs_","t/t","level","consistency","temperature","l/min","fibre_fraction"]):
             turnup.loc[turnup[v] <= 0, v] = np.nan
@@ -2017,9 +2019,6 @@ def _feature_engineering(turnup, setpoint_df, steam_null):
     turnup.loc[turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"] > 4, "Starch_uptake_by_paper_Top_Roll__g/m2_"] = np.nan
     turnup.loc[turnup["LF_screen_1_accept_flow"] < 600, "LF_screen_1_accept_flow"] = np.nan
     turnup.loc[turnup["LF_screen_1_accept_flow"] > 1000, "LF_screen_1_accept_flow"] = np.nan
-    turnup.loc[turnup["Steam__€/T_"] > 100, "Steam__€/T_"] = np.nan
-    turnup.loc[turnup["Steam__kWh/T_"] > 2000, "Steam__kWh/T_"] = np.nan
-    turnup.loc[turnup["Electricity__kWh/T_"] > 500, "Electricity__kWh/T_"] = np.nan
     turnup.loc[turnup["Starch_consumption_Top__m³/h_"] > 2, "Starch_consumption_Top__m³/h_"] = np.nan
     turnup.loc[turnup["Starch_application_BW_in_ml"] > 30, "Starch_application_BW_in_ml"] = np.nan
     turnup.loc[turnup["Starch_flow_to_inactivation"] > 1e8, "Starch_flow_to_inactivation"] = np.nan
@@ -2043,8 +2042,6 @@ def _feature_engineering(turnup, setpoint_df, steam_null):
     turnup.loc[turnup["Cylinder_14_differential_pressure"] > 0.22, "Cylinder_14_differential_pressure"] = np.nan
     turnup.loc[turnup["Multifractor_1_long_fibre_flow"] > 400, "Multifractor_1_long_fibre_flow"] = np.nan
     turnup.loc[turnup["Short_fibre_B06_consistency"] < 4, "Short_fibre_B06_consistency"] = np.nan
-    turnup.loc[turnup["Fibre_usage__T/T_"] < .06, "Fibre_usage__T/T_"] = np.nan
-    turnup.loc[turnup['Combined_cost__€/T_'] > 300, 'Combined_cost__€/T_'] = np.nan
     turnup.loc[turnup["LF_screen_1_accept_flow"] < 600, "LF_screen_1_accept_flow"] = np.nan
     turnup.loc[turnup["LF_screen_1_accept_flow"] > 1000, "LF_screen_1_accept_flow"] = np.nan
     turnup.loc[turnup["Jet/wire_ratio"] > -10, "LF_screen_1_accept_flow"] = np.nan
@@ -2064,17 +2061,9 @@ def _feature_engineering(turnup, setpoint_df, steam_null):
     turnup.loc[turnup["Dissolved_gas_after_stock_deculator_measurement_1"] > 1,  "Dissolved_gas_after_stock_deculator_measurement_1"] = np.nan
     turnup.loc[turnup["Dissolved_gas_after_stock_deculator_measurement_2"] > 1,  "Dissolved_gas_after_stock_deculator_measurement_2"] = np.nan
     turnup.loc[turnup["Condensate_energy_from_paper_plant_to_power_plant"] < 4.5,  "Condensate_energy_from_paper_plant_to_power_plant"] = np.nan
-    turnup.loc[(turnup["Act_Deaerator_mass_flow__g/T_"] > 250) & (turnup["Act_Deaerator_mass_flow__g/T_"] < 70),  "Act_Deaerator_mass_flow__g/T_"] = np.nan
-    turnup.loc[(turnup["Defoamer_mass_flow__g/T_"] > 250) & (turnup["Defoamer_mass_flow__g/T_"] < 30),  "Defoamer_mass_flow__g/T_"] = np.nan
-    turnup.loc[(turnup["Sizing_Agent__g/T_"] > 6000) & (turnup["Sizing_Agent__g/T_"] < 3500),  "Sizing_Agent__g/T_"] = np.nan
-    turnup.loc[(turnup["Dry_Strength_Agent_mass_flow__kg/T_"] > 16) & (turnup["Dry_Strength_Agent_mass_flow__kg/T_"] < 10),  "Dry_Strength_Agent_mass_flow__kg/T_"] = np.nan
-    turnup.loc[(turnup["Natriumhydroxide_mass_flow__g/T_"] > 3000) & (turnup["Natriumhydroxide_mass_flow__g/T_"] < 340),  "Natriumhydroxide_mass_flow__g/T_"] = np.nan
     turnup.loc[(turnup["Long_fibre_consistency_B07"] <= 0) & (turnup["Long_fibre_consistency_B07"] >= 100),  "Long_fibre_consistency_B07"] = np.nan
     turnup.loc[(turnup["Short_fibre_B06_consistency"] <= 0) & (turnup["Short_fibre_B06_consistency"] >= 100),  "Short_fibre_B06_consistency"] = np.nan
     turnup.loc[turnup["Long_fibre_flow"] <= 0,  "Long_fibre_flow"] = np.nan
-
-    impute_outside_limits_with_grade_median(turnup, "Steam__kWh/T_", 800, 1220, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, "Steam__€/T_", 75, 110, inplace=True)
 
     for v in ["Pressure_to_inactivation","Current_reel_moisture_average(reel)","Current_reel_dry_average"]:
         turnup.loc[turnup[v] <= 2, v] = np.nan
@@ -2161,13 +2150,15 @@ def _feature_engineering(turnup, setpoint_df, steam_null):
     overprocessingT=overprocessing.groupby('MBS_Current_reel_ID').agg({"property_pct":"mean","starch_cost_diff":"mean", "overprocessing_std":"mean","overprocessing_score":"sum","underprocessing_score":"sum"}).reset_index()
     overprocessingT["property"]="ALL"
     overprocessing=pd.concat([overprocessing,overprocessingT],axis=0)
-    overprocessing.pivot(index=["MBS_Current_reel_ID"],columns="property",values=["property_pct","starch_cost_diff"])
-    overprocessing=overprocessing.pivot(index=["MBS_Current_reel_ID"],columns="property",values=["property_pct","starch_cost_diff"])
+    overprocessing.pivot(index=["MBS_Current_reel_ID"],columns="property",values=["property_pct","overprocessing_std","starch_cost_diff"])
+    overprocessing=overprocessing.pivot(index=["MBS_Current_reel_ID"],columns="property",values=["property_pct","overprocessing_std","starch_cost_diff"])
     overprocessing1=overprocessing["property_pct"].rename(columns={"ALL":"Overprocessing_percentage","MBS_SCT_CD":"Overprocessing_SCT_CD","MBS_Burst":"Overprocessing_Burst","MBS_CMT30":"Overprocessing_CMT30"})
     overprocessing2=overprocessing["starch_cost_diff"][["ALL"]].rename(columns={"ALL":"Overprocessing_cost__€/T_"})
     overprocessing3=overprocessingT[["MBS_Current_reel_ID","overprocessing_std","overprocessing_score","underprocessing_score"]].set_index("MBS_Current_reel_ID")
-    overprocessing=pd.concat([overprocessing1,overprocessing2,overprocessing3],axis=1)
-    overprocessing=overprocessing.reset_index()[["MBS_Current_reel_ID","Overprocessing_percentage","Overprocessing_SCT_CD","Overprocessing_Burst","Overprocessing_CMT30","Overprocessing_cost__€/T_","overprocessing_std","overprocessing_score","underprocessing_score"]]
+    overprocessing4=overprocessing["overprocessing_std"].rename(columns={"ALL":"Overprocessing_std_ALL","MBS_SCT_CD":"Overprocessing_std_SCT_CD","MBS_Burst":"Overprocessing_std_Burst","MBS_CMT30":"Overprocessing_std_CMT30"})
+    overprocessing=pd.concat([overprocessing1,overprocessing2,overprocessing3,overprocessing4],axis=1)
+    overprocessing=overprocessing.reset_index()[["MBS_Current_reel_ID","Overprocessing_percentage","Overprocessing_SCT_CD","Overprocessing_Burst","Overprocessing_CMT30","Overprocessing_cost__€/T_",'Overprocessing_std_ALL', 'Overprocessing_std_Burst',
+        'Overprocessing_std_CMT30', 'Overprocessing_std_SCT_CD',"overprocessing_std","overprocessing_score","underprocessing_score"]]
     turnup=pd.merge(turnup,overprocessing,on='MBS_Current_reel_ID',how="left")
     return turnup
 
@@ -4554,7 +4545,6 @@ def describe_drilldown_row(row, decimals=2):
         f"resulting in {curr_txt} €/t."
     )
 
-
 def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
     """
     Multiline Markdown-ready report text.
@@ -4596,14 +4586,14 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
         if not isinstance(text, str):
             text = str(text)
 
-        # Ordered: longer/more specific first (IMPORTANT!)
+        # Ordered: longer/more specific first
         patterns = [
             # New items you reported
             (r"\bsaw a\b", "verzeichnete einen"),
             (r"\bresulting in\b", "was zu"),
             (r"\bresulting\b", "wodurch"),
 
-            # "For ..." cases (more specific first!)
+            # "For ..." cases
             (r"\bFor all considered grades\b", "Für alle betrachteten Sorten"),
             (r"\bFor the considered grades\b", "Für die betrachteten Sorten"),
             (r"\bFor all grades\b", "Für alle Sorten"),
@@ -4613,16 +4603,20 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
 
             # Existing items
             (r"\bconsidered grades\b", "betrachtete Sorten"),
-
             (r"\bLooking across individual grades\b", "Über alle einzelnen Sorten betrachtet"),
             (r"\bLooking across grades\b", "Über alle Sorten betrachtet"),
             (r"\bindividual grades\b", "einzelne Sorten"),
-            (r"\bThese movements stand out and may require further investigation\b",
-             "Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden"),
-            (r"\bmay require further investigation\b", "sollten ggf. weiter untersucht werden"),
+            (
+                r"\bThese movements stand out and may require further investigation\b",
+                "Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden",
+            ),
+            (
+                r"\bmay require further investigation\b",
+                "sollten ggf. weiter untersucht werden",
+            ),
             (r"\bfurther investigation\b", "weitere Untersuchung"),
 
-            # cost / overprocessing words (in case they appear)
+            # cost / overprocessing words
             (r"\boverprocessing\b", "Überverarbeitung"),
             (r"\bcost\b", "Kosten"),
 
@@ -4633,7 +4627,6 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
             (r"\bdue to\b", "aufgrund von"),
             (r"\bexplained by\b", "erklärt durch"),
             (r"\bassociated with\b", "verbunden mit"),
-
             (r"\bstrongest\b", "stärkste"),
             (r"\bhigher\b", "höher"),
             (r"\blower\b", "niedriger"),
@@ -4647,7 +4640,7 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
             (r"\bincreased\b", "gestiegen"),
             (r"\bdecreased\b", "gesunken"),
 
-            # grade phrasing (plural first!)
+            # grade phrasing
             (r"\bgrades\b", "Sorten"),
             (r"\bgrade\b", "Sorte"),
         ]
@@ -4683,7 +4676,9 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
     breakdown_flag_value = "AVERAGE" if is_overprocessing else "TOTAL"
     breakdown_exists = False
     if has_component_col:
-        breakdown_exists = (~drilldown[component_col].astype(str).str.upper().eq(breakdown_flag_value)).any()
+        breakdown_exists = (
+            ~drilldown[component_col].astype(str).str.upper().eq(breakdown_flag_value)
+        ).any()
 
     # ----------------------------
     # Formatting helpers
@@ -4699,11 +4694,15 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
     def _cheaper_or_more_expensive(x):
         x = float(x)
         if x < 0:
-            return _t("lower" if is_overprocessing else "cheaper",
-                      "niedriger" if is_overprocessing else "günstiger")
+            return _t(
+                "lower" if is_overprocessing else "cheaper",
+                "niedriger" if is_overprocessing else "günstiger",
+            )
         if x > 0:
-            return _t("higher" if is_overprocessing else "more expensive",
-                      "höher" if is_overprocessing else "teurer")
+            return _t(
+                "higher" if is_overprocessing else "more expensive",
+                "höher" if is_overprocessing else "teurer",
+            )
         return _t("unchanged", "unverändert")
 
     def _improvement_or_deterioration(x):
@@ -4736,13 +4735,12 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
         mix, process = mix_contribution[0], mix_contribution[1]
         mix_dir = _cheaper_or_more_expensive(mix)
         proc_phrase = _improvement_or_deterioration(process)
-
         extra_lines.append(
             _t(
-                f"Breaking down the overall {metric_noun_en} change, {_fmt_abs(mix)} was driven by a {mix_dir} mix of grades, "
-                f"and {_fmt_abs(process)} was due to {proc_phrase}.",
-                f"Bei der Aufschlüsselung der gesamten Veränderung der {metric_noun_de} ergibt sich, dass {_fmt_abs(mix)} durch eine {mix_dir} Sortenmischung verursacht wurden "
-                f"und {_fmt_abs(process)} auf {proc_phrase} zurückzuführen sind."
+                f"Breaking down the overall {metric_noun_en} change, {_fmt_signed(mix)} was driven by a {mix_dir} mix of grades, "
+                f"and {_fmt_signed(process)} was due to {proc_phrase}.",
+                f"Bei der Aufschlüsselung der gesamten Veränderung der {metric_noun_de} ergibt sich, dass {_fmt_signed(mix)} durch eine {mix_dir} Sortenmischung verursacht wurden "
+                f"und {_fmt_signed(process)} auf {proc_phrase} zurückzuführen sind."
             )
         )
 
@@ -4772,6 +4770,7 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
 
         # 1) Average change by component
         lines.append(_t("Average change by component:", "Durchschnittliche Veränderung je Komponente:"))
+
         avg_sorted = avg_by_comp.copy()
         avg_sorted["abs_avg"] = avg_sorted["pct_cost"].abs()
         avg_sorted = avg_sorted.sort_values(["abs_avg", component_col], ascending=[False, True])
@@ -4789,15 +4788,13 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
         # 2) A more detailed breakdown...
         avg_inc = avg_by_comp[avg_by_comp["pct_cost"] > 0]
         avg_dec = avg_by_comp[avg_by_comp["pct_cost"] < 0]
-
         detail_parts = []
 
         if not avg_inc.empty:
             row = avg_inc.loc[avg_inc["pct_cost"].idxmax()]
             comp = row[component_col]
-            peak = dd_comp[dd_comp[component_col] == comp].loc[
-                dd_comp[dd_comp[component_col] == comp]["pct_cost"].idxmax()
-            ]
+            peak_rows = dd_comp[dd_comp[component_col] == comp]
+            peak = peak_rows.loc[peak_rows["pct_cost"].idxmax()]
             detail_parts.append(
                 _t(
                     f"the largest average increase comes from **{comp}** ({_fmt_signed(row['pct_cost'])} on average), "
@@ -4808,11 +4805,10 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
             )
 
         if not avg_dec.empty:
-            row = avg_dec.loc[avg_dec["pct_cost"].idxmin()]  # most negative
+            row = avg_dec.loc[avg_dec["pct_cost"].idxmin()] # most negative
             comp = row[component_col]
-            trough = dd_comp[dd_comp[component_col] == comp].loc[
-                dd_comp[dd_comp[component_col] == comp]["pct_cost"].idxmin()
-            ]
+            trough_rows = dd_comp[dd_comp[component_col] == comp]
+            trough = trough_rows.loc[trough_rows["pct_cost"].idxmin()]
             detail_parts.append(
                 _t(
                     f"the largest average decrease comes from **{comp}** ({_fmt_signed(row['pct_cost'])} on average), "
@@ -4844,11 +4840,16 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
     # If overprocessing, adjust wording + units in row-level descriptions
     if is_overprocessing:
         descriptions = [
-            re.sub(r"\bcost\b", _t("overprocessing", "Überverarbeitung"), d, flags=re.IGNORECASE).replace("€/t", "%")
+            re.sub(
+                r"\bcost\b",
+                _t("overprocessing", "Überverarbeitung"),
+                d,
+                flags=re.IGNORECASE
+            ).replace("€/t", "%")
             for d in descriptions
         ]
 
-    # Translate row-level descriptions if German is requested.
+    # Translate row-level descriptions if German is requested
     if lang == "de":
         descriptions = [_translate_row_text_de(d) for d in descriptions]
 
@@ -4859,8 +4860,8 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
 
     if len(dd_grades) > 1 and {"pct_cost", "AB_Grade_ID"}.issubset(dd_grades.columns):
         dd_valid = dd_grades.dropna(subset=["pct_cost"])
-
         attention_parts = []
+
         if not dd_valid.empty:
             inc = dd_valid[dd_valid["pct_cost"] > 0]
             if not inc.empty:
@@ -4899,6 +4900,8 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
             )
 
     return "\n\n".join(descriptions + extra_lines)
+
+
 
 def build_shapley_text(shapley_contrib, top_frac=0.20, lang="en"):
     """
