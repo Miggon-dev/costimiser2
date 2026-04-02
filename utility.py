@@ -5120,290 +5120,19 @@ def _lab_data(local, bucket, fs):
     else:
         return pd.read_parquet(f"s3://{bucket}/turnup/optvsn_df.parquet")
 
-# class FeatureCreator(BaseEstimator, TransformerMixin):
-#         """
-#         Create predefined engineered features, selectively enabled via `features_to_create`.
-    
-#         Parameters
-#         ----------
-#         features_to_create : list[str] | None
-#             Names of engineered features to create. If None, creates all known features.
-#         errors : {"raise", "ignore"}
-#             What to do if a requested feature cannot be created because required input columns
-#             are missing (or division by zero etc.). "ignore" will skip that feature.
-#         """
-    
-#         def __init__(self, features_to_create=None, features_to_keep=None, errors="raise"):
-#             self.features_to_create = features_to_create
-#             self.features_to_keep = features_to_keep
-#             self.errors = errors
-    
-#         # ----- public sklearn API -----
-    
-#         def fit(self, X, y=None):
-#             self.input_features_ = list(X.columns) if hasattr(X, "columns") else None
-#             self.feature_names_in_ = self.input_features_
-#             self._registry_ = self._build_registry()
-#             self._deps_ = self._build_dependencies()
-#             return self
-    
-#         def transform(self, X):
-#             X_df = self._to_dataframe(X)
-    
-#             # Determine which engineered features to create
-#             requested = (
-#                 list(self._registry_.keys())
-#                 if self.features_to_create is None
-#                 else list(self.features_to_create)
-#             )
-    
-#             # Expand prerequisites automatically
-#             to_make = self._expand_with_deps(requested)
-    
-#             # Create them in dependency order
-#             created = []
-#             for name in to_make:
-#                 if name in X_df.columns:
-#                     # Don't overwrite if already exists
-#                     continue
-    
-#                 fn = self._registry_.get(name)
-#                 if fn is None:
-#                     msg = f"Unknown feature requested: {name}. Available: {sorted(self._registry_.keys())}"
-#                     if self.errors == "raise":
-#                         raise ValueError(msg)
-#                     else:
-#                         continue
-    
-#                 try:
-#                     X_df = fn(X_df)
-#                     created.append(name)
-#                 except Exception as e:
-#                     if self.errors == "raise":
-#                         raise
-#                     # ignore: skip feature
-#                     continue
-    
-#             self.created_features_ = created            
-#             return X_df[self.features_to_keep]
-    
-#         def get_feature_names_out(self, input_features=None):
-            
-#             out = self.features_to_keep
-            
-#             return np.array(out, dtype=object)
-    
-#         # ----- internals -----
-    
-#         def _to_dataframe(self, X):
-#             if isinstance(X, pd.DataFrame):
-#                 return X.copy()
-#             if self.input_features_ is None:
-#                 raise ValueError(
-#                     "Input is not a DataFrame and feature names are unknown. "
-#                     "Pass a DataFrame into the pipeline or provide columns another way."
-#                 )
-#             return pd.DataFrame(X, columns=self.input_features_)
-    
-#         def _expand_with_deps(self, requested):
-#             # simple DFS expansion
-#             seen = set()
-#             order = []
-    
-#             def visit(f):
-#                 if f in seen:
-#                     return
-#                 seen.add(f)
-#                 for d in self._deps_.get(f, []):
-#                     visit(d)
-#                 order.append(f)
-    
-#             for f in requested:
-#                 visit(f)
-#             return order
-
-#         def features_required(self):    
-#             dd = []
-#             for v in self.features_to_create:
-#                 if v == "Fibre__g/m2_":
-#                     dd.append("Current_basis_weight")
-#                     dd.append("Current_reel_moisture_average(reel)")
-#                     dd.append("Starch_uptake__g/m2_")
-#                 elif v == "concentration_starch":
-#                     dd.append("Flow_starch_main_line_to_working_tank_1~^0")
-#                     dd.append("Flow_starch_main_line_to_working_tank_2~^0")
-#                     dd.append("Dilution_water_working_tank_1")
-#                     dd.append("Dilution_water_working_tank_2")
-#                 elif v == "Water_flow_Predryer":
-#                     dd.append("Current_basis_weight")
-#                     dd.append("Speed_PD1")
-#                     dd.append("Current_reel_width")
-#                     dd.append("Moisture_out_of_PreDryer")
-#                 elif v == "Water_flow_Predryer":
-#                     dd.append("Current_basis_weight")
-#                     dd.append("Speed_PD1")
-#                     dd.append("Current_reel_width")
-#                     dd.append("Moisture_out_of_PreDryer")
-#                 elif v == "Water_flow_Afterdryer":
-#                     dd.append("Current_basis_weight")
-#                     dd.append("Speed_PD1")
-#                     dd.append("Current_reel_width")
-#                     dd.append("Moisture_after_SpeedSizer")
-#                     dd.append("Actual_moisture")
-#                 elif v == "Water_flow":
-#                     dd.append("Current_basis_weight")
-#                     dd.append("Speed_PD1")
-#                     dd.append("Current_reel_width")
-#                     dd.append("Moisture_out_of_PreDryer")
-#                     dd.append("Moisture_after_SpeedSizer")
-#                     dd.append("Actual_moisture")
-#                 elif v == "flow_diluted_starch":
-#                     dd.append("Flow_starch_main_line_to_working_tank_2~^0")
-#                     dd.append("concentration_starch_working_tank_2")
-#                     dd.append("Flow_starch_main_line_to_working_tank_1~^0")
-#                     dd.append("concentration_starch_working_tank_1")
-#                 elif v =="Water_flow_Afterdryer_input":
-#                     dd.append("Current_basis_weight")
-#                     dd.append("Speed_PD1")
-#                     dd.append("Current_reel_width")
-#                     dd.append("Flow_starch_main_line_to_working_tank_2~^0")
-#                     dd.append("concentration_starch_working_tank_2")
-#                     dd.append("Flow_starch_main_line_to_working_tank_1~^0")
-#                     dd.append("concentration_starch_working_tank_1")
-#                 elif v =="Water_flow_Afterdryer_output":
-#                     dd.append("Current_basis_weight")
-#                     dd.append("Speed_PD1")
-#                     dd.append("Current_reel_width")
-#                     dd.append("Actual_moisture")
-#             return list(set(dd))
-                    
-
-    
-#         def _build_dependencies(self):
-#             """
-#             Declare which engineered features depend on which other engineered features.
-#             Raw input-column requirements are enforced by the feature function itself.
-#             """
-#             return {
-#                 "Water_flow": ["Water_flow_Predryer", "Water_flow_Afterdryer"],
-#                 "Water_flow_Afterdryer_input": ["flow_diluted_starch"],
-#                 # flow_diluted_starch depends on concentrations, which you already have as columns:
-#                 # "flow_diluted_starch": ["concentration_starch_working_tank_1", "concentration_starch_working_tank_2"]
-#                 # But those look like raw columns, not engineered features, so we don't list them here.
-#             }
-    
-#         def _build_registry(self):
-#             """
-#             Map engineered feature name -> function that takes df and returns df with the feature added.
-#             Keep functions small and single-responsibility.
-#             """
-    
-#             def add_concentration_starch(df):
-#                 # your formula (note: you referenced concentration_starch_working_tank_2 elsewhere;
-#                 # I'm keeping your shown name "concentration_starch" here)
-#                 df = df.copy()
-#                 num = df["Flow_starch_main_line_to_working_tank_1~^0"] + df["Flow_starch_main_line_to_working_tank_2~^0"]
-#                 den = (
-#                     df["Dilution_water_working_tank_2"]
-#                     + df["Dilution_water_working_tank_1"]
-#                     + df["Flow_starch_main_line_to_working_tank_1~^0"]
-#                     + df["Flow_starch_main_line_to_working_tank_2~^0"]
-#                 )
-#                 df["concentration_starch"] = num / den
-#                 return df
-    
-#             def add_fibre(df):
-#                 df = df.copy()
-#                 df["Fibre__g/m2_"] = (
-#                     df["Current_basis_weight"] * (1 - df["Current_reel_moisture_average(reel)"] / 100)
-#                     - df["Starch_uptake__g/m2_"]
-#                 )
-#                 return df
-    
-#             def add_water_flow_predryer(df):
-#                 df = df.copy()
-#                 df["Water_flow_Predryer"] = (
-#                     df["Current_basis_weight"]
-#                     * df["Speed_PD1"]
-#                     * df["Current_reel_width"]
-#                     * (100 - 35 - df["Moisture_out_of_PreDryer"])
-#                     * 60
-#                     / 1e10
-#                 )
-#                 return df
-    
-#             def add_water_flow_afterdryer(df):
-#                 df = df.copy()
-#                 df["Water_flow_Afterdryer"] = (
-#                     df["Current_basis_weight"]
-#                     * df["Speed_PD1"]
-#                     * df["Current_reel_width"]
-#                     * (df["Moisture_after_SpeedSizer"] - df["Actual_moisture"])
-#                     * 60
-#                     / 1e10
-#                 )
-#                 return df
-    
-#             def add_water_flow(df):
-#                 df = df.copy()
-#                 df["Water_flow"] = df["Water_flow_Predryer"] + df["Water_flow_Afterdryer"]
-#                 return df
-    
-#             def add_flow_diluted_starch(df):
-#                 df = df.copy()
-#                 df["flow_diluted_starch"] = (
-#                     df["Flow_starch_main_line_to_working_tank_2~^0"] / df["concentration_starch_working_tank_2"]
-#                     + df["Flow_starch_main_line_to_working_tank_1~^0"] / df["concentration_starch_working_tank_1"]
-#                 )
-#                 return df
-    
-#             def add_water_flow_afterdryer_input(df):
-#                 df = df.copy()
-#                 df["Water_flow_Afterdryer_input"] = (
-#                     df["Current_basis_weight"]
-#                     * df["Speed_PD1"]
-#                     * df["Current_reel_width"]
-#                     * df["flow_diluted_starch"]
-#                     * 60
-#                     / 1e10
-#                 )
-#                 return df
-    
-#             def add_water_flow_afterdryer_output(df):
-#                 df = df.copy()
-#                 df["Water_flow_Afterdryer_output"] = (
-#                     df["Current_basis_weight"]
-#                     * df["Speed_PD1"]
-#                     * df["Current_reel_width"]
-#                     * df["Actual_moisture"]
-#                     * 60
-#                     / 1e10
-#                 )
-#                 return df
-    
-#             return {
-#                 "concentration_starch": add_concentration_starch,
-#                 "Fibre__g/m2_": add_fibre,
-#                 "Water_flow_Predryer": add_water_flow_predryer,
-#                 "Water_flow_Afterdryer": add_water_flow_afterdryer,
-#                 "Water_flow": add_water_flow,
-#                 "flow_diluted_starch": add_flow_diluted_starch,
-#                 "Water_flow_Afterdryer_input": add_water_flow_afterdryer_input,
-#                 "Water_flow_Afterdryer_output": add_water_flow_afterdryer_output,
-#             }
 class FeatureCreator(BaseEstimator, TransformerMixin):
     """
     A scikit-learn compatible transformer that creates predefined engineered features.
     Only the features listed in `features_to_create` are created (plus any prerequisites).
- 
+
     Parameters
     ----------
-    features_to_create : list[str] | None    
+    features_to_create : list[str] | None
         Names of engineered features to create. If None, creates all known engineered features.
     features_to_keep : list[str] | None
-        Names of features to keep.
+        Names of features to keep in the output.
     errors : {"raise", "ignore"}
-        If "raise", raise if a feature cannot be computed (missing columns, division by zero, etc.).
+        If "raise", raise if a feature cannot be computed.
         If "ignore", silently skip that feature.
     copy : bool
         If True, works on a copy of the input DataFrame.
@@ -5413,179 +5142,155 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
         self.features_to_create = features_to_create
         self.features_to_keep = features_to_keep
         self.errors = errors
-        self.copy=copy
+        self.copy = copy
 
-    def features_required(self):    
-            dd = []
-            for v in self.features_to_create:
-                if v == "Fibre__g/m2_":
-                    dd.append("Current_basis_weight")
-                    dd.append("Current_reel_moisture_average(reel)")
-                    dd.append("Starch_uptake__g/m2_")
-                # elif v == "concentration_starch":
-                #     dd.append("Flow_starch_main_line_to_working_tank_1~^0")
-                #     dd.append("Flow_starch_main_line_to_working_tank_2~^0")
-                #     dd.append("Dilution_water_working_tank_1")
-                #     dd.append("Dilution_water_working_tank_2")
-                elif v == "Water_flow_Predryer":
-                    dd.append("Current_basis_weight")
-                    dd.append("Speed_PD1")
-                    dd.append("Current_reel_width")
-                    dd.append("Moisture_out_of_PreDryer")
-                elif v == "Water_flow_Predryer":
-                    dd.append("Current_basis_weight")
-                    dd.append("Speed_PD1")
-                    dd.append("Current_reel_width")
-                    dd.append("Moisture_out_of_PreDryer")
-                elif v == "Water_flow_Afterdryer":
-                    dd.append("Current_basis_weight")
-                    dd.append("Speed_PD1")
-                    dd.append("Current_reel_width")
-                    dd.append("Moisture_after_SpeedSizer")
-                    dd.append("Actual_moisture")
-                elif v == "Water_flow":
-                    dd.append("Current_basis_weight")
-                    dd.append("Speed_PD1")
-                    dd.append("Current_reel_width")
-                    dd.append("Moisture_out_of_PreDryer")
-                    dd.append("Moisture_after_SpeedSizer")
-                    dd.append("Actual_moisture")
-                elif v == "flow_diluted_starch":
-                    #dd.append("Flow_starch_main_line_to_working_tank_2~^0")
-                    dd.append("concentration_starch_working_tank_2")
-                    #dd.append("Flow_starch_main_line_to_working_tank_1~^0")
-                    dd.append("concentration_starch_working_tank_1")
-                    dd.append("Starch_uptake_by_paper_Bottom_Roll__g/m2_")
-                    dd.append("Starch_uptake_by_paper_Top_Roll__g/m2_")
+    def features_required(self):
+        dd = []
+        for v in self.features_to_create:
+            if v == "Fibre__g/m2_":
+                dd.append("Current_basis_weight")
+                dd.append("Current_reel_moisture_average(reel)")
+                dd.append("Starch_uptake__g/m2_")
 
-                elif v == "flow_diluted_starch_index":
-                    dd.append("Flow_starch_main_line_to_working_tank_2~^0")
-                    dd.append("concentration_starch_working_tank_2")
-                    dd.append("Flow_starch_main_line_to_working_tank_1~^0")
-                    dd.append("concentration_starch_working_tank_1")
-                    dd.append("Production_Rate__T/h_")
-                elif v =="Water_flow_Afterdryer_input":
-                    dd.append("Current_basis_weight")
-                    dd.append("Speed_PD1")
-                    dd.append("Current_reel_width")
-                    #dd.append("Flow_starch_main_line_to_working_tank_2~^0")
-                    dd.append("concentration_starch_working_tank_2")
-                    #dd.append("Flow_starch_main_line_to_working_tank_1~^0")
-                    dd.append("concentration_starch_working_tank_1")
-                    dd.append("Starch_uptake_by_paper_Bottom_Roll__g/m2_")
-                    dd.append("Starch_uptake_by_paper_Top_Roll__g/m2_")
-                elif v =="Water_flow_Afterdryer_output":
-                    dd.append("Current_basis_weight")
-                    dd.append("Speed_PD1")
-                    dd.append("Current_reel_width")
-                    dd.append("Current_reel_moisture_average(reel)")
-                    dd.append("Moisture_out_of_PreDryer")
-                    #dd.append("Actual_moisture")                    
-            return list(set(dd))
- 
-    # -------------------------
-    # sklearn API
-    # -------------------------
+            elif v == "Water_flow_Predryer":
+                dd.append("Current_basis_weight")
+                dd.append("Speed_PD1")
+                dd.append("Current_reel_width")
+                dd.append("Moisture_out_of_PreDryer")
+
+            elif v == "Water_flow_Afterdryer":
+                dd.append("Current_basis_weight")
+                dd.append("Speed_PD1")
+                dd.append("Current_reel_width")
+                dd.append("Moisture_after_SpeedSizer")
+                dd.append("Actual_moisture")
+
+            elif v == "Water_flow":
+                dd.append("Current_basis_weight")
+                dd.append("Speed_PD1")
+                dd.append("Current_reel_width")
+                dd.append("Moisture_out_of_PreDryer")
+                dd.append("Moisture_after_SpeedSizer")
+                dd.append("Actual_moisture")
+
+            elif v == "flow_diluted_starch":
+                dd.append("concentration_starch_working_tank_2")
+                dd.append("concentration_starch_working_tank_1")
+                dd.append("Starch_uptake_by_paper_Bottom_Roll__g/m2_")
+                dd.append("Starch_uptake_by_paper_Top_Roll__g/m2_")
+
+            elif v == "flow_diluted_starch_index":
+                dd.append("Flow_starch_main_line_to_working_tank_2~^0")
+                dd.append("concentration_starch_working_tank_2")
+                dd.append("Flow_starch_main_line_to_working_tank_1~^0")
+                dd.append("concentration_starch_working_tank_1")
+                dd.append("Production_Rate__T/h_")
+
+            elif v == "Water_flow_Afterdryer_input":
+                dd.append("Current_basis_weight")
+                dd.append("Speed_PD1")
+                dd.append("Current_reel_width")
+                dd.append("concentration_starch_working_tank_2")
+                dd.append("concentration_starch_working_tank_1")
+                dd.append("Starch_uptake_by_paper_Bottom_Roll__g/m2_")
+                dd.append("Starch_uptake_by_paper_Top_Roll__g/m2_")
+
+            elif v == "Water_flow_Afterdryer_output":
+                dd.append("Current_basis_weight")
+                dd.append("Speed_PD1")
+                dd.append("Current_reel_width")
+                dd.append("Current_reel_moisture_average(reel)")
+                dd.append("Moisture_out_of_PreDryer")
+
+            elif v == "inv_Rod_Pressure_Bottom_Roll":
+                dd.append("Rod_Pressure_Bottom_Roll")
+
+            elif v == "inv_Rod_pressure_Top_Roll":
+                dd.append("Rod_pressure_Top_Roll")
+
+            elif v == "square_Rod_Pressure_Bottom_Roll":
+                dd.append("Rod_Pressure_Bottom_Roll")
+
+            elif v == "square_Rod_pressure_Top_Roll":
+                dd.append("Rod_pressure_Top_Roll")
+
+        return list(set(dd))
+
     def fit(self, X, y=None):
-        import numpy as np
-
-        # Keep track of input feature names (sklearn convention)
         if hasattr(X, "columns"):
             self.feature_names_in_ = np.array(list(X.columns), dtype=object)
         else:
-            # If X is numpy and you want names, pass a DataFrame to the pipeline,
-            # or wrap numpy into a DataFrame before fitting.
             self.feature_names_in_ = None
         return self
- 
+
     def transform(self, X):
-        # Allow transform to be called even if someone forgot fit()
         if not hasattr(self, "feature_names_in_"):
             self.fit(X)
- 
+
         X_df = self._to_dataframe(X)
         if self.copy:
             X_df = X_df.copy()
- 
-        # Which engineered features were requested?
+
         registry = self._registry()
         requested = list(registry.keys()) if self.features_to_create is None else list(self.features_to_create)
- 
-        # Expand dependencies
+
         to_make = self._expand_with_deps(requested)
- 
+
         created = []
         for name in to_make:
             if name in X_df.columns:
-                continue  # do not overwrite
- 
+                continue
+
             fn = registry.get(name)
             if fn is None:
                 msg = f"Unknown engineered feature '{name}'. Available: {sorted(registry.keys())}"
                 if self.errors == "raise":
                     raise ValueError(msg)
-                else:
-                    continue
- 
+                continue
+
             try:
                 X_df = fn(X_df)
                 created.append(name)
-            except Exception as e:
+            except Exception:
                 if self.errors == "raise":
                     raise
-                # ignore
                 continue
- 
+
         self.created_features_ = created
+
+        if self.features_to_keep is None:
+            return X_df
         return X_df[self.features_to_keep]
- 
+
     def get_feature_names_out(self, input_features=None):
-        import numpy as np
-        # If input_features not given, use what we saw at fit time
-        # if input_features is None:
-        #     if getattr(self, "feature_names_in_", None) is not None:
-        #         input_features = list(self.feature_names_in_)
-        #     else:
-        #         input_features = []
- 
-        # registry = self._registry()
-        # requested = list(registry.keys()) if self.features_to_create is None else list(self.features_to_create)
-        # requested = self._expand_with_deps(requested)
- 
-        # out = list(input_features)
-        # for f in requested:
-        #     if f not in out:
-        #         out.append(f)
-        # return np.array(out, dtype=object)
+        if self.features_to_keep is None:
+            if getattr(self, "feature_names_in_", None) is not None:
+                return np.array(list(self.feature_names_in_), dtype=object)
+            return np.array([], dtype=object)
         return np.array(self.features_to_keep, dtype=object)
- 
-    # -------------------------
-    # Internal helpers
-    # -------------------------
+
     def _to_dataframe(self, X):
         if isinstance(X, pd.DataFrame):
             return X
         if getattr(self, "feature_names_in_", None) is None:
             raise ValueError(
                 "FeatureCreator received a numpy array without known column names. "
-                "Pass a pandas DataFrame into the pipeline (recommended) or ensure "
-                "feature_names_in_ is set by fitting with a DataFrame first."
+                "Pass a pandas DataFrame into the pipeline or fit with a DataFrame first."
             )
         return pd.DataFrame(X, columns=list(self.feature_names_in_))
- 
+
     @classmethod
     def _deps(cls):
-        # Dependencies between engineered features (engineered -> engineered)
         return {
             "Water_flow": ["Water_flow_Predryer", "Water_flow_Afterdryer"],
             "Water_flow_Afterdryer_input": ["flow_diluted_starch"],
         }
- 
+
     def _expand_with_deps(self, requested):
         deps = self._deps()
         seen = set()
         order = []
- 
+
         def visit(f):
             if f in seen:
                 return
@@ -5593,28 +5298,17 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             for d in deps.get(f, []):
                 visit(d)
             order.append(f)
- 
+
         for f in requested:
             visit(f)
         return order
- 
-    # -------------------------
-    # Engineered feature functions
-    # (STATIC / CLASS METHODS ONLY -> picklable)
-    # -------------------------
-    # @staticmethod
-    # def _add_concentration_starch(df: pd.DataFrame) -> pd.DataFrame:
-    #     df = df.copy()
-    #     num = df["Flow_starch_main_line_to_working_tank_1~^0"] + df["Flow_starch_main_line_to_working_tank_2~^0"]
-    #     den = (
-    #         df["Dilution_water_working_tank_2"]
-    #         + df["Dilution_water_working_tank_1"]
-    #         + df["Flow_starch_main_line_to_working_tank_1~^0"]
-    #         + df["Flow_starch_main_line_to_working_tank_2~^0"]
-    #     )
-    #     df["concentration_starch"] = num / den
-    #     return df
- 
+
+    @staticmethod
+    def _safe_inverse(series: pd.Series, eps: float = 1e-9) -> pd.Series:
+        s = pd.to_numeric(series, errors="coerce")
+        s = s.where(s.abs() > eps, np.nan)
+        return 1.0 / s
+
     @staticmethod
     def _add_fibre(df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
@@ -5623,7 +5317,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             - df["Starch_uptake__g/m2_"]
         )
         return df
- 
+
     @staticmethod
     def _add_water_flow_predryer(df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
@@ -5636,7 +5330,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             / 1e10
         )
         return df
- 
+
     @staticmethod
     def _add_water_flow_afterdryer(df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
@@ -5649,35 +5343,33 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             / 1e10
         )
         return df
- 
+
     @staticmethod
     def _add_water_flow(df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         df["Water_flow"] = df["Water_flow_Predryer"] + df["Water_flow_Afterdryer"]
         return df
- 
+
     @staticmethod
     def _add_flow_diluted_starch(df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
-        # df["flow_diluted_starch"] = (
-        #     df["Flow_starch_main_line_to_working_tank_2~^0"] / df["concentration_starch_working_tank_2"]
-        #     + df["Flow_starch_main_line_to_working_tank_1~^0"] / df["concentration_starch_working_tank_1"]
-        # )
         df["flow_diluted_starch"] = (
             df["Starch_uptake_by_paper_Top_Roll__g/m2_"] / df["concentration_starch_working_tank_2"]
             + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] / df["concentration_starch_working_tank_1"]
         )
         return df
-    
+
     @staticmethod
     def _add_flow_diluted_starch_index(df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         df["flow_diluted_starch_index"] = (
-            (df["Flow_starch_main_line_to_working_tank_2~^0"] / df["concentration_starch_working_tank_2"]
-            + df["Flow_starch_main_line_to_working_tank_1~^0"] / df["concentration_starch_working_tank_1"])/df['Production_Rate__T/h_']
+            (
+                df["Flow_starch_main_line_to_working_tank_2~^0"] / df["concentration_starch_working_tank_2"]
+                + df["Flow_starch_main_line_to_working_tank_1~^0"] / df["concentration_starch_working_tank_1"]
+            ) / df["Production_Rate__T/h_"]
         )
         return df
- 
+
     @staticmethod
     def _add_water_flow_afterdryer_input(df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
@@ -5690,7 +5382,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             / 1e10
         )
         return df
- 
+
     @staticmethod
     def _add_water_flow_afterdryer_output(df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
@@ -5698,17 +5390,43 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             df["Current_basis_weight"]
             * df["Speed_PD1"]
             * df["Current_reel_width"]
-            * (df["Current_reel_moisture_average(reel)"]-df["Moisture_out_of_PreDryer"])
+            * (df["Current_reel_moisture_average(reel)"] - df["Moisture_out_of_PreDryer"])
             * 60
             / 1e10
         )
         return df
- 
+
+    @staticmethod
+    def _add_inv_rod_pressure_bottom_roll(df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        df["inv_Rod_Pressure_Bottom_Roll"] = FeatureCreator._safe_inverse(df["Rod_Pressure_Bottom_Roll"])
+        return df
+
+    @staticmethod
+    def _add_inv_rod_pressure_top_roll(df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        df["inv_Rod_pressure_Top_Roll"] = FeatureCreator._safe_inverse(df["Rod_pressure_Top_Roll"])
+        return df
+
+    @staticmethod
+    def _add_square_rod_pressure_bottom_roll(df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        df["square_Rod_Pressure_Bottom_Roll"] = pd.to_numeric(
+            df["Rod_Pressure_Bottom_Roll"], errors="coerce"
+        ) ** 2
+        return df
+
+    @staticmethod
+    def _add_square_rod_pressure_top_roll(df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        df["square_Rod_pressure_Top_Roll"] = pd.to_numeric(
+            df["Rod_pressure_Top_Roll"], errors="coerce"
+        ) ** 2
+        return df
+
     @classmethod
     def _registry(cls):
-        # IMPORTANT: references are to class methods (picklable), not local functions
         return {
-            #"concentration_starch": cls._add_concentration_starch,
             "Fibre__g/m2_": cls._add_fibre,
             "Water_flow_Predryer": cls._add_water_flow_predryer,
             "Water_flow_Afterdryer": cls._add_water_flow_afterdryer,
@@ -5717,8 +5435,12 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             "flow_diluted_starch_index": cls._add_flow_diluted_starch_index,
             "Water_flow_Afterdryer_input": cls._add_water_flow_afterdryer_input,
             "Water_flow_Afterdryer_output": cls._add_water_flow_afterdryer_output,
+            "inv_Rod_Pressure_Bottom_Roll": cls._add_inv_rod_pressure_bottom_roll,
+            "inv_Rod_pressure_Top_Roll": cls._add_inv_rod_pressure_top_roll,
+            "square_Rod_Pressure_Bottom_Roll": cls._add_square_rod_pressure_bottom_roll,
+            "square_Rod_pressure_Top_Roll": cls._add_square_rod_pressure_top_roll,
         }
-    
+        
 def calculate_manual_shap(model, X_sample, grade_id=None, X_reference=None, grade_col=None):
     """
     SHAP (using shap library) for NON-linear pipelines, computed per grade to avoid grade-mix bias.
@@ -6461,3 +6183,5 @@ def bounds_to_cobyla_constraints(bounds, n_vars=None):
             # hi - x[i] >= 0
             cons.append({"type": "ineq", "fun": (lambda i=i, hi=hi: lambda x: hi - x[i])()})
     return cons
+
+
