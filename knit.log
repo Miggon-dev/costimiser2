@@ -2135,3 +2135,2474 @@ According to [papermaking_science_technology.pdf:d6f6f20ccb65b658:4602:0], "A ch
 **Key Variables & Purpose:**
 - **Vacuum uhle-box bottom felt** (Press Section): Vacuum level for water removal through felt
 - **Linepressur
+2026-04-05 21:23:07,252 ERROR: Failure in drilldown_analysis_plot_fibre_6010085_cost_driver chunk
+Traceback (most recent call last):
+  File "<string>", line 8, in <module>
+NameError: name 'starch_cost' is not defined. Did you mean: 'steam_cost'?
+2026-04-05 21:26:34,163 ERROR: Error importing optional module IPython.core.display
+Traceback (most recent call last):
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\_plotly_utils\optional_imports.py", line 28, in get_module
+    return import_module(name)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\importlib\__init__.py", line 88, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1310, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1310, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 1026, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\IPython\__init__.py", line 57, in <module>
+    from .terminal.embed import embed
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\IPython\terminal\embed.py", line 16, in <module>
+    from IPython.terminal.interactiveshell import TerminalInteractiveShell
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\IPython\terminal\interactiveshell.py", line 49, in <module>
+    from .debugger import TerminalPdb, Pdb
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\IPython\terminal\debugger.py", line 6, in <module>
+    from IPython.core.completer import IPCompleter
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\IPython\core\completer.py", line 260, in <module>
+    import jedi
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\jedi\__init__.py", line 32, in <module>
+    from jedi.api import Script, Interpreter, set_debug_function, preload_module
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\jedi\api\__init__.py", line 21, in <module>
+    from jedi.api import classes
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\jedi\api\classes.py", line 24, in <module>
+    from jedi.inference.utils import unite
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\jedi\inference\__init__.py", line 70, in <module>
+    from jedi.inference import imports
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\jedi\inference\imports.py", line 29, in <module>
+    from jedi.inference.gradual.typeshed import import_module_decorator, \
+        create_stub_module, parse_stub_module
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\jedi\inference\gradual\typeshed.py", line 12, in <module>
+    from jedi.inference.gradual.stub_value import TypingModuleWrapper, StubModuleValue
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\jedi\inference\gradual\stub_value.py", line 2, in <module>
+    from jedi.inference.value.module import ModuleValue
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 122, in _find_and_load_hook
+    return _run_hook(name, _hook)
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 96, in _run_hook
+    module = hook()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\R\R-4.5.1\library\reticulate\python\rpytools\loader.py", line 120, in _hook
+    return _find_and_load(name, import_)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\jedi\inference\value\__init__.py", line 4, in <module>
+    from jedi.inference.value.module import ModuleValue
+MemoryError
+2026-04-05 21:28:43,280 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-05 21:28:56,639 ERROR: Failure in drilldown_analysis_plot_fibre_6010085_cost_driver chunk
+Traceback (most recent call last):
+  File "<string>", line 8, in <module>
+NameError: name 'starch_cost' is not defined. Did you mean: 'steam_cost'?
+2026-04-05 21:34:11,621 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-05 21:34:12,716 ERROR: Failure in data chunk
+Traceback (most recent call last):
+  File "<string>", line 60, in <module>
+NameError: name 'make_models_cost' is not defined. Did you mean: 'make_model_cost'?
+2026-04-05 21:34:25,298 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-05 21:34:32,378 ERROR: Failure in drilldown_analysis_plot_fibre_6010085_cost_driver chunk
+Traceback (most recent call last):
+  File "<string>", line 8, in <module>
+NameError: name 'starch_cost' is not defined. Did you mean: 'steam_cost'?
+2026-04-05 21:35:36,276 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-05 21:35:59,455 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-05 21:36:08,864 INFO: Fibre_cost__€/T_
+2026-04-05 21:36:20,407 INFO: Steam__€/T_
+2026-04-05 21:37:23,015 INFO: Electricity__€/T_
+2026-04-05 21:37:42,053 INFO: Starch__€/T_
+2026-04-05 21:38:11,732 INFO: Fibre_cost__€/T_
+2026-04-05 21:38:23,204 INFO: Steam__€/T_
+2026-04-05 21:39:24,200 INFO: Electricity__€/T_
+2026-04-05 21:39:41,218 INFO: Starch__€/T_
+2026-04-05 21:40:09,656 INFO: Fibre_cost__€/T_
+2026-04-05 21:40:21,258 INFO: Steam__€/T_
+2026-04-05 21:41:22,354 INFO: Electricity__€/T_
+2026-04-05 21:41:40,041 INFO: Starch__€/T_
+2026-04-05 21:42:12,975 INFO: Fibre_cost__€/T_
+2026-04-05 21:42:26,157 INFO: Steam__€/T_
+2026-04-05 21:43:33,439 INFO: Electricity__€/T_
+2026-04-05 21:43:53,472 INFO: Starch__€/T_
+2026-04-05 21:44:16,718 INFO [llm] === Entering llm chunk ===
+2026-04-05 21:44:16,721 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-05 21:44:16,724 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-05 21:44:16,737 INFO [llm] boto3 session created
+2026-04-05 21:44:17,058 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-05 21:44:18,214 INFO [botocore.tokens] SSO Token refresh succeeded
+2026-04-05 21:44:19,595 INFO [llm] Credentials available: True
+2026-04-05 21:44:19,595 INFO [llm] Access key prefix: ASIA3M***
+2026-04-05 21:44:19,629 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-05 21:44:19,630 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-05 21:44:19,630 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-05 21:44:19,735 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-05 21:44:22,641 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-05 21:44:22,641 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-05 21:44:22,827 INFO [llm] === Entering summary chunk ===
+2026-04-05 21:44:22,830 INFO [llm] LANG: en
+2026-04-05 21:44:22,831 INFO [llm] descriptions count: 22
+2026-04-05 21:44:22,831 INFO [llm] non-empty descriptions count: 22
+2026-04-05 21:44:22,831 INFO [llm] prompt_body length: 6551
+2026-04-05 21:44:22,831 INFO [llm] prompt preview: For all considered grades, TOTAL cost saw a decrease of 1.32 €/t, resulting in 279.55 €/t.
+
+Breaking down the overall cost change, +1.68 €/t was driven by a more expensive mix of grades, and -3.00 €/t was due to an improvement in the process..For grade 3200115, TOTAL cost saw a decrease of 3.45 €/t, resulting in 274.13 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 5.62 €/t, resulting in 284.61 €/t.
+
+For grade 6010100, TOTAL cost saw a decrease of 1.60 €/t, resulting in 285.43 €/t.
+
+For grade 6010120, TOTAL cost saw a decrease of 1.41 €/t, resulting in 275.01 €/t.
+
+Looking across individual grades, the strongest cost decrease was observed for grade 6010085 (-5.62 €/t). These movements stand out and may require further investigation..Average change by component:
+
+- **Starch__€/T_** decreased on average (-1.48 €/t).
+
+- **Steam__€/T_** decreased on average (-1.06 €/t).
+
+- **Chemicals__€/T_** decreased on average (-1.05 €/t).
+
+- **Fibre_cost__€/T_** increased on average (+0.62 €/t).
+
+- **Electricity__€/T_** decreased on average (-0.05 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Fibre_cost__€/T_** (+0.62 €/t on average), with the highest increase in grade 6010100 (+0.70 €/t) and the largest average decrease comes from **Starch__€/T_** (-1.48 €/t on average), with the biggest drop in grade 3200115 (-1.72 €/t). These components stand out and may require further investigation..For all considered grades, TOTAL overprocessing saw an increase of 0.81 %, resulting in 7.48 %..For grade 3200115, TOTAL overprocessing saw a decrease of 0.71 %, resulting in 8.05 %.
+
+For grade 6010085, TOTAL overprocessing saw a decrease of 0.99 %, resulting in 6.32 %.
+
+For grade 6010100, TOTAL overprocessing saw an increase of 3.52 %, resulting in 12.81 %.
+
+For grade 6010120, TOTAL overprocessing saw an increase of 0.90 %, resulting in 5.56 %.
+
+Looking across individual grades, the strongest overprocessing increase was observed for grade 
+2026-04-05 21:44:22,831 INFO [llm] final prompt length: 6730
+2026-04-05 21:44:22,831 INFO [llm] Calling rag.ask(prompt)
+2026-04-05 21:47:24,846 INFO [llm] rag.ask returned object type: <class 'dict'>
+2026-04-05 21:47:24,846 INFO [llm] rag.ask returned repr: {'answer': '# SUMMARY, DIAGNOSIS AND ACTION PLAN\n\n## Executive Summary\n\nThe overall production performance shows a **positive cost reduction of 1.32 €/t** (to 279.55 €/t), driven by **process improvements (-3.00 €/t)** that more than offset the impact of a more expensive grade mix (+1.68 €/t). However, this improvement is accompanied by a concerning **increase in overprocessing (+0.81%)**, indicating that quality targets are being exceeded unnecessarily, particularly for grade 6010100.\n\n**Key Variables by Section** (from [data_glossary.csv:e633305a49e7e154:1:0]):\n- **Cost Section**: Starch, Steam, Chemicals, Fibre cost, Electricity costs\n- **Size Press Section**: Starch uptake, concentration, application rates\n- **Pre/After Dryer Sections**: Steam pressures, temperatures, moisture levels\n- **Scanner Section**: Speed, moisture measurements\n- **Press Section**: Vacuum levels, dewatering efficiency\n\n---\n\n## Detailed Diagnosis\n\n### Cost Performance Analysis\n\n**Overall Trends:**\n- **Starch costs** decreased most significantly (-1.48 €/t average), with grade 3200115 showing the largest reduction (-1.72 €/t)\n- **Steam costs** reduced by -1.06 €/t on average\n- **Chemicals costs** decreased by -1.05 €/t\n- **Fibre costs** increased by +0.62 €/t (concerning trend)\n- **Electricity costs** marginally decreased (-0.05 €/t)\n\n**Grade-Specific Performance:**\n- **Grade 6010085**: Best performer with -5.62 €/t reduction\n- **Grade 3200115**: Strong reduction of -3.45 €/t\n- **Grade 6010100**: Moderate reduction of -1.60 €/t but highest overprocessing issue\n- **Grade 6010120**: Smallest reduction of -1.41 €/t\n\n### Overprocessing Analysis\n\n**Critical Finding:** While costs decreased, overprocessing increased to 7.48%, indicating inefficient quality management.\n\n**By Grade:**\n- **Grade 6010100**: Severe overprocessing increase (+3.52% to 12.81%) - **REQUIRES IMMEDIATE ATTENTION**\n- **Grade 6010120**: Moderate increase (+0.90% to 5.56%)\n- **Grade 3200115**: Improved (-0.71% to 8.05%)\n- **Grade 6010085**: Best improvement (-0.99% to 6.32%)\n\n**Quality Components:**\n- **CMT30** (compression strength): Increased +2.84% on average, highest in grade 6010100 (+4.23%)\n- **Burst strength**: Decreased -0.72% on average\n- **SCT_CD** (cross-direction strength): Increased +0.36%\n\n### Root Cause Analysis by Grade\n\n**Grade 6010085** (Best Cost Performance):\n- **Cost Reducers**: Lower DG4 inlet air temperature (-12.03°C), increased dissolved gas (+0.25), reduced starch concentration (-0.07%), lower moisture after SpeedSizer (-0.89%)\n- **Cost Increasers**: Higher dewatering suction (+176.09 units), lower vacuum uhle-box (-0.02), decreased starch uptake (-0.86 g/m²)\n- **Diagnosis**: Improved drying efficiency and dewatering optimization\n\n**Grade 3200115**:\n- **Cost Reducers**: Increased speed (+76.96 m/min), reduced bottom roll starch (-0.42 g/m²), lower starch concentration (-0.06%), reduced moisture after SpeedSizer (-0.49%)\n- **Cost Increasers**: Cylinder pressure issues (40-53 differential +0.02, cylinder 37 pressure -0.26), reduced vacuum (-0.05), decreased starch uptake (-0.38 g/m²)\n- **Diagnosis**: Speed optimization successful but drying section showing instability\n\n**Grade 6010100** (Highest Overprocessing):\n- **Cost Reducers**: Major speed increase (+164.63 m/min), reduced vacuum (-0.13), lower starch applications (top -1.13, bottom -0.59 g/m²), improved lip settings (-1.32), reduced moisture after SpeedSizer (-1.69%)\n- **Cost Increasers**: Decreased shoe press pressure (-0.12 bar), increased DG4 temperature (+24.59°C), excessive starch uptake reduction (-2.69 g/m²)\n- **Diagnosis**: Aggressive speed increase causing quality compensation through overprocessing; drying section running too hot\n\n**Grade 6010120**:\n- **Cost Reducers**: Reduced bottom roll starch (-0.73 g/m²), speed increase (+55.33 m/min), lower starch concentration (-0.17%)\n- **Cost Increasers**: Lower reel moisture (-0.21%), reduc
+2026-04-05 21:47:24,846 INFO [llm] answer length: 10342
+2026-04-05 21:47:24,847 INFO [llm] answer preview: # SUMMARY, DIAGNOSIS AND ACTION PLAN
+
+## Executive Summary
+
+The overall production performance shows a **positive cost reduction of 1.32 €/t** (to 279.55 €/t), driven by **process improvements (-3.00 €/t)** that more than offset the impact of a more expensive grade mix (+1.68 €/t). However, this improvement is accompanied by a concerning **increase in overprocessing (+0.81%)**, indicating that quality targets are being exceeded unnecessarily, particularly for grade 6010100.
+
+**Key Variables by Section** (from [data_glossary.csv:e633305a49e7e154:1:0]):
+- **Cost Section**: Starch, Steam, Chemicals, Fibre cost, Electricity costs
+- **Size Press Section**: Starch uptake, concentration, application rates
+- **Pre/After Dryer Sections**: Steam pressures, temperatures, moisture levels
+- **Scanner Section**: Speed, moisture measurements
+- **Press Section**: Vacuum levels, dewatering efficiency
+
+---
+
+## Detailed Diagnosis
+
+### Cost Performance Analysis
+
+**Overall Trends:**
+- **Starch costs** decreased most significantly (-1.48 €/t average), with grade 3200115 showing the largest reduction (-1.72 €/t)
+- **Steam costs** reduced by -1.06 €/t on average
+- **Chemicals costs** decreased by -1.05 €/t
+- **Fibre costs** increased by +0.62 €/t (concerning trend)
+- **Electricity costs** marginally decreased (-0.05 €/t)
+
+**Grade-Specific Performance:**
+- **Grade 6010085**: Best performer with -5.62 €/t reduction
+- **Grade 3200115**: Strong reduction of -3.45 €/t
+- **Grade 6010100**: Moderate reduction of -1.60 €/t but highest overprocessing issue
+- **Grade 6010120**: Smallest reduction of -1.41 €/t
+
+### Overprocessing Analysis
+
+**Critical Finding:** While costs decreased, overprocessing increased to 7.48%, indicating inefficient quality management.
+
+**By Grade:**
+- **Grade 6010100**: Severe overprocessing increase (+3.52% to 12.81%) - **REQUIRES IMMEDIATE ATTENTION**
+- **Grade 6010120**: Moderate increase (+0.90% to 5.56%)
+- **Grade 3200115**: Improved (-0.71% to 8.05%)
+- **Grade 6010085*
+2026-04-05 21:51:52,725 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-05 21:52:29,479 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-05 21:52:41,485 INFO: Fibre_cost__€/T_
+2026-04-05 21:52:52,822 INFO: Steam__€/T_
+2026-04-05 21:53:59,446 INFO: Electricity__€/T_
+2026-04-05 21:54:18,821 INFO: Starch__€/T_
+2026-04-05 21:54:48,537 INFO: Fibre_cost__€/T_
+2026-04-05 21:54:59,380 INFO: Steam__€/T_
+2026-04-05 21:56:00,763 INFO: Electricity__€/T_
+2026-04-05 21:56:17,619 INFO: Starch__€/T_
+2026-04-05 21:56:48,314 INFO: Fibre_cost__€/T_
+2026-04-05 21:57:00,811 INFO: Steam__€/T_
+2026-04-05 21:58:00,052 INFO: Electricity__€/T_
+2026-04-05 21:58:17,017 INFO: Starch__€/T_
+2026-04-05 21:58:49,163 INFO: Fibre_cost__€/T_
+2026-04-05 21:59:01,409 INFO: Steam__€/T_
+2026-04-05 22:00:02,672 INFO: Electricity__€/T_
+2026-04-05 22:00:21,972 INFO: Starch__€/T_
+2026-04-05 22:00:42,698 INFO [llm] === Entering llm chunk ===
+2026-04-05 22:00:42,702 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-05 22:00:42,707 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-05 22:00:42,721 INFO [llm] boto3 session created
+2026-04-05 22:00:43,101 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-05 22:00:44,362 INFO [llm] Credentials available: True
+2026-04-05 22:00:44,362 INFO [llm] Access key prefix: ASIA3M***
+2026-04-05 22:00:44,369 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-05 22:00:44,369 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-05 22:00:44,369 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-05 22:00:44,455 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-05 22:00:44,829 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-05 22:00:44,829 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-05 22:00:45,044 INFO [llm] === Entering summary chunk ===
+2026-04-05 22:00:45,048 INFO [llm] LANG: en
+2026-04-05 22:00:45,048 INFO [llm] descriptions count: 22
+2026-04-05 22:00:45,048 INFO [llm] non-empty descriptions count: 22
+2026-04-05 22:00:45,048 INFO [llm] prompt_body length: 6551
+2026-04-05 22:00:45,048 INFO [llm] prompt preview: For all considered grades, TOTAL cost saw a decrease of 1.32 €/t, resulting in 279.55 €/t.
+
+Breaking down the overall cost change, +1.68 €/t was driven by a more expensive mix of grades, and -3.00 €/t was due to an improvement in the process..For grade 3200115, TOTAL cost saw a decrease of 3.45 €/t, resulting in 274.13 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 5.62 €/t, resulting in 284.61 €/t.
+
+For grade 6010100, TOTAL cost saw a decrease of 1.60 €/t, resulting in 285.43 €/t.
+
+For grade 6010120, TOTAL cost saw a decrease of 1.41 €/t, resulting in 275.01 €/t.
+
+Looking across individual grades, the strongest cost decrease was observed for grade 6010085 (-5.62 €/t). These movements stand out and may require further investigation..Average change by component:
+
+- **Starch__€/T_** decreased on average (-1.48 €/t).
+
+- **Steam__€/T_** decreased on average (-1.06 €/t).
+
+- **Chemicals__€/T_** decreased on average (-1.05 €/t).
+
+- **Fibre_cost__€/T_** increased on average (+0.62 €/t).
+
+- **Electricity__€/T_** decreased on average (-0.05 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Fibre_cost__€/T_** (+0.62 €/t on average), with the highest increase in grade 6010100 (+0.70 €/t) and the largest average decrease comes from **Starch__€/T_** (-1.48 €/t on average), with the biggest drop in grade 3200115 (-1.72 €/t). These components stand out and may require further investigation..For all considered grades, TOTAL overprocessing saw an increase of 0.81 %, resulting in 7.48 %..For grade 3200115, TOTAL overprocessing saw a decrease of 0.71 %, resulting in 8.05 %.
+
+For grade 6010085, TOTAL overprocessing saw a decrease of 0.99 %, resulting in 6.32 %.
+
+For grade 6010100, TOTAL overprocessing saw an increase of 3.52 %, resulting in 12.81 %.
+
+For grade 6010120, TOTAL overprocessing saw an increase of 0.90 %, resulting in 5.56 %.
+
+Looking across individual grades, the strongest overprocessing increase was observed for grade 
+2026-04-05 22:00:45,048 INFO [llm] final prompt length: 6730
+2026-04-05 22:00:45,048 INFO [llm] Calling rag.ask(prompt)
+2026-04-05 22:03:38,085 INFO [llm] rag.ask returned object type: <class 'dict'>
+2026-04-05 22:03:38,086 INFO [llm] rag.ask returned repr: {'answer': '# Summary, Diagnosis, and Action Plan\n\n## Executive Summary\n\nThe operation achieved an overall cost reduction of 1.32 €/t (resulting in 279.55 €/t total cost) despite a more expensive grade mix (+1.68 €/t), thanks to significant process improvements (-3.00 €/t). However, overprocessing increased by 0.81% to 7.48%, indicating quality control challenges. Grade 6010085 showed the strongest cost performance (-5.62 €/t), while grade 6010100 exhibited concerning overprocessing (+3.52%) and requires immediate attention.\n\n---\n\n## Detailed Diagnosis by Section\n\n### Cost Performance Analysis\n\n**Overall Cost Components:**\n- **Starch__€/T** (Size Press section): Largest decrease at -1.48 €/t average, with grade 3200115 showing -1.72 €/t\n- **Steam__€/T** (Pre Dryier & After Dryier sections): Decreased -1.06 €/t average\n- **Chemicals__€/T** (Cost section): Decreased -1.05 €/t average\n- **Fibre_cost__€/T** (Cost section): Increased +0.62 €/t average, highest in grade 6010100 (+0.70 €/t)\n- **Electricity__€/T** (Pre Dryier section): Minimal decrease at -0.05 €/t\n\n**Grade-Specific Performance:**\n- **Grade 6010085**: Best performer with -5.62 €/t reduction\n- **Grade 3200115**: Strong reduction of -3.45 €/t\n- **Grade 6010100**: Moderate reduction of -1.60 €/t but concerning overprocessing\n- **Grade 6010120**: Reduction of -1.41 €/t\n\n### Quality Control Issues (Overprocessing)\n\n**Overprocessing Components (Scanner section):**\n- **CMT30**: Increased +2.84% average, highest in grade 6010100 (+4.23%)\n- **Burst**: Decreased -0.72% average, largest drop in grade 3200115\n- **SCT_CD**: Increased +0.36% average\n\n**Critical Finding:** Grade 6010100 shows 12.81% total overprocessing (+3.52% increase), indicating excessive quality margins that increase costs unnecessarily [papermaking_science_technology.pdf:d6f6f20ccb65b658:3395:0].\n\n### Process Section Analysis\n\n#### Size Press Section\n**Key Variables:** Starch uptake g/m2, Starch uptake by paper Top/Bottom Roll g/m2, Concentration starch working tank 1, Moisture after SpeedSizer\n\n**Findings:**\n- Decreased starch uptake correlates with cost increases across all grades\n- Grade 6010100 shows largest starch uptake decrease (-2.69 g/m2)\n- Reduced concentration in starch working tank 1 consistently drives cost reduction\n- Lower moisture after SpeedSizer reduces costs (grade 6010100: -1.69%)\n\n#### Pre Dryier Section\n**Key Variables:** Speed, Speed PD1, Vacuum uhle-box bottom felt, Linepressure shoe press bar, Lip settings\n\n**Findings:**\n- Speed increases strongly correlate with cost reduction (grade 6010100: +162.10 m/min)\n- Decreased vacuum uhle-box bottom felt reduces costs\n- Reduced linepressure shoe press bar increases costs\n- Optimized lip settings contribute to cost reduction (grade 6010100: -1.32)\n\n#### After Dryier Section\n**Key Variables:** DG4 Temperature Inlet Air, Cylinder steam pressures, Cylinder differential pressures\n\n**Findings:**\n- Lower DG4 inlet air temperature reduces costs (grade 6010085: -12.03°C)\n- Increased DG4 temperature increases costs (grades 6010100, 6010120: +24-26°C)\n- Cylinder pressure optimization varies by grade, requiring careful management [papermaking_science_technology.pdf:d6f6f20ccb65b658:4601:0]\n\n#### Press Section\n**Key Variables:** Dewatering top wire suction box zone 2, Dissolved gas before dilution water deculator\n\n**Findings:**\n- Increased dewatering suction (+176.09) paradoxically increases costs for grade 6010085\n- Improved dissolved gas management (+0.25) reduces costs\n\n#### Scanner Section\n**Key Variables:** Current reel moisture average, Moisture before SpeedSizer\n\n**Findings:**\n- Decreased reel moisture (grade 6010120: -0.21%) increases costs, suggesting over-drying\n- Moisture profile optimization critical for cost-quality balance\n\n---\n\n## Root Cause Analysis\n\n### Primary Issues\n\n1. **Grade 6010100 Overprocessing Crisis**: 12.81% overprocessing driven by excessive CMT30
+2026-04-05 22:03:38,086 INFO [llm] answer length: 10280
+2026-04-05 22:03:38,086 INFO [llm] answer preview: # Summary, Diagnosis, and Action Plan
+
+## Executive Summary
+
+The operation achieved an overall cost reduction of 1.32 €/t (resulting in 279.55 €/t total cost) despite a more expensive grade mix (+1.68 €/t), thanks to significant process improvements (-3.00 €/t). However, overprocessing increased by 0.81% to 7.48%, indicating quality control challenges. Grade 6010085 showed the strongest cost performance (-5.62 €/t), while grade 6010100 exhibited concerning overprocessing (+3.52%) and requires immediate attention.
+
+---
+
+## Detailed Diagnosis by Section
+
+### Cost Performance Analysis
+
+**Overall Cost Components:**
+- **Starch__€/T** (Size Press section): Largest decrease at -1.48 €/t average, with grade 3200115 showing -1.72 €/t
+- **Steam__€/T** (Pre Dryier & After Dryier sections): Decreased -1.06 €/t average
+- **Chemicals__€/T** (Cost section): Decreased -1.05 €/t average
+- **Fibre_cost__€/T** (Cost section): Increased +0.62 €/t average, highest in grade 6010100 (+0.70 €/t)
+- **Electricity__€/T** (Pre Dryier section): Minimal decrease at -0.05 €/t
+
+**Grade-Specific Performance:**
+- **Grade 6010085**: Best performer with -5.62 €/t reduction
+- **Grade 3200115**: Strong reduction of -3.45 €/t
+- **Grade 6010100**: Moderate reduction of -1.60 €/t but concerning overprocessing
+- **Grade 6010120**: Reduction of -1.41 €/t
+
+### Quality Control Issues (Overprocessing)
+
+**Overprocessing Components (Scanner section):**
+- **CMT30**: Increased +2.84% average, highest in grade 6010100 (+4.23%)
+- **Burst**: Decreased -0.72% average, largest drop in grade 3200115
+- **SCT_CD**: Increased +0.36% average
+
+**Critical Finding:** Grade 6010100 shows 12.81% total overprocessing (+3.52% increase), indicating excessive quality margins that increase costs unnecessarily [papermaking_science_technology.pdf:d6f6f20ccb65b658:3395:0].
+
+### Process Section Analysis
+
+#### Size Press Section
+**Key Variables:** Starch uptake g/m2, Starch uptake by paper Top/Bottom Roll g/m2, Concentration starch working
+2026-04-06 06:34:55,232 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 06:34:55,236 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 06:34:55,239 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 06:35:36,495 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 06:35:36,499 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 06:35:36,503 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 06:35:50,028 INFO: Fibre_cost__€/T_
+2026-04-06 06:36:04,614 INFO: Steam__€/T_
+2026-04-06 06:37:31,497 INFO: Electricity__€/T_
+2026-04-06 06:37:51,941 INFO: Starch__€/T_
+2026-04-06 06:38:27,209 INFO: Fibre_cost__€/T_
+2026-04-06 06:38:40,183 INFO: Steam__€/T_
+2026-04-06 06:39:51,457 INFO: Electricity__€/T_
+2026-04-06 06:40:17,900 INFO: Starch__€/T_
+2026-04-06 06:41:00,947 INFO: Fibre_cost__€/T_
+2026-04-06 06:41:16,529 INFO: Steam__€/T_
+2026-04-06 06:42:29,273 INFO: Electricity__€/T_
+2026-04-06 06:42:46,657 INFO: Starch__€/T_
+2026-04-06 06:43:19,568 INFO: Fibre_cost__€/T_
+2026-04-06 06:43:31,383 INFO: Steam__€/T_
+2026-04-06 06:44:36,231 INFO: Electricity__€/T_
+2026-04-06 06:44:55,230 INFO: Starch__€/T_
+2026-04-06 06:45:16,447 INFO [llm] === Entering llm chunk ===
+2026-04-06 06:45:16,453 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 06:45:16,456 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-06 06:45:16,468 INFO [llm] boto3 session created
+2026-04-06 06:45:16,754 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-06 06:45:17,914 INFO [llm] Credentials available: True
+2026-04-06 06:45:17,914 INFO [llm] Access key prefix: ASIA3M***
+2026-04-06 06:45:17,951 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-06 06:45:17,951 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-06 06:45:17,951 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-06 06:45:18,175 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-06 06:45:18,723 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-06 06:45:18,723 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-06 06:45:19,451 INFO [llm] === Entering summary chunk ===
+2026-04-06 06:45:19,454 INFO [llm] LANG: en
+2026-04-06 06:45:19,455 INFO [llm] descriptions count: 22
+2026-04-06 06:45:19,455 INFO [llm] non-empty descriptions count: 22
+2026-04-06 06:45:19,455 INFO [llm] prompt_body length: 6672
+2026-04-06 06:45:19,455 INFO [llm] prompt preview: For all considered grades, TOTAL cost saw a decrease of 1.62 €/t, resulting in 279.25 €/t.
+
+Breaking down the overall cost change, +1.14 €/t was driven by a more expensive mix of grades, and -2.76 €/t was due to an improvement in the process..For grade 3200115, TOTAL cost saw a decrease of 2.29 €/t, resulting in 275.30 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 5.62 €/t, resulting in 284.61 €/t.
+
+For grade 6010100, TOTAL cost saw a decrease of 1.60 €/t, resulting in 285.43 €/t.
+
+For grade 6010120, TOTAL cost saw a decrease of 1.41 €/t, resulting in 275.01 €/t.
+
+Looking across individual grades, the strongest cost decrease was observed for grade 6010085 (-5.62 €/t). These movements stand out and may require further investigation..Average change by component:
+
+- **Starch__€/T_** decreased on average (-1.17 €/t).
+
+- **Chemicals__€/T_** decreased on average (-1.07 €/t).
+
+- **Steam__€/T_** decreased on average (-1.07 €/t).
+
+- **Fibre_cost__€/T_** increased on average (+0.60 €/t).
+
+- **Electricity__€/T_** decreased on average (-0.01 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Fibre_cost__€/T_** (+0.60 €/t on average), with the highest increase in grade 6010100 (+0.70 €/t) and the largest average decrease comes from **Starch__€/T_** (-1.17 €/t on average), with the biggest drop in grade 6010120 (-1.61 €/t). These components stand out and may require further investigation..For all considered grades, TOTAL overprocessing saw an increase of 0.56 %, resulting in 7.23 %..For grade 3200115, TOTAL overprocessing saw a decrease of 1.95 %, resulting in 6.81 %.
+
+For grade 6010085, TOTAL overprocessing saw a decrease of 0.99 %, resulting in 6.32 %.
+
+For grade 6010100, TOTAL overprocessing saw an increase of 3.52 %, resulting in 12.81 %.
+
+For grade 6010120, TOTAL overprocessing saw an increase of 0.90 %, resulting in 5.56 %.
+
+Looking across individual grades, the strongest overprocessing increase was observed for grade 
+2026-04-06 06:45:19,455 INFO [llm] final prompt length: 6851
+2026-04-06 06:45:19,455 INFO [llm] Calling rag.ask(prompt)
+2026-04-06 06:50:35,507 ERROR [llm] Failure in summary chunk
+Traceback (most recent call last):
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connection.py", line 516, in getresponse
+    httplib_response = super().getresponse()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 1430, in getresponse
+    response.begin()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 331, in begin
+    version, status, reason = self._read_status()
+                              ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 292, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\socket.py", line 719, in readinto
+    return self._sock.recv_into(b)
+           ~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\ssl.py", line 1304, in recv_into
+    return self.read(nbytes, buffer)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\ssl.py", line 1138, in read
+    return self._sslobj.read(len, buffer)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+TimeoutError: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\httpsession.py", line 465, in send
+    urllib_response = conn.urlopen(
+        method=request.method,
+    ...<7 lines>...
+        chunked=self._chunked(request.headers),
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\util\retry.py", line 449, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\util\util.py", line 39, in reraise
+    raise value
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 536, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 367, in _raise_timeout
+    raise ReadTimeoutError(
+        self, url, f"Read timed out. (read timeout={timeout_value})"
+    ) from err
+urllib3.exceptions.ReadTimeoutError: AWSHTTPSConnectionPool(host='bedrock-runtime.eu-west-1.amazonaws.com', port=443): Read timed out. (read timeout=60)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 32, in <module>
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 346, in ask
+    answer = llm_answer(prompt)
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 171, in llm_answer
+    resp = rt.converse(
+        modelId=LLM_MODEL_ID,
+    ...<8 lines>...
+        inferenceConfig={"maxTokens": max_tokens, "temperature": temperature},
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 602, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 1060, in _make_api_call
+    http, parsed_response = self._make_request(
+                            ~~~~~~~~~~~~~~~~~~^
+        operation_model, request_dict, request_context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 1084, in _make_request
+    return self._endpoint.make_request(operation_model, request_dict)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 119, in make_request
+    return self._send_request(request_dict, operation_model)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 200, in _send_request
+    while self._needs_retry(
+          ~~~~~~~~~~~~~~~~~^
+        attempts,
+        ^^^^^^^^^
+    ...<3 lines>...
+        exception,
+        ^^^^^^^^^^
+    ):
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 360, in _needs_retry
+    responses = self._event_emitter.emit(
+        event_name,
+    ...<5 lines>...
+        request_dict=request_dict,
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 412, in emit
+    return self._emitter.emit(aliased_event_name, **kwargs)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 256, in emit
+    return self._emit(event_name, kwargs)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 239, in _emit
+    response = handler(**kwargs)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 207, in __call__
+    if self._checker(**checker_kwargs):
+       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 284, in __call__
+    should_retry = self._should_retry(
+        attempt_number, response, caught_exception
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 320, in _should_retry
+    return self._checker(attempt_number, response, caught_exception)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 363, in __call__
+    checker_response = checker(
+        attempt_number, response, caught_exception
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 247, in __call__
+    return self._check_caught_exception(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        attempt_number, caught_exception
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 416, in _check_caught_exception
+    raise caught_exception
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 279, in _do_get_response
+    http_response = self._send(request)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 383, in _send
+    return self.http_session.send(request)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\httpsession.py", line 502, in send
+    raise ReadTimeoutError(endpoint_url=request.url, error=e)
+botocore.exceptions.ReadTimeoutError: Read timeout on endpoint URL: "https://bedrock-runtime.eu-west-1.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aeu-west-1%3A781690932061%3Ainference-profile%2Feu.anthropic.claude-sonnet-4-5-20250929-v1%3A0/converse"
+2026-04-06 07:00:25,018 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 07:00:25,026 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 07:00:25,031 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 07:00:52,554 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 07:00:52,560 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 07:00:52,565 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 07:01:04,338 INFO: Fibre_cost__€/T_
+2026-04-06 07:01:18,570 INFO: Steam__€/T_
+2026-04-06 07:02:57,931 INFO: Electricity__€/T_
+2026-04-06 07:03:24,671 INFO: Starch__€/T_
+2026-04-06 07:04:09,623 INFO: Fibre_cost__€/T_
+2026-04-06 07:04:24,056 INFO: Steam__€/T_
+2026-04-06 07:06:01,019 INFO: Electricity__€/T_
+2026-04-06 07:06:25,729 INFO: Starch__€/T_
+2026-04-06 07:07:08,664 INFO: Fibre_cost__€/T_
+2026-04-06 07:07:23,156 INFO: Steam__€/T_
+2026-04-06 07:08:58,237 INFO: Electricity__€/T_
+2026-04-06 07:09:22,651 INFO: Starch__€/T_
+2026-04-06 07:10:10,738 INFO: Fibre_cost__€/T_
+2026-04-06 07:10:25,416 INFO: Steam__€/T_
+2026-04-06 07:12:05,677 INFO: Electricity__€/T_
+2026-04-06 07:12:32,091 INFO: Starch__€/T_
+2026-04-06 07:13:05,056 INFO [llm] === Entering llm chunk ===
+2026-04-06 07:13:05,075 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 07:13:05,089 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-06 07:13:05,109 INFO [llm] boto3 session created
+2026-04-06 07:13:05,615 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-06 07:13:07,035 INFO [llm] Credentials available: True
+2026-04-06 07:13:07,035 INFO [llm] Access key prefix: ASIA3M***
+2026-04-06 07:13:07,044 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-06 07:13:07,044 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-06 07:13:07,045 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-06 07:13:07,307 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-06 07:13:08,146 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-06 07:13:08,147 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-06 07:13:08,817 INFO [llm] === Entering summary chunk ===
+2026-04-06 07:13:08,823 INFO [llm] LANG: en
+2026-04-06 07:13:08,824 INFO [llm] descriptions count: 22
+2026-04-06 07:13:08,824 INFO [llm] non-empty descriptions count: 22
+2026-04-06 07:13:08,824 INFO [llm] prompt_body length: 6672
+2026-04-06 07:13:08,824 INFO [llm] prompt preview: For all considered grades, TOTAL cost saw a decrease of 1.62 €/t, resulting in 279.25 €/t.
+
+Breaking down the overall cost change, +1.14 €/t was driven by a more expensive mix of grades, and -2.76 €/t was due to an improvement in the process..For grade 3200115, TOTAL cost saw a decrease of 2.29 €/t, resulting in 275.30 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 5.62 €/t, resulting in 284.61 €/t.
+
+For grade 6010100, TOTAL cost saw a decrease of 1.60 €/t, resulting in 285.43 €/t.
+
+For grade 6010120, TOTAL cost saw a decrease of 1.41 €/t, resulting in 275.01 €/t.
+
+Looking across individual grades, the strongest cost decrease was observed for grade 6010085 (-5.62 €/t). These movements stand out and may require further investigation..Average change by component:
+
+- **Starch__€/T_** decreased on average (-1.17 €/t).
+
+- **Chemicals__€/T_** decreased on average (-1.07 €/t).
+
+- **Steam__€/T_** decreased on average (-1.07 €/t).
+
+- **Fibre_cost__€/T_** increased on average (+0.60 €/t).
+
+- **Electricity__€/T_** decreased on average (-0.01 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Fibre_cost__€/T_** (+0.60 €/t on average), with the highest increase in grade 6010100 (+0.70 €/t) and the largest average decrease comes from **Starch__€/T_** (-1.17 €/t on average), with the biggest drop in grade 6010120 (-1.61 €/t). These components stand out and may require further investigation..For all considered grades, TOTAL overprocessing saw an increase of 0.56 %, resulting in 7.23 %..For grade 3200115, TOTAL overprocessing saw a decrease of 1.95 %, resulting in 6.81 %.
+
+For grade 6010085, TOTAL overprocessing saw a decrease of 0.99 %, resulting in 6.32 %.
+
+For grade 6010100, TOTAL overprocessing saw an increase of 3.52 %, resulting in 12.81 %.
+
+For grade 6010120, TOTAL overprocessing saw an increase of 0.90 %, resulting in 5.56 %.
+
+Looking across individual grades, the strongest overprocessing increase was observed for grade 
+2026-04-06 07:13:08,824 INFO [llm] final prompt length: 6851
+2026-04-06 07:13:08,824 INFO [llm] Calling rag.ask(prompt)
+2026-04-06 07:18:25,570 ERROR [llm] Failure in summary chunk
+Traceback (most recent call last):
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connection.py", line 516, in getresponse
+    httplib_response = super().getresponse()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 1430, in getresponse
+    response.begin()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 331, in begin
+    version, status, reason = self._read_status()
+                              ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 292, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\socket.py", line 719, in readinto
+    return self._sock.recv_into(b)
+           ~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\ssl.py", line 1304, in recv_into
+    return self.read(nbytes, buffer)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\ssl.py", line 1138, in read
+    return self._sslobj.read(len, buffer)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+TimeoutError: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\httpsession.py", line 465, in send
+    urllib_response = conn.urlopen(
+        method=request.method,
+    ...<7 lines>...
+        chunked=self._chunked(request.headers),
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\util\retry.py", line 449, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\util\util.py", line 39, in reraise
+    raise value
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 536, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 367, in _raise_timeout
+    raise ReadTimeoutError(
+        self, url, f"Read timed out. (read timeout={timeout_value})"
+    ) from err
+urllib3.exceptions.ReadTimeoutError: AWSHTTPSConnectionPool(host='bedrock-runtime.eu-west-1.amazonaws.com', port=443): Read timed out. (read timeout=60)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 32, in <module>
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 346, in ask
+    answer = llm_answer(prompt)
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 171, in llm_answer
+    resp = rt.converse(
+        modelId=LLM_MODEL_ID,
+    ...<8 lines>...
+        inferenceConfig={"maxTokens": max_tokens, "temperature": temperature},
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 602, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 1060, in _make_api_call
+    http, parsed_response = self._make_request(
+                            ~~~~~~~~~~~~~~~~~~^
+        operation_model, request_dict, request_context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 1084, in _make_request
+    return self._endpoint.make_request(operation_model, request_dict)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 119, in make_request
+    return self._send_request(request_dict, operation_model)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 200, in _send_request
+    while self._needs_retry(
+          ~~~~~~~~~~~~~~~~~^
+        attempts,
+        ^^^^^^^^^
+    ...<3 lines>...
+        exception,
+        ^^^^^^^^^^
+    ):
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 360, in _needs_retry
+    responses = self._event_emitter.emit(
+        event_name,
+    ...<5 lines>...
+        request_dict=request_dict,
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 412, in emit
+    return self._emitter.emit(aliased_event_name, **kwargs)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 256, in emit
+    return self._emit(event_name, kwargs)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 239, in _emit
+    response = handler(**kwargs)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 207, in __call__
+    if self._checker(**checker_kwargs):
+       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 284, in __call__
+    should_retry = self._should_retry(
+        attempt_number, response, caught_exception
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 320, in _should_retry
+    return self._checker(attempt_number, response, caught_exception)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 363, in __call__
+    checker_response = checker(
+        attempt_number, response, caught_exception
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 247, in __call__
+    return self._check_caught_exception(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        attempt_number, caught_exception
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 416, in _check_caught_exception
+    raise caught_exception
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 279, in _do_get_response
+    http_response = self._send(request)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 383, in _send
+    return self.http_session.send(request)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\httpsession.py", line 502, in send
+    raise ReadTimeoutError(endpoint_url=request.url, error=e)
+botocore.exceptions.ReadTimeoutError: Read timeout on endpoint URL: "https://bedrock-runtime.eu-west-1.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aeu-west-1%3A781690932061%3Ainference-profile%2Feu.anthropic.claude-sonnet-4-5-20250929-v1%3A0/converse"
+2026-04-06 07:21:56,395 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 07:21:56,402 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 07:21:56,407 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 07:22:21,325 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 07:22:21,331 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 07:22:21,335 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 07:22:30,265 INFO: Fibre_cost__€/T_
+2026-04-06 07:22:42,847 INFO: Steam__€/T_
+2026-04-06 07:23:46,013 INFO: Electricity__€/T_
+2026-04-06 07:24:04,719 INFO: Starch__€/T_
+2026-04-06 07:24:34,761 INFO: Fibre_cost__€/T_
+2026-04-06 07:24:46,110 INFO: Steam__€/T_
+2026-04-06 07:25:46,414 INFO: Electricity__€/T_
+2026-04-06 07:26:03,738 INFO: Starch__€/T_
+2026-04-06 07:26:34,362 INFO: Fibre_cost__€/T_
+2026-04-06 07:26:46,183 INFO: Steam__€/T_
+2026-04-06 07:27:45,643 INFO: Electricity__€/T_
+2026-04-06 07:28:02,500 INFO: Starch__€/T_
+2026-04-06 07:28:35,054 INFO: Fibre_cost__€/T_
+2026-04-06 07:28:47,071 INFO: Steam__€/T_
+2026-04-06 07:29:52,736 INFO: Electricity__€/T_
+2026-04-06 07:30:12,617 INFO: Starch__€/T_
+2026-04-06 07:30:33,634 INFO [llm] === Entering llm chunk ===
+2026-04-06 07:30:33,639 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 07:30:33,642 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-06 07:30:33,656 INFO [llm] boto3 session created
+2026-04-06 07:30:34,021 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-06 07:30:35,242 INFO [llm] Credentials available: True
+2026-04-06 07:30:35,242 INFO [llm] Access key prefix: ASIA3M***
+2026-04-06 07:30:35,254 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-06 07:30:35,255 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-06 07:30:35,255 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-06 07:30:35,417 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-06 07:30:35,920 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-06 07:30:35,920 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-06 07:30:36,314 INFO [llm] === Entering summary chunk ===
+2026-04-06 07:30:36,321 INFO [llm] LANG: en
+2026-04-06 07:30:36,321 INFO [llm] descriptions count: 22
+2026-04-06 07:30:36,321 INFO [llm] non-empty descriptions count: 22
+2026-04-06 07:30:36,322 INFO [llm] prompt_body length: 6672
+2026-04-06 07:30:36,322 INFO [llm] prompt preview: For all considered grades, TOTAL cost saw a decrease of 1.62 €/t, resulting in 279.25 €/t.
+
+Breaking down the overall cost change, +1.14 €/t was driven by a more expensive mix of grades, and -2.76 €/t was due to an improvement in the process..For grade 3200115, TOTAL cost saw a decrease of 2.29 €/t, resulting in 275.30 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 5.62 €/t, resulting in 284.61 €/t.
+
+For grade 6010100, TOTAL cost saw a decrease of 1.60 €/t, resulting in 285.43 €/t.
+
+For grade 6010120, TOTAL cost saw a decrease of 1.41 €/t, resulting in 275.01 €/t.
+
+Looking across individual grades, the strongest cost decrease was observed for grade 6010085 (-5.62 €/t). These movements stand out and may require further investigation..Average change by component:
+
+- **Starch__€/T_** decreased on average (-1.17 €/t).
+
+- **Chemicals__€/T_** decreased on average (-1.07 €/t).
+
+- **Steam__€/T_** decreased on average (-1.07 €/t).
+
+- **Fibre_cost__€/T_** increased on average (+0.60 €/t).
+
+- **Electricity__€/T_** decreased on average (-0.01 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Fibre_cost__€/T_** (+0.60 €/t on average), with the highest increase in grade 6010100 (+0.70 €/t) and the largest average decrease comes from **Starch__€/T_** (-1.17 €/t on average), with the biggest drop in grade 6010120 (-1.61 €/t). These components stand out and may require further investigation..For all considered grades, TOTAL overprocessing saw an increase of 0.56 %, resulting in 7.23 %..For grade 3200115, TOTAL overprocessing saw a decrease of 1.95 %, resulting in 6.81 %.
+
+For grade 6010085, TOTAL overprocessing saw a decrease of 0.99 %, resulting in 6.32 %.
+
+For grade 6010100, TOTAL overprocessing saw an increase of 3.52 %, resulting in 12.81 %.
+
+For grade 6010120, TOTAL overprocessing saw an increase of 0.90 %, resulting in 5.56 %.
+
+Looking across individual grades, the strongest overprocessing increase was observed for grade 
+2026-04-06 07:30:36,322 INFO [llm] final prompt length: 6851
+2026-04-06 07:30:36,322 INFO [llm] Calling rag.ask(prompt)
+2026-04-06 07:35:45,696 ERROR [llm] Failure in summary chunk
+Traceback (most recent call last):
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connection.py", line 516, in getresponse
+    httplib_response = super().getresponse()
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 1430, in getresponse
+    response.begin()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 331, in begin
+    version, status, reason = self._read_status()
+                              ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\http\client.py", line 292, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\socket.py", line 719, in readinto
+    return self._sock.recv_into(b)
+           ~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\ssl.py", line 1304, in recv_into
+    return self.read(nbytes, buffer)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\gbmiggon\AppData\Local\Programs\Python\Python313\Lib\ssl.py", line 1138, in read
+    return self._sslobj.read(len, buffer)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+TimeoutError: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\httpsession.py", line 465, in send
+    urllib_response = conn.urlopen(
+        method=request.method,
+    ...<7 lines>...
+        chunked=self._chunked(request.headers),
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\util\retry.py", line 449, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\util\util.py", line 39, in reraise
+    raise value
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 536, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\urllib3\connectionpool.py", line 367, in _raise_timeout
+    raise ReadTimeoutError(
+        self, url, f"Read timed out. (read timeout={timeout_value})"
+    ) from err
+urllib3.exceptions.ReadTimeoutError: AWSHTTPSConnectionPool(host='bedrock-runtime.eu-west-1.amazonaws.com', port=443): Read timed out. (read timeout=60)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<string>", line 32, in <module>
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 346, in ask
+    answer = llm_answer(prompt)
+  File "c:\workspace\costimiser\knowledge_retrieval.py", line 171, in llm_answer
+    resp = rt.converse(
+        modelId=LLM_MODEL_ID,
+    ...<8 lines>...
+        inferenceConfig={"maxTokens": max_tokens, "temperature": temperature},
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 602, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 1060, in _make_api_call
+    http, parsed_response = self._make_request(
+                            ~~~~~~~~~~~~~~~~~~^
+        operation_model, request_dict, request_context
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 1084, in _make_request
+    return self._endpoint.make_request(operation_model, request_dict)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 119, in make_request
+    return self._send_request(request_dict, operation_model)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 200, in _send_request
+    while self._needs_retry(
+          ~~~~~~~~~~~~~~~~~^
+        attempts,
+        ^^^^^^^^^
+    ...<3 lines>...
+        exception,
+        ^^^^^^^^^^
+    ):
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 360, in _needs_retry
+    responses = self._event_emitter.emit(
+        event_name,
+    ...<5 lines>...
+        request_dict=request_dict,
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 412, in emit
+    return self._emitter.emit(aliased_event_name, **kwargs)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 256, in emit
+    return self._emit(event_name, kwargs)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\hooks.py", line 239, in _emit
+    response = handler(**kwargs)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 207, in __call__
+    if self._checker(**checker_kwargs):
+       ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 284, in __call__
+    should_retry = self._should_retry(
+        attempt_number, response, caught_exception
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 320, in _should_retry
+    return self._checker(attempt_number, response, caught_exception)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 363, in __call__
+    checker_response = checker(
+        attempt_number, response, caught_exception
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 247, in __call__
+    return self._check_caught_exception(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        attempt_number, caught_exception
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\retryhandler.py", line 416, in _check_caught_exception
+    raise caught_exception
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 279, in _do_get_response
+    http_response = self._send(request)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\endpoint.py", line 383, in _send
+    return self.http_session.send(request)
+           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\httpsession.py", line 502, in send
+    raise ReadTimeoutError(endpoint_url=request.url, error=e)
+botocore.exceptions.ReadTimeoutError: Read timeout on endpoint URL: "https://bedrock-runtime.eu-west-1.amazonaws.com/model/arn%3Aaws%3Abedrock%3Aeu-west-1%3A781690932061%3Ainference-profile%2Feu.anthropic.claude-sonnet-4-5-20250929-v1%3A0/converse"
+2026-04-06 07:41:05,760 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 07:41:05,763 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 07:41:05,766 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 07:41:34,789 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 07:41:34,795 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 07:41:34,802 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 07:41:44,100 INFO: Fibre_cost__€/T_
+2026-04-06 07:41:55,287 INFO: Steam__€/T_
+2026-04-06 07:42:59,057 INFO: Electricity__€/T_
+2026-04-06 07:43:28,825 INFO: Starch__€/T_
+2026-04-06 07:44:00,003 INFO: Fibre_cost__€/T_
+2026-04-06 07:44:11,840 INFO: Steam__€/T_
+2026-04-06 07:45:12,748 INFO: Electricity__€/T_
+2026-04-06 07:45:29,693 INFO: Starch__€/T_
+2026-04-06 07:45:57,927 INFO: Fibre_cost__€/T_
+2026-04-06 07:46:09,911 INFO: Steam__€/T_
+2026-04-06 07:47:09,814 INFO: Electricity__€/T_
+2026-04-06 07:47:26,553 INFO: Starch__€/T_
+2026-04-06 07:47:58,184 INFO: Fibre_cost__€/T_
+2026-04-06 07:48:10,228 INFO: Steam__€/T_
+2026-04-06 07:49:15,789 INFO: Electricity__€/T_
+2026-04-06 07:49:35,476 INFO: Starch__€/T_
+2026-04-06 07:49:56,685 INFO [llm] === Entering llm chunk ===
+2026-04-06 07:49:56,691 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 07:49:56,694 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-06 07:49:56,705 INFO [llm] boto3 session created
+2026-04-06 07:49:57,045 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-06 07:49:58,260 INFO [llm] Credentials available: True
+2026-04-06 07:49:58,260 INFO [llm] Access key prefix: ASIA3M***
+2026-04-06 07:49:58,289 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-06 07:49:58,289 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-06 07:49:58,289 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-06 07:49:58,479 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-06 07:49:58,908 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-06 07:49:58,908 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-06 07:49:59,339 INFO [llm] === Entering summary chunk ===
+2026-04-06 07:49:59,345 INFO [llm] LANG: en
+2026-04-06 07:49:59,345 INFO [llm] descriptions count: 22
+2026-04-06 07:49:59,345 INFO [llm] non-empty descriptions count: 22
+2026-04-06 07:49:59,345 INFO [llm] prompt_body length: 6672
+2026-04-06 07:49:59,345 INFO [llm] prompt preview: For all considered grades, TOTAL cost saw a decrease of 1.62 €/t, resulting in 279.25 €/t.
+
+Breaking down the overall cost change, +1.14 €/t was driven by a more expensive mix of grades, and -2.76 €/t was due to an improvement in the process..For grade 3200115, TOTAL cost saw a decrease of 2.29 €/t, resulting in 275.30 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 5.62 €/t, resulting in 284.61 €/t.
+
+For grade 6010100, TOTAL cost saw a decrease of 1.60 €/t, resulting in 285.43 €/t.
+
+For grade 6010120, TOTAL cost saw a decrease of 1.41 €/t, resulting in 275.01 €/t.
+
+Looking across individual grades, the strongest cost decrease was observed for grade 6010085 (-5.62 €/t). These movements stand out and may require further investigation..Average change by component:
+
+- **Starch__€/T_** decreased on average (-1.17 €/t).
+
+- **Chemicals__€/T_** decreased on average (-1.07 €/t).
+
+- **Steam__€/T_** decreased on average (-1.07 €/t).
+
+- **Fibre_cost__€/T_** increased on average (+0.60 €/t).
+
+- **Electricity__€/T_** decreased on average (-0.01 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Fibre_cost__€/T_** (+0.60 €/t on average), with the highest increase in grade 6010100 (+0.70 €/t) and the largest average decrease comes from **Starch__€/T_** (-1.17 €/t on average), with the biggest drop in grade 6010120 (-1.61 €/t). These components stand out and may require further investigation..For all considered grades, TOTAL overprocessing saw an increase of 0.56 %, resulting in 7.23 %..For grade 3200115, TOTAL overprocessing saw a decrease of 1.95 %, resulting in 6.81 %.
+
+For grade 6010085, TOTAL overprocessing saw a decrease of 0.99 %, resulting in 6.32 %.
+
+For grade 6010100, TOTAL overprocessing saw an increase of 3.52 %, resulting in 12.81 %.
+
+For grade 6010120, TOTAL overprocessing saw an increase of 0.90 %, resulting in 5.56 %.
+
+Looking across individual grades, the strongest overprocessing increase was observed for grade 
+2026-04-06 07:49:59,345 INFO [llm] final prompt length: 6851
+2026-04-06 07:49:59,345 INFO [llm] Calling rag.ask(prompt)
+2026-04-06 07:50:36,350 INFO [llm] rag.ask returned object type: <class 'dict'>
+2026-04-06 07:50:36,350 INFO [llm] rag.ask returned repr: {'answer': '# SUMMARY, DIAGNOSIS AND ACTION PLAN\n\n## Executive Summary\n\nOverall performance shows **positive cost reduction of 1.62 €/t** (to 279.25 €/t) driven primarily by **process improvements (-2.76 €/t)**, partially offset by a more expensive grade mix (+1.14 €/t). However, **overprocessing increased by 0.56%** (to 7.23%), indicating quality targets are being exceeded unnecessarily. Grade 6010085 shows the strongest cost improvement (-5.62 €/t), while grade 6010100 exhibits concerning overprocessing (+3.52%) requiring immediate attention.\n\n---\n\n## Detailed Diagnosis by Section\n\n### Cost Performance Analysis\n\n**Overall Trends:**\n- **Starch (Cost Section)**: Largest average decrease (-1.17 €/t), particularly in grade 6010120 (-1.61 €/t)\n- **Chemicals (Cost Section)**: Decreased -1.07 €/t on average\n- **Steam (Cost Section)**: Decreased -1.07 €/t on average  \n- **Fibre_cost (Cost Section)**: Increased +0.60 €/t on average, highest in grade 6010100 (+0.70 €/t)\n- **Electricity (Cost Section)**: Minimal decrease (-0.01 €/t)\n\n**Grade-Specific Cost Performance:**\n- **Grade 6010085**: Best performer (-5.62 €/t to 284.61 €/t)\n- **Grade 3200115**: Good reduction (-2.29 €/t to 275.30 €/t)\n- **Grade 6010100**: Moderate reduction (-1.60 €/t to 285.43 €/t)\n- **Grade 6010120**: Moderate reduction (-1.41 €/t to 275.01 €/t)\n\n### Quality/Overprocessing Analysis\n\n**Overall Overprocessing Trends:**\n- Total overprocessing increased 0.56% to 7.23%\n- **CMT30**: Increased +2.84% on average (strength property from quality testing)\n- **Burst**: Decreased -2.33% on average (strength property from quality testing)\n- **SCT_CD**: Minimal increase +0.15% (cross-direction short-span compression test)\n\n**Grade-Specific Overprocessing:**\n- **Grade 6010100**: Critical concern with +3.52% increase (to 12.81%) - highest overprocessing level\n- **Grade 6010120**: Slight increase +0.90% (to 5.56%)\n- **Grade 3200115**: Improved with -1.95% decrease (to 6.81%)\n- **Grade 6010085**: Improved with -0.99% decrease (to 6.32%)\n\n### Process Variable Analysis by Section\n\n#### **Grade 6010085 - Key Drivers:**\n\n**Size Press Section:**\n- Starch uptake g/m2 decreased (-0.86) → Cost increase driver\n- Concentration starch working tank 1 decreased (-0.07) → Cost reduction\n- Starch uptake by paper Bottom Roll g/m2 decreased → Cost reduction\n\n**Pre Dryier Section:**\n- DG4 Temperature Inlet Air decreased (-12.03) → Cost reduction\n- Vacuum uhle-box bottom felt decreased (-0.02) → Cost increase\n\n**Press Section:**\n- Dewatering top wire suction box zone 2 increased (+176.09) → Cost increase\n- Dissolved gas before dilution water deculator increased (+0.25) → Cost reduction\n\n**Scaner Section:**\n- Moisture after SpeedSizer decreased (-0.89) → Cost reduction\n\n---\n\n#### **Grade 3200115 - Key Drivers:**\n\n**Scaner Section:**\n- Current reel moisture average(reel) decreased (-0.18) → Cost increase\n- Speed increased (+86.06) → Cost reduction\n\n**Size Press Section:**\n- Starch uptake by paper Bottom Roll g/m2 decreased (-0.33) → Cost reduction\n- Concentration starch working tank 1 decreased (-0.06) → Cost reduction\n- Moisture after SpeedSizer decreased (-0.49) → Cost reduction\n- Lip settings increased (+0.28) → Cost increase\n\n**Pre Dryier Section:**\n- DG1 temperature Inlet Air decreased (-10.39) → Cost reduction\n\n**Press Section:**\n- Vacuum wire suction box 2 decreased (-0.05) → Cost increase\n- Cylinder 40-53 differential pressure increased (+0.01) → Cost increase (After Dryier)\n\n---\n\n#### **Grade 6010100 - Key Drivers:**\n\n**Size Press Section:**\n- Starch uptake g/m2 decreased (-2.69) → Cost increase driver\n- Starch uptake by paper Top Roll g/m2 decreased (-1.13) → Cost reduction\n- Starch uptake by paper Bottom Roll g/m2 decreased (-0.59) → Cost reduction\n- Concentration starch working tank 1 decreased (-0.12) → Cost reduction\n- Lip settings decreased (-1.32) → Cost reduction\n\n**Scaner Section:**\n- Speed 
+2026-04-06 07:50:36,350 INFO [llm] answer length: 6617
+2026-04-06 07:50:36,350 INFO [llm] answer preview: # SUMMARY, DIAGNOSIS AND ACTION PLAN
+
+## Executive Summary
+
+Overall performance shows **positive cost reduction of 1.62 €/t** (to 279.25 €/t) driven primarily by **process improvements (-2.76 €/t)**, partially offset by a more expensive grade mix (+1.14 €/t). However, **overprocessing increased by 0.56%** (to 7.23%), indicating quality targets are being exceeded unnecessarily. Grade 6010085 shows the strongest cost improvement (-5.62 €/t), while grade 6010100 exhibits concerning overprocessing (+3.52%) requiring immediate attention.
+
+---
+
+## Detailed Diagnosis by Section
+
+### Cost Performance Analysis
+
+**Overall Trends:**
+- **Starch (Cost Section)**: Largest average decrease (-1.17 €/t), particularly in grade 6010120 (-1.61 €/t)
+- **Chemicals (Cost Section)**: Decreased -1.07 €/t on average
+- **Steam (Cost Section)**: Decreased -1.07 €/t on average  
+- **Fibre_cost (Cost Section)**: Increased +0.60 €/t on average, highest in grade 6010100 (+0.70 €/t)
+- **Electricity (Cost Section)**: Minimal decrease (-0.01 €/t)
+
+**Grade-Specific Cost Performance:**
+- **Grade 6010085**: Best performer (-5.62 €/t to 284.61 €/t)
+- **Grade 3200115**: Good reduction (-2.29 €/t to 275.30 €/t)
+- **Grade 6010100**: Moderate reduction (-1.60 €/t to 285.43 €/t)
+- **Grade 6010120**: Moderate reduction (-1.41 €/t to 275.01 €/t)
+
+### Quality/Overprocessing Analysis
+
+**Overall Overprocessing Trends:**
+- Total overprocessing increased 0.56% to 7.23%
+- **CMT30**: Increased +2.84% on average (strength property from quality testing)
+- **Burst**: Decreased -2.33% on average (strength property from quality testing)
+- **SCT_CD**: Minimal increase +0.15% (cross-direction short-span compression test)
+
+**Grade-Specific Overprocessing:**
+- **Grade 6010100**: Critical concern with +3.52% increase (to 12.81%) - highest overprocessing level
+- **Grade 6010120**: Slight increase +0.90% (to 5.56%)
+- **Grade 3200115**: Improved with -1.95% decrease (to 6.81%)
+- **Grade 6010085**: Improved with -0.99% decrease (to
+2026-04-06 07:54:06,963 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 07:54:06,967 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 07:54:06,970 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 07:54:34,386 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 07:54:34,389 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 07:54:34,393 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 07:54:43,432 INFO: Fibre_cost__€/T_
+2026-04-06 07:54:54,919 INFO: Steam__€/T_
+2026-04-06 07:55:56,037 INFO: Electricity__€/T_
+2026-04-06 07:56:14,761 INFO: Starch__€/T_
+2026-04-06 07:56:44,521 INFO: Fibre_cost__€/T_
+2026-04-06 07:56:56,066 INFO: Steam__€/T_
+2026-04-06 07:57:56,518 INFO: Electricity__€/T_
+2026-04-06 07:58:14,263 INFO: Starch__€/T_
+2026-04-06 07:58:44,841 INFO: Fibre_cost__€/T_
+2026-04-06 07:58:57,307 INFO: Steam__€/T_
+2026-04-06 08:00:05,434 INFO: Electricity__€/T_
+2026-04-06 08:00:22,122 INFO: Starch__€/T_
+2026-04-06 08:00:54,482 INFO: Fibre_cost__€/T_
+2026-04-06 08:01:07,044 INFO: Steam__€/T_
+2026-04-06 08:02:06,282 INFO: Electricity__€/T_
+2026-04-06 08:02:25,249 INFO: Starch__€/T_
+2026-04-06 08:02:45,507 INFO [llm] === Entering llm chunk ===
+2026-04-06 08:02:45,513 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 08:02:45,516 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-06 08:02:45,527 INFO [llm] boto3 session created
+2026-04-06 08:02:45,785 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-06 08:02:46,965 INFO [llm] Credentials available: True
+2026-04-06 08:02:46,965 INFO [llm] Access key prefix: ASIA3M***
+2026-04-06 08:02:47,002 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-06 08:02:47,003 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-06 08:02:47,003 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-06 08:02:47,195 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-06 08:02:47,630 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-06 08:02:47,630 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-06 08:02:47,975 INFO [llm] === Entering summary chunk ===
+2026-04-06 08:02:47,979 INFO [llm] LANG: en
+2026-04-06 08:02:47,979 INFO [llm] descriptions count: 22
+2026-04-06 08:02:47,979 INFO [llm] non-empty descriptions count: 22
+2026-04-06 08:02:47,979 INFO [llm] prompt_body length: 6672
+2026-04-06 08:02:47,979 INFO [llm] prompt preview: For all considered grades, TOTAL cost saw a decrease of 1.62 €/t, resulting in 279.25 €/t.
+
+Breaking down the overall cost change, +1.14 €/t was driven by a more expensive mix of grades, and -2.76 €/t was due to an improvement in the process..For grade 3200115, TOTAL cost saw a decrease of 2.29 €/t, resulting in 275.30 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 5.62 €/t, resulting in 284.61 €/t.
+
+For grade 6010100, TOTAL cost saw a decrease of 1.60 €/t, resulting in 285.43 €/t.
+
+For grade 6010120, TOTAL cost saw a decrease of 1.41 €/t, resulting in 275.01 €/t.
+
+Looking across individual grades, the strongest cost decrease was observed for grade 6010085 (-5.62 €/t). These movements stand out and may require further investigation..Average change by component:
+
+- **Starch__€/T_** decreased on average (-1.17 €/t).
+
+- **Chemicals__€/T_** decreased on average (-1.07 €/t).
+
+- **Steam__€/T_** decreased on average (-1.07 €/t).
+
+- **Fibre_cost__€/T_** increased on average (+0.60 €/t).
+
+- **Electricity__€/T_** decreased on average (-0.01 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Fibre_cost__€/T_** (+0.60 €/t on average), with the highest increase in grade 6010100 (+0.70 €/t) and the largest average decrease comes from **Starch__€/T_** (-1.17 €/t on average), with the biggest drop in grade 6010120 (-1.61 €/t). These components stand out and may require further investigation..For all considered grades, TOTAL overprocessing saw an increase of 0.56 %, resulting in 7.23 %..For grade 3200115, TOTAL overprocessing saw a decrease of 1.95 %, resulting in 6.81 %.
+
+For grade 6010085, TOTAL overprocessing saw a decrease of 0.99 %, resulting in 6.32 %.
+
+For grade 6010100, TOTAL overprocessing saw an increase of 3.52 %, resulting in 12.81 %.
+
+For grade 6010120, TOTAL overprocessing saw an increase of 0.90 %, resulting in 5.56 %.
+
+Looking across individual grades, the strongest overprocessing increase was observed for grade 
+2026-04-06 08:02:47,979 INFO [llm] final prompt length: 6851
+2026-04-06 08:02:47,979 INFO [llm] Calling rag.ask(prompt)
+2026-04-06 08:03:47,039 INFO [llm] rag.ask returned object type: <class 'dict'>
+2026-04-06 08:03:47,040 INFO [llm] rag.ask returned repr: {'answer': '# SUMMARY, DIAGNOSIS AND ACTION PLAN\n\n## Executive Summary\n\nOverall performance shows positive cost reduction of **1.62 €/t** (resulting in 279.25 €/t), driven by process improvements (-2.76 €/t) that more than offset the impact of a more expensive grade mix (+1.14 €/t). However, overprocessing increased by **0.56%** (to 7.23%), indicating quality targets are being exceeded unnecessarily. Grade 6010085 shows the strongest cost improvement (-5.62 €/t), while grade 6010100 exhibits concerning overprocessing (+3.52%) and requires immediate attention.\n\n---\n\n## Diagnosis by Functional Area\n\n### Cost Performance Analysis\n\n**Overall Trends:**\n- **Starch consumption** (Size Press section): Largest cost reduction driver (-1.17 €/t average) [data_glossary.csv:e633305a49e7e154:1:0]\n- **Chemicals** (Cost section): Significant decrease (-1.07 €/t average)\n- **Steam** (Pre Dryier & After Dryier sections): Reduced consumption (-1.07 €/t average)\n- **Fibre cost** (Cost section): Only increasing component (+0.60 €/t average)\n- **Electricity** (Pre Dryier section): Minimal change (-0.01 €/t)\n\n**Grade-Specific Performance:**\n\n*Grade 6010085* (Best performer: -5.62 €/t):\n- **Size Press**: Starch uptake decreased (-0.86 g/m²), reducing costs\n- **After Dryier**: DG4 inlet air temperature decreased (-12.03°C), improving steam efficiency\n- **Press Section**: Dewatering top wire suction box zone 2 increased significantly (+176.09), indicating improved water removal\n- **Wet End**: Dissolved gas before dilution water deculator increased (+0.25), potentially improving formation\n\n*Grade 3200115* (-2.29 €/t):\n- **Scanner section**: Current reel moisture decreased (-0.18%), indicating drier sheet requiring more energy\n- **Size Press**: Starch uptake bottom roll decreased (-0.33 g/m²), reducing chemical costs\n- **After Dryier**: DG1 inlet air temperature decreased (-10.39°C)\n- **Scanner**: Speed increased (+86.06 m/min), improving productivity [papermaking_science_technology.pdf:d6f6f20ccb65b658:7029:0]\n\n*Grade 6010100* (-1.60 €/t, but concerning overprocessing):\n- **Size Press**: Total starch uptake decreased significantly (-2.69 g/m²), but individual roll applications also decreased\n- **Scanner**: Speed increased substantially (+162.10-164.63 m/min)\n- **Press Section**: Vacuum uhle-box bottom felt decreased (-0.13), line pressure shoe press decreased (-0.12 bar)\n- **After Dryier**: DG4 temperature increased (+24.59°C), indicating higher energy input\n\n*Grade 6010120* (-1.41 €/t):\n- **Scanner**: Reel moisture decreased (-0.21%)\n- **Size Press**: Bottom roll starch uptake decreased (-0.73 g/m²)\n- **Scanner**: Speed increased (+55.33 m/min)\n- **After Dryier**: DG4 temperature increased (+25.84°C)\n\n### Quality Performance (Overprocessing Analysis)\n\n**Critical Issues:**\n\n*Grade 6010100* (Highest overprocessing: 12.81%, +3.52%):\n- **CMT30** (compression strength): Increased +4.23%, indicating excessive strength\n- This suggests over-refining or excessive chemical addition in the Wet End/Size Press sections\n- Speed increases may have triggered compensatory over-addition of strength agents\n\n*Grade 6010120* (+0.90% to 5.56%):\n- **CMT30**: Increased +2.84% average\n- Moisture after SpeedSizer increased (+1.76%), indicating incomplete drying in Size Press section\n\n**Positive Developments:**\n\n*Grade 3200115* (Reduced overprocessing: -1.95% to 6.81%):\n- **Burst strength**: Decreased -2.33%, bringing closer to target\n- Better optimization of strength properties\n\n*Grade 6010085* (Reduced overprocessing: -0.99% to 6.32%):\n- Improved balance between cost and quality\n\n### Process Section Analysis\n\n**Size Press Section** [data_glossary.csv:e633305a49e7e154:1:0]:\n- Starch concentration in working tank 1 decreased across multiple grades (-0.06 to -0.17%)\n- Moisture after SpeedSizer generally decreased (except grade 6010120: +1.76%)\n- Starch uptake reductions driving major cost savings\n- Potential
+2026-04-06 08:03:47,041 INFO [llm] answer length: 10620
+2026-04-06 08:03:47,041 INFO [llm] answer preview: # SUMMARY, DIAGNOSIS AND ACTION PLAN
+
+## Executive Summary
+
+Overall performance shows positive cost reduction of **1.62 €/t** (resulting in 279.25 €/t), driven by process improvements (-2.76 €/t) that more than offset the impact of a more expensive grade mix (+1.14 €/t). However, overprocessing increased by **0.56%** (to 7.23%), indicating quality targets are being exceeded unnecessarily. Grade 6010085 shows the strongest cost improvement (-5.62 €/t), while grade 6010100 exhibits concerning overprocessing (+3.52%) and requires immediate attention.
+
+---
+
+## Diagnosis by Functional Area
+
+### Cost Performance Analysis
+
+**Overall Trends:**
+- **Starch consumption** (Size Press section): Largest cost reduction driver (-1.17 €/t average) [data_glossary.csv:e633305a49e7e154:1:0]
+- **Chemicals** (Cost section): Significant decrease (-1.07 €/t average)
+- **Steam** (Pre Dryier & After Dryier sections): Reduced consumption (-1.07 €/t average)
+- **Fibre cost** (Cost section): Only increasing component (+0.60 €/t average)
+- **Electricity** (Pre Dryier section): Minimal change (-0.01 €/t)
+
+**Grade-Specific Performance:**
+
+*Grade 6010085* (Best performer: -5.62 €/t):
+- **Size Press**: Starch uptake decreased (-0.86 g/m²), reducing costs
+- **After Dryier**: DG4 inlet air temperature decreased (-12.03°C), improving steam efficiency
+- **Press Section**: Dewatering top wire suction box zone 2 increased significantly (+176.09), indicating improved water removal
+- **Wet End**: Dissolved gas before dilution water deculator increased (+0.25), potentially improving formation
+
+*Grade 3200115* (-2.29 €/t):
+- **Scanner section**: Current reel moisture decreased (-0.18%), indicating drier sheet requiring more energy
+- **Size Press**: Starch uptake bottom roll decreased (-0.33 g/m²), reducing chemical costs
+- **After Dryier**: DG1 inlet air temperature decreased (-10.39°C)
+- **Scanner**: Speed increased (+86.06 m/min), improving productivity [papermaking_science_technology.pdf:d6f6f20ccb65b658:7
+2026-04-06 08:06:05,662 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 08:06:05,666 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 08:06:05,669 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 08:06:27,629 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 08:06:27,636 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 08:06:27,640 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 08:06:36,678 INFO: Fibre_cost__€/T_
+2026-04-06 08:06:48,168 INFO: Steam__€/T_
+2026-04-06 08:07:50,779 INFO: Electricity__€/T_
+2026-04-06 08:08:10,083 INFO: Starch__€/T_
+2026-04-06 08:08:39,962 INFO: Fibre_cost__€/T_
+2026-04-06 08:08:51,391 INFO: Steam__€/T_
+2026-04-06 08:09:51,997 INFO: Electricity__€/T_
+2026-04-06 08:10:10,316 INFO: Starch__€/T_
+2026-04-06 08:10:39,592 INFO: Fibre_cost__€/T_
+2026-04-06 08:10:51,413 INFO: Steam__€/T_
+2026-04-06 08:11:51,265 INFO: Electricity__€/T_
+2026-04-06 08:12:08,908 INFO: Starch__€/T_
+2026-04-06 08:12:41,848 INFO: Fibre_cost__€/T_
+2026-04-06 08:12:53,592 INFO: Steam__€/T_
+2026-04-06 08:13:55,563 INFO: Electricity__€/T_
+2026-04-06 08:14:14,773 INFO: Starch__€/T_
+2026-04-06 08:14:36,043 INFO [llm] === Entering llm chunk ===
+2026-04-06 08:14:36,048 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 08:14:36,052 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-06 08:14:36,063 INFO [llm] boto3 session created
+2026-04-06 08:14:36,224 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-06 08:14:37,099 INFO [botocore.tokens] SSO Token refresh succeeded
+2026-04-06 08:14:38,209 INFO [llm] Credentials available: True
+2026-04-06 08:14:38,209 INFO [llm] Access key prefix: ASIA3M***
+2026-04-06 08:14:38,215 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-06 08:14:38,216 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-06 08:14:38,216 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-06 08:14:38,390 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-06 08:14:38,865 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-06 08:14:38,866 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-06 08:14:39,262 INFO [llm] === Entering summary chunk ===
+2026-04-06 08:14:39,266 INFO [llm] LANG: de
+2026-04-06 08:14:39,266 INFO [llm] descriptions count: 22
+2026-04-06 08:14:39,266 INFO [llm] non-empty descriptions count: 22
+2026-04-06 08:14:39,266 INFO [llm] prompt_body length: 7167
+2026-04-06 08:14:39,266 INFO [llm] prompt preview: Für alle betrachteten Sorten, TOTAL Kosten verzeichnete einen Rückgang of 1.62 €/t, was zu 279.25 €/t.
+
+Bei der Aufschlüsselung der gesamten Veränderung der Kosten ergibt sich, dass +1.14 €/t durch eine teurer Sortenmischung verursacht wurden und -2.76 €/t auf einer Verbesserung im Prozess zurückzuführen sind..Für Sorte 3200115, TOTAL Kosten verzeichnete einen Rückgang of 2.29 €/t, was zu 275.30 €/t.
+
+Für Sorte 6010085, TOTAL Kosten verzeichnete einen Rückgang of 5.62 €/t, was zu 284.61 €/t.
+
+Für Sorte 6010100, TOTAL Kosten verzeichnete einen Rückgang of 1.60 €/t, was zu 285.43 €/t.
+
+Für Sorte 6010120, TOTAL Kosten verzeichnete einen Rückgang of 1.41 €/t, was zu 275.01 €/t.
+
+Über alle einzelnen Sorten betrachtet der stärkste Kosten-Rückgang wurde für Sorte 6010085 beobachtet (-5.62 €/t). Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden..Durchschnittliche Veränderung je Komponente:
+
+- **Starch__€/T_** ist im Durchschnitt gesunken (-1.17 €/t).
+
+- **Chemicals__€/T_** ist im Durchschnitt gesunken (-1.07 €/t).
+
+- **Steam__€/T_** ist im Durchschnitt gesunken (-1.07 €/t).
+
+- **Fibre_cost__€/T_** ist im Durchschnitt gestiegen (+0.60 €/t).
+
+- **Electricity__€/T_** ist im Durchschnitt gesunken (-0.01 €/t).
+
+Eine detailliertere Aufschlüsselung nach Komponenten zeigt, dass die größte durchschnittliche Zunahme stammt von **Fibre_cost__€/T_** (im Mittel +0.60 €/t), mit dem höchsten Anstieg in Sorte 6010100 (+0.70 €/t) und die größte durchschnittliche Abnahme stammt von **Starch__€/T_** (im Mittel -1.17 €/t), mit dem stärksten Rückgang in Sorte 6010120 (-1.61 €/t). Diese Komponenten stechen hervor und sollten ggf. weiter untersucht werden..Für alle betrachteten Sorten, TOTAL Überverarbeitung saw an Anstieg of 0.56 %, was zu 7.23 %..Für Sorte 3200115, TOTAL Überverarbeitung verzeichnete einen Rückgang of 1.95 %, was zu 6.81 %.
+
+Für Sorte 6010085, TOTAL Überverarbeitung verzeichnete einen Rückgang of 0.99 %, was zu 6.32 %.
+
+Für Sorte 6010100, TOTAL Überverar
+2026-04-06 08:14:39,266 INFO [llm] final prompt length: 7409
+2026-04-06 08:14:39,266 INFO [llm] Calling rag.ask(prompt)
+2026-04-06 08:15:31,214 INFO [llm] rag.ask returned object type: <class 'dict'>
+2026-04-06 08:15:31,215 INFO [llm] rag.ask returned repr: {'answer': '# Zusammenfassung\n\n## Gesamtüberblick\n\nFür alle betrachteten Sorten wurde eine **positive Kostenentwicklung** mit einem Rückgang der Gesamtkosten um **1,62 €/t auf 279,25 €/t** erreicht. Die Analyse zeigt, dass trotz einer **teureren Sortenmischung (+1,14 €/t)** eine deutliche **Prozessverbesserung (-2,76 €/t)** realisiert wurde, die den Mischungseffekt überkompensiert.\n\nDie Überverarbeitung stieg insgesamt um **0,56 % auf 7,23 %**, was auf Optimierungspotenzial hinweist, insbesondere bei Sorte 6010100 mit einem Anstieg von 3,52 %.\n\n## Sortenspezifische Entwicklung\n\n**Sorte 6010085** zeigt mit **-5,62 €/t** die stärkste Kostenreduktion und erreicht 284,61 €/t. Die Überverarbeitung sank um 0,99 % auf 6,32 %.\n\n**Sorte 3200115** verzeichnete einen Kostenrückgang von **-2,29 €/t auf 275,30 €/t** bei gleichzeitiger Reduktion der Überverarbeitung um 1,95 % auf 6,81 %.\n\n**Sorte 6010100** erreichte eine Kostenreduktion von **-1,60 €/t auf 285,43 €/t**, zeigt jedoch mit **+3,52 %** den höchsten Anstieg der Überverarbeitung auf 12,81 %.\n\n**Sorte 6010120** reduzierte die Kosten um **-1,41 €/t auf 275,01 €/t**, wobei die Überverarbeitung um 0,90 % auf 5,56 % stieg.\n\n## Kostenkomponenten-Analyse\n\n**Kostensenkende Komponenten:**\n- **Starch__€/T_**: -1,17 €/t (stärkster Rückgang bei 6010120: -1,61 €/t)\n- **Chemicals__€/T_**: -1,07 €/t\n- **Steam__€/T_**: -1,07 €/t\n- **Electricity__€/T_**: -0,01 €/t\n\n**Kostentreibende Komponente:**\n- **Fibre_cost__€/T_**: +0,60 €/t (höchster Anstieg bei 6010100: +0,70 €/t)\n\n## Qualitätsparameter\n\n**CMT30** stieg durchschnittlich um **+2,84 %** (höchster Anstieg bei 6010100: +4,23 %), während **Burst** um **-2,33 %** sank (stärkster Rückgang bei 3200115: -2,33 %). **SCT_CD** zeigte eine minimale Zunahme von +0,15 %.\n\n---\n\n# Diagnose\n\n## Prozesseffizienz und Kostenstruktur\n\nDie Gesamtanalyse zeigt eine **erfolgreiche Prozessoptimierung**, die gemäß [papermaking_science_technology.pdf:p152:c0] durch verbesserte Contribution Margin pro Stunde bewertet werden kann. Die Reduktion der variablen Kosten (Stärke, Chemikalien, Dampf) deutet auf optimierte Verbrauchsraten hin.\n\n## Kritische Befunde nach Sorten\n\n### Sorte 6010085 (Beste Performance)\n**Haupttreiber der Kostenreduktion:**\n- **Stärkeauftrag**: Reduktion um 0,86 g/m² führte zu Kosteneinsparungen\n- **DG4 Einlasslufttemperatur**: Senkung um 12,03°C verbesserte Energieeffizienz\n- **Gelöstgas vor Verdünnungswasser**: Anstieg um 0,25 optimierte Entwässerung\n- **Vakuum Uhle-Box Unterfilz**: Reduktion um 0,02 bar\n- **Stärkekonzentration Arbeitstank 1**: Senkung um 0,07 %\n- **Feuchte nach SpeedSizer**: Reduktion um 0,89 %\n\n**Problematisch:**\n- **Entwässerung Obersieb Saugkasten Zone 2**: Anstieg um 176,09 deutet auf Entwässerungsprobleme hin\n\n### Sorte 3200115\n**Haupttreiber der Kostenreduktion:**\n- **Maschinengeschwindigkeit**: Erhöhung um 86,06 m/min verbesserte Produktivität\n- **Stärkeauftrag Unterwalze**: Reduktion um 0,33 g/m²\n- **DG1 Einlasslufttemperatur**: Senkung um 10,39°C\n- **Stärkekonzentration Arbeitstank 1**: Reduktion um 0,06 %\n- **Feuchte nach SpeedSizer**: Senkung um 0,49 %\n\n**Problematisch:**\n- **Haspelfeuchte**: Reduktion um 0,18 % könnte Qualitätsprobleme verursachen\n- **Lippeneinstellung**: Anstieg um 0,28 mm\n- **Vakuum Sieb Saugkasten 2**: Reduktion um 0,05 bar\n- **Zylinder 40-53 Differenzdruck**: Anstieg um 0,01 bar\n\n### Sorte 6010100 (Höchste Überverarbeitung)\n**Haupttreiber der Kostenreduktion:**\n- **Maschinengeschwindigkeit (Speed PD1 & Speed)**: Erhöhung um 164,63 bzw. 162,10 m/min\n- **Vakuum Uhle-Box Unterfilz**: Reduktion um 0,13 bar\n- **Stärkeauftrag Oberwalze**: Reduktion um 1,13 g/m²\n- **Stärkeauftrag Unterwalze**: Reduktion um 0,59 g/m²\n- **Lippeneinstellung**: Reduktion um 1,32 mm\n- **Stärkekonzentration Arbeitstank 1**: Senkung um 0,12 %\n- **Feuchte nach SpeedSizer**: Reduktion um 1,69 %\n\n**Kritisch problematisch:**\n- **Stärkeauftrag gesamt**:
+2026-04-06 08:15:31,215 INFO [llm] answer length: 6931
+2026-04-06 08:15:31,215 INFO [llm] answer preview: # Zusammenfassung
+
+## Gesamtüberblick
+
+Für alle betrachteten Sorten wurde eine **positive Kostenentwicklung** mit einem Rückgang der Gesamtkosten um **1,62 €/t auf 279,25 €/t** erreicht. Die Analyse zeigt, dass trotz einer **teureren Sortenmischung (+1,14 €/t)** eine deutliche **Prozessverbesserung (-2,76 €/t)** realisiert wurde, die den Mischungseffekt überkompensiert.
+
+Die Überverarbeitung stieg insgesamt um **0,56 % auf 7,23 %**, was auf Optimierungspotenzial hinweist, insbesondere bei Sorte 6010100 mit einem Anstieg von 3,52 %.
+
+## Sortenspezifische Entwicklung
+
+**Sorte 6010085** zeigt mit **-5,62 €/t** die stärkste Kostenreduktion und erreicht 284,61 €/t. Die Überverarbeitung sank um 0,99 % auf 6,32 %.
+
+**Sorte 3200115** verzeichnete einen Kostenrückgang von **-2,29 €/t auf 275,30 €/t** bei gleichzeitiger Reduktion der Überverarbeitung um 1,95 % auf 6,81 %.
+
+**Sorte 6010100** erreichte eine Kostenreduktion von **-1,60 €/t auf 285,43 €/t**, zeigt jedoch mit **+3,52 %** den höchsten Anstieg der Überverarbeitung auf 12,81 %.
+
+**Sorte 6010120** reduzierte die Kosten um **-1,41 €/t auf 275,01 €/t**, wobei die Überverarbeitung um 0,90 % auf 5,56 % stieg.
+
+## Kostenkomponenten-Analyse
+
+**Kostensenkende Komponenten:**
+- **Starch__€/T_**: -1,17 €/t (stärkster Rückgang bei 6010120: -1,61 €/t)
+- **Chemicals__€/T_**: -1,07 €/t
+- **Steam__€/T_**: -1,07 €/t
+- **Electricity__€/T_**: -0,01 €/t
+
+**Kostentreibende Komponente:**
+- **Fibre_cost__€/T_**: +0,60 €/t (höchster Anstieg bei 6010100: +0,70 €/t)
+
+## Qualitätsparameter
+
+**CMT30** stieg durchschnittlich um **+2,84 %** (höchster Anstieg bei 6010100: +4,23 %), während **Burst** um **-2,33 %** sank (stärkster Rückgang bei 3200115: -2,33 %). **SCT_CD** zeigte eine minimale Zunahme von +0,15 %.
+
+---
+
+# Diagnose
+
+## Prozesseffizienz und Kostenstruktur
+
+Die Gesamtanalyse zeigt eine **erfolgreiche Prozessoptimierung**, die gemäß [papermaking_science_technology.pdf:p152:c0] durch verbesserte Contribution Margin pro Stunde bewertet w
+2026-04-06 11:29:03,854 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 11:29:03,863 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 11:29:03,870 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 11:29:49,048 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 11:29:49,053 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 11:29:49,059 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 11:30:00,204 INFO: Fibre_cost__€/T_
+2026-04-06 11:30:14,109 INFO: Steam__€/T_
+2026-04-06 11:31:36,187 INFO: Electricity__€/T_
+2026-04-06 11:31:58,122 INFO: Starch__€/T_
+2026-04-06 11:32:40,209 INFO: Fibre_cost__€/T_
+2026-04-06 11:32:53,396 INFO: Steam__€/T_
+2026-04-06 11:34:13,015 INFO: Electricity__€/T_
+2026-04-06 11:34:37,721 INFO: Starch__€/T_
+2026-04-06 11:35:17,196 INFO: Fibre_cost__€/T_
+2026-04-06 11:35:30,688 INFO: Steam__€/T_
+2026-04-06 11:37:02,631 INFO: Electricity__€/T_
+2026-04-06 11:37:21,506 INFO: Starch__€/T_
+2026-04-06 11:37:51,852 INFO: Fibre_cost__€/T_
+2026-04-06 11:38:04,856 INFO: Steam__€/T_
+2026-04-06 11:39:05,626 INFO: Electricity__€/T_
+2026-04-06 11:39:24,021 INFO: Starch__€/T_
+2026-04-06 11:39:46,555 INFO [llm] === Entering llm chunk ===
+2026-04-06 11:39:46,558 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 11:39:46,566 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-06 11:39:46,581 INFO [llm] boto3 session created
+2026-04-06 11:39:47,007 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-06 11:39:48,043 INFO [botocore.tokens] SSO Token refresh succeeded
+2026-04-06 11:39:49,167 INFO [llm] Credentials available: True
+2026-04-06 11:39:49,167 INFO [llm] Access key prefix: ASIA3M***
+2026-04-06 11:39:49,200 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-06 11:39:49,200 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-06 11:39:49,200 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-06 11:39:49,278 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-06 11:39:51,975 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-06 11:39:51,976 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-06 11:39:52,626 INFO [llm] === Entering summary chunk ===
+2026-04-06 11:39:52,631 INFO [llm] LANG: de
+2026-04-06 11:39:52,631 INFO [llm] descriptions count: 22
+2026-04-06 11:39:52,631 INFO [llm] non-empty descriptions count: 22
+2026-04-06 11:39:52,631 INFO [llm] prompt_body length: 7183
+2026-04-06 11:39:52,631 INFO [llm] prompt preview: Für alle betrachteten Sorten, TOTAL Kosten verzeichnete einen Rückgang of 1.56 €/t, was zu 152.89 €/t.
+
+Bei der Aufschlüsselung der gesamten Veränderung der Kosten ergibt sich, dass +1.05 €/t durch eine teurer Sortenmischung verursacht wurden und -2.61 €/t auf einer Verbesserung im Prozess zurückzuführen sind..Für Sorte 3200115, TOTAL Kosten verzeichnete einen Rückgang of 3.37 €/t, was zu 151.17 €/t.
+
+Für Sorte 6010085, TOTAL Kosten verzeichnete einen Rückgang of 6.09 €/t, was zu 155.90 €/t.
+
+Für Sorte 6010100, TOTAL Kosten saw an Anstieg of 0.38 €/t, was zu 156.79 €/t.
+
+Für Sorte 6010120, TOTAL Kosten verzeichnete einen Rückgang of 0.71 €/t, was zu 149.92 €/t.
+
+Über alle einzelnen Sorten betrachtet der stärkste Kosten-Anstieg wurde für Sorte 6010100 beobachtet (+0.38 €/t) und der stärkste Kosten-Rückgang wurde für Sorte 6010085 beobachtet (-6.09 €/t). Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden..Durchschnittliche Veränderung je Komponente:
+
+- **Starch__€/T_** ist im Durchschnitt gesunken (-1.27 €/t).
+
+- **Steam__€/T_** ist im Durchschnitt gesunken (-1.24 €/t).
+
+- **Fibre_cost__€/T_** ist im Durchschnitt gestiegen (+0.61 €/t).
+
+- **Chemicals__€/T_** ist im Durchschnitt gestiegen (+0.09 €/t).
+
+- **Electricity__€/T_** ist im Durchschnitt gestiegen (+0.01 €/t).
+
+Eine detailliertere Aufschlüsselung nach Komponenten zeigt, dass die größte durchschnittliche Zunahme stammt von **Fibre_cost__€/T_** (im Mittel +0.61 €/t), mit dem höchsten Anstieg in Sorte 6010100 (+0.83 €/t) und die größte durchschnittliche Abnahme stammt von **Starch__€/T_** (im Mittel -1.27 €/t), mit dem stärksten Rückgang in Sorte 6010120 (-1.61 €/t). Diese Komponenten stechen hervor und sollten ggf. weiter untersucht werden..Für alle betrachteten Sorten, TOTAL Überverarbeitung saw an Anstieg of 0.65 %, was zu 7.32 %..Für Sorte 3200115, TOTAL Überverarbeitung verzeichnete einen Rückgang of 1.84 %, was zu 6.81 %.
+
+Für Sorte 6010085, TOTAL Überverarbeitung verzeichnete einen Rü
+2026-04-06 11:39:52,631 INFO [llm] final prompt length: 7425
+2026-04-06 11:39:52,631 INFO [llm] Calling rag.ask(prompt)
+2026-04-06 11:40:47,144 INFO [llm] rag.ask returned object type: <class 'dict'>
+2026-04-06 11:40:47,144 INFO [llm] rag.ask returned repr: {'answer': '# Zusammenfassung\n\n## Gesamtüberblick über alle Sorten\n\nDie Gesamtkosten für alle betrachteten Sorten verzeichneten einen **Rückgang von 1.56 €/t auf 152.89 €/t**. Diese Veränderung setzt sich zusammen aus:\n\n- **+1.05 €/t** durch eine teurere Sortenmischung (Mix-Effekt)\n- **-2.61 €/t** durch Prozessverbesserungen\n\nDie **Gesamtüberverarbeitung stieg um 0.65% auf 7.32%**, was auf ineffizientere Qualitätseinstellungen hindeutet.\n\n## Sortenspezifische Entwicklungen\n\n**Sorte 6010085** (beste Performance):\n- Kostenreduktion: -6.09 €/t → 155.90 €/t\n- Überverarbeitung: -0.64% → 6.67%\n\n**Sorte 3200115**:\n- Kostenreduktion: -3.37 €/t → 151.17 €/t\n- Überverarbeitung: -1.84% → 6.81%\n\n**Sorte 6010120**:\n- Kostenreduktion: -0.71 €/t → 149.92 €/t\n- Überverarbeitung: +0.94% → 5.83%\n\n**Sorte 6010100** (Problemsorte):\n- Kostenanstieg: +0.38 €/t → 156.79 €/t\n- Überverarbeitung: +3.52% → 12.22%\n\n## Kostenkomponenten (Durchschnitt über alle Sorten)\n\n**Kostensenkende Faktoren:**\n- Starch__€/T_: -1.27 €/t (größte Einsparung)\n- Steam__€/T_: -1.24 €/t\n\n**Kostentreibende Faktoren:**\n- Fibre_cost__€/T_: +0.61 €/t (größter Anstieg)\n- Chemicals__€/T_: +0.09 €/t\n- Electricity__€/T_: +0.01 €/t\n\n## Qualitätsparameter (Überverarbeitung)\n\n**Durchschnittliche Veränderungen:**\n- CMT30: +2.90% (größte Zunahme)\n- SCT_CD: +0.29%\n- Burst: -2.33% (größte Abnahme)\n\n---\n\n# Diagnose\n\n## Positive Entwicklungen\n\n### Prozessverbesserungen dominieren\nDie **Netto-Prozessverbesserung von -2.61 €/t** überkompensiert den negativen Mix-Effekt (+1.05 €/t), was auf erfolgreiche Optimierungsmaßnahmen hindeutet.\n\n### Energieeffizienz verbessert\n- **Dampfkosten** sanken durchschnittlich um 1.24 €/t\n- **Stärkekosten** reduzierten sich um 1.27 €/t\n- Trocknungstemperaturen wurden optimiert (z.B. DG4/DG1 Temperature Inlet Air gesunken)\n\n### Erfolgreiche Sorten\n**Sorte 6010085** zeigt exzellente Performance durch:\n- Reduzierte Stärkeaufnahme (-0.66 g/m²)\n- Optimierte Trocknungstemperaturen (DG4: -12.35°C)\n- Verbesserte Gasauflösung (+0.27)\n\n**Sorte 3200115** profitiert von:\n- Geschwindigkeitserhöhung (+86.06 m/min)\n- Reduzierter Stärkeaufnahme Bottom Roll (-0.30 g/m²)\n- Optimierter Trocknungstemperatur (DG1: -10.39°C)\n\n## Kritische Problemfelder\n\n### Sorte 6010100 – Hauptproblemfall\n\n**Kostenproblematik (+0.38 €/t):**\n- **Faserkosten** stiegen um 0.83 €/t (höchster Anstieg aller Sorten)\n- **Feuchtigkeitsverlust** am Rollenwechsel (-0.13%) führt zu Energieineffizienz\n- **DG4 Temperature Inlet Air** stieg um 24.37°C (kostentreibend)\n\n**Überverarbeitungsproblematik (+3.52% → 12.22%):**\n- **CMT30** überspezifiziert (+4.24%)\n- Deutlich höchste Überverarbeitung aller Sorten\n- Geschwindigkeitserhöhung (+173.48 m/min) nicht optimal genutzt\n\n**Prozessinstabilitäten:**\n- Linepressure shoe press gesunken (-0.12 bar) → schlechtere Entwässerung\n- Jet/wire ratio stark gesunken (-19.55) → Formierungsprobleme\n- Lip settings reduziert (-1.36) → Kompensationsversuche\n\n### Faserkosten als übergreifendes Problem\n\n**Fibre_cost__€/T_** stieg durchschnittlich um **+0.61 €/t**:\n- Höchster Anstieg bei Sorte 6010100 (+0.83 €/t)\n- Deutet auf teurere Rohstoffmischung oder höheren Faserverbrauch hin\n- Laut [papermaking_science_technology.pdf:p310:c0] können Rohstoffpreise stark schwanken (Faktor 10 in 20 Jahren)\n\n### Überverarbeitung nimmt zu\n\n**Gesamtanstieg von +0.65%** trotz Kostenreduktion:\n- **CMT30** durchschnittlich +2.90% überspezifiziert\n- Besonders kritisch bei Sorte 6010100 (+4.24%)\n- Laut [papermaking_science_technology.pdf:p152:c0] sollte der Beitrag pro Stunde maximiert werden, nicht die Qualität pro Tonne\n\n### Stärkemanagement inkonsistent\n\nWidersprüchliche Entwicklungen:\n- **Concentration starch working tank 1** sank bei mehreren Sorten\n- **Temperature starch working tank 2** stieg bei 6010100 (+2.58°C)\n- **Moisture after SpeedSizer** variiert stark zwischen Sorten\n\n---\n\n# Maßn
+2026-04-06 11:40:47,144 INFO [llm] answer length: 7116
+2026-04-06 11:40:47,145 INFO [llm] answer preview: # Zusammenfassung
+
+## Gesamtüberblick über alle Sorten
+
+Die Gesamtkosten für alle betrachteten Sorten verzeichneten einen **Rückgang von 1.56 €/t auf 152.89 €/t**. Diese Veränderung setzt sich zusammen aus:
+
+- **+1.05 €/t** durch eine teurere Sortenmischung (Mix-Effekt)
+- **-2.61 €/t** durch Prozessverbesserungen
+
+Die **Gesamtüberverarbeitung stieg um 0.65% auf 7.32%**, was auf ineffizientere Qualitätseinstellungen hindeutet.
+
+## Sortenspezifische Entwicklungen
+
+**Sorte 6010085** (beste Performance):
+- Kostenreduktion: -6.09 €/t → 155.90 €/t
+- Überverarbeitung: -0.64% → 6.67%
+
+**Sorte 3200115**:
+- Kostenreduktion: -3.37 €/t → 151.17 €/t
+- Überverarbeitung: -1.84% → 6.81%
+
+**Sorte 6010120**:
+- Kostenreduktion: -0.71 €/t → 149.92 €/t
+- Überverarbeitung: +0.94% → 5.83%
+
+**Sorte 6010100** (Problemsorte):
+- Kostenanstieg: +0.38 €/t → 156.79 €/t
+- Überverarbeitung: +3.52% → 12.22%
+
+## Kostenkomponenten (Durchschnitt über alle Sorten)
+
+**Kostensenkende Faktoren:**
+- Starch__€/T_: -1.27 €/t (größte Einsparung)
+- Steam__€/T_: -1.24 €/t
+
+**Kostentreibende Faktoren:**
+- Fibre_cost__€/T_: +0.61 €/t (größter Anstieg)
+- Chemicals__€/T_: +0.09 €/t
+- Electricity__€/T_: +0.01 €/t
+
+## Qualitätsparameter (Überverarbeitung)
+
+**Durchschnittliche Veränderungen:**
+- CMT30: +2.90% (größte Zunahme)
+- SCT_CD: +0.29%
+- Burst: -2.33% (größte Abnahme)
+
+---
+
+# Diagnose
+
+## Positive Entwicklungen
+
+### Prozessverbesserungen dominieren
+Die **Netto-Prozessverbesserung von -2.61 €/t** überkompensiert den negativen Mix-Effekt (+1.05 €/t), was auf erfolgreiche Optimierungsmaßnahmen hindeutet.
+
+### Energieeffizienz verbessert
+- **Dampfkosten** sanken durchschnittlich um 1.24 €/t
+- **Stärkekosten** reduzierten sich um 1.27 €/t
+- Trocknungstemperaturen wurden optimiert (z.B. DG4/DG1 Temperature Inlet Air gesunken)
+
+### Erfolgreiche Sorten
+**Sorte 6010085** zeigt exzellente Performance durch:
+- Reduzierte Stärkeaufnahme (-0.66 g/m²)
+- Optimierte Trocknungstemperaturen (DG4: -12.35°C)
+- Verbesserte Gasauflö
+2026-04-06 11:42:54,607 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 11:42:54,613 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 11:42:54,617 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 11:43:24,218 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 11:43:24,225 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 11:43:24,234 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 11:43:34,108 INFO: Fibre_cost__€/T_
+2026-04-06 11:43:47,853 INFO: Steam__€/T_
+2026-04-06 11:45:27,728 INFO: Electricity__€/T_
+2026-04-06 11:45:47,269 INFO: Starch__€/T_
+2026-04-06 11:46:20,247 INFO: Fibre_cost__€/T_
+2026-04-06 11:46:32,496 INFO: Steam__€/T_
+2026-04-06 11:47:36,595 INFO: Electricity__€/T_
+2026-04-06 11:47:55,928 INFO: Starch__€/T_
+2026-04-06 11:48:28,885 INFO: Fibre_cost__€/T_
+2026-04-06 11:48:40,032 INFO: Steam__€/T_
+2026-04-06 11:49:45,153 INFO: Electricity__€/T_
+2026-04-06 11:50:02,759 INFO: Starch__€/T_
+2026-04-06 11:50:34,787 INFO: Fibre_cost__€/T_
+2026-04-06 11:50:50,217 INFO: Steam__€/T_
+2026-04-06 11:52:44,386 INFO: Electricity__€/T_
+2026-04-06 11:53:07,255 INFO: Starch__€/T_
+2026-04-06 11:53:35,587 INFO [llm] === Entering llm chunk ===
+2026-04-06 11:53:35,595 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 11:53:35,603 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-06 11:53:35,621 INFO [llm] boto3 session created
+2026-04-06 11:53:36,392 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-06 11:53:37,818 INFO [llm] Credentials available: True
+2026-04-06 11:53:37,818 INFO [llm] Access key prefix: ASIA3M***
+2026-04-06 11:53:37,879 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-06 11:53:37,880 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-06 11:53:37,881 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-06 11:53:38,097 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-06 11:53:44,385 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-06 11:53:44,385 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-06 11:53:45,359 INFO [llm] === Entering summary chunk ===
+2026-04-06 11:53:45,366 INFO [llm] LANG: en
+2026-04-06 11:53:45,366 INFO [llm] descriptions count: 22
+2026-04-06 11:53:45,366 INFO [llm] non-empty descriptions count: 22
+2026-04-06 11:53:45,367 INFO [llm] prompt_body length: 6692
+2026-04-06 11:53:45,367 INFO [llm] prompt preview: For all considered grades, TOTAL cost saw a decrease of 1.56 €/t, resulting in 152.89 €/t.
+
+Breaking down the overall cost change, +1.05 €/t was driven by a more expensive mix of grades, and -2.61 €/t was due to an improvement in the process..For grade 3200115, TOTAL cost saw a decrease of 3.37 €/t, resulting in 151.17 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 6.09 €/t, resulting in 155.90 €/t.
+
+For grade 6010100, TOTAL cost saw an increase of 0.38 €/t, resulting in 156.79 €/t.
+
+For grade 6010120, TOTAL cost saw a decrease of 0.71 €/t, resulting in 149.92 €/t.
+
+Looking across individual grades, the strongest cost increase was observed for grade 6010100 (+0.38 €/t) and the strongest cost decrease was observed for grade 6010085 (-6.09 €/t). These movements stand out and may require further investigation..Average change by component:
+
+- **Starch__€/T_** decreased on average (-1.27 €/t).
+
+- **Steam__€/T_** decreased on average (-1.24 €/t).
+
+- **Fibre_cost__€/T_** increased on average (+0.61 €/t).
+
+- **Chemicals__€/T_** increased on average (+0.09 €/t).
+
+- **Electricity__€/T_** increased on average (+0.01 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Fibre_cost__€/T_** (+0.61 €/t on average), with the highest increase in grade 6010100 (+0.83 €/t) and the largest average decrease comes from **Starch__€/T_** (-1.27 €/t on average), with the biggest drop in grade 6010120 (-1.61 €/t). These components stand out and may require further investigation..For all considered grades, TOTAL overprocessing saw an increase of 0.65 %, resulting in 7.32 %..For grade 3200115, TOTAL overprocessing saw a decrease of 1.84 %, resulting in 6.81 %.
+
+For grade 6010085, TOTAL overprocessing saw a decrease of 0.64 %, resulting in 6.67 %.
+
+For grade 6010100, TOTAL overprocessing saw an increase of 3.52 %, resulting in 12.22 %.
+
+For grade 6010120, TOTAL overprocessing saw an increase of 0.94 %, resulting in 5.83 %.
+
+Looking across indi
+2026-04-06 11:53:45,367 INFO [llm] final prompt length: 6871
+2026-04-06 11:53:45,367 INFO [llm] Calling rag.ask(prompt)
+2026-04-06 11:54:43,391 INFO [llm] rag.ask returned object type: <class 'dict'>
+2026-04-06 11:54:43,391 INFO [llm] rag.ask returned repr: {'answer': "# Summary, Diagnosis, and Action Plan\n\n## Executive Summary\n\nThe overall production performance shows a **net cost reduction of 1.56 €/t** (resulting in 152.89 €/t), driven by process improvements (-2.61 €/t) that more than offset the impact of a more expensive grade mix (+1.05 €/t). However, this positive trend masks significant grade-specific variations and a concerning **increase in overprocessing of 0.65%** (to 7.32%), indicating quality control challenges.\n\n---\n\n## Diagnosis by Functional Area\n\n### Overall Cost Performance\n**Variables involved:** TOTAL cost (€/t) - represents combined operating costs across all production inputs\n\n**Key Findings:**\n- **Grade 6010085** achieved the strongest improvement (-6.09 €/t to 155.90 €/t)\n- **Grade 6010100** showed cost deterioration (+0.38 €/t to 156.79 €/t)\n- **Grades 3200115 and 6010120** showed moderate improvements (-3.37 €/t and -0.71 €/t respectively)\n\n### Component Cost Analysis\n\n#### Size Press Section\n**Variables involved:** \n- Starch__€/T (starch application costs)\n- Starch uptake g/m² (starch consumption per unit area)\n- Concentration starch working tank 1 (starch preparation consistency)\n- Temperature starch working tank 2 (starch cooking temperature)\n- Moisture after SpeedSizer (moisture content post-sizing)\n\n**Diagnosis:**\n- **Largest cost reduction:** Starch costs decreased -1.27 €/t on average, with grade 6010120 showing the best performance (-1.61 €/t)\n- **Root causes:** Lower starch uptake and improved concentration control in working tanks\n- **Grade 6010100 concern:** Increased temperature in starch working tank 2 (+2.58°C) suggests suboptimal starch cooking, potentially affecting quality\n\n#### Pre-Drier and After-Drier Sections\n**Variables involved:**\n- Steam__€/T (drying energy costs)\n- DG1/DG4/DG5 Temperature Inlet Air (dryer hood air temperatures)\n- Cylinder differential pressures (steam condensate removal efficiency)\n- Electricity__€/T (motor and auxiliary power consumption)\n\n**Diagnosis:**\n- **Steam costs decreased -1.24 €/t** on average, indicating improved drying efficiency\n- **Grade 6010085:** Excellent performance with DG4 inlet air temperature reduction (-12.35°C), suggesting better heat transfer efficiency\n- **Grade 3200115:** Similar improvement with DG1 temperature reduction (-10.39°C)\n- **Grades 6010100 and 6010120:** Concerning increases in DG4 inlet air temperature (+24.37°C and +25.91°C), indicating potential over-drying or inefficient heat utilization\n\n#### Wet End and Press Section\n**Variables involved:**\n- Fibre_cost__€/T (raw material costs)\n- Chemicals__€/T (retention aids, fixatives, sizing agents)\n- Speed PD1 (machine speed at pre-dryer section)\n- Linepressure 1st press DS bar / shoe press bar (pressing intensity)\n- Vacuum wire suction box 2 / uhle-box bottom felt (dewatering efficiency)\n- Jet/wire ratio (forming section hydrodynamics)\n\n**Diagnosis:**\n- **Fibre costs increased +0.61 €/t** on average, with grade 6010100 worst affected (+0.83 €/t)\n- **Chemical costs increased slightly** (+0.09 €/t), suggesting stable retention performance\n- **Speed increases** in grades 3200115 (+86 m/min), 6010100 (+167-173 m/min), and 6010120 (+55 m/min) contributed to cost reductions through improved productivity\n- **Press section issues:** Decreased line pressures in multiple grades indicate suboptimal dewatering, potentially forcing higher drying energy consumption\n\n#### Scanner Section\n**Variables involved:**\n- Current reel moisture average (final product moisture)\n- BSW 2 sigma, Mois 2 sigma (quality variation indicators)\n\n**Diagnosis:**\n- **Grade 6010100:** Decreased reel moisture (-0.13%) suggests running too dry, contributing to cost increase and quality issues\n\n### Overprocessing Analysis\n\n**Variables involved:**\n- TOTAL overprocessing (%) - excess quality delivery beyond specifications\n- CMT30 (compression strength)\n- Burst (bursting strength)\n- SCT_CD (short-s
+2026-04-06 11:54:43,391 INFO [llm] answer length: 10448
+2026-04-06 11:54:43,391 INFO [llm] answer preview: # Summary, Diagnosis, and Action Plan
+
+## Executive Summary
+
+The overall production performance shows a **net cost reduction of 1.56 €/t** (resulting in 152.89 €/t), driven by process improvements (-2.61 €/t) that more than offset the impact of a more expensive grade mix (+1.05 €/t). However, this positive trend masks significant grade-specific variations and a concerning **increase in overprocessing of 0.65%** (to 7.32%), indicating quality control challenges.
+
+---
+
+## Diagnosis by Functional Area
+
+### Overall Cost Performance
+**Variables involved:** TOTAL cost (€/t) - represents combined operating costs across all production inputs
+
+**Key Findings:**
+- **Grade 6010085** achieved the strongest improvement (-6.09 €/t to 155.90 €/t)
+- **Grade 6010100** showed cost deterioration (+0.38 €/t to 156.79 €/t)
+- **Grades 3200115 and 6010120** showed moderate improvements (-3.37 €/t and -0.71 €/t respectively)
+
+### Component Cost Analysis
+
+#### Size Press Section
+**Variables involved:** 
+- Starch__€/T (starch application costs)
+- Starch uptake g/m² (starch consumption per unit area)
+- Concentration starch working tank 1 (starch preparation consistency)
+- Temperature starch working tank 2 (starch cooking temperature)
+- Moisture after SpeedSizer (moisture content post-sizing)
+
+**Diagnosis:**
+- **Largest cost reduction:** Starch costs decreased -1.27 €/t on average, with grade 6010120 showing the best performance (-1.61 €/t)
+- **Root causes:** Lower starch uptake and improved concentration control in working tanks
+- **Grade 6010100 concern:** Increased temperature in starch working tank 2 (+2.58°C) suggests suboptimal starch cooking, potentially affecting quality
+
+#### Pre-Drier and After-Drier Sections
+**Variables involved:**
+- Steam__€/T (drying energy costs)
+- DG1/DG4/DG5 Temperature Inlet Air (dryer hood air temperatures)
+- Cylinder differential pressures (steam condensate removal efficiency)
+- Electricity__€/T (motor and auxiliary power consumption)
+
+**Diagnosis:**
+- **Ste
+2026-04-06 11:57:49,648 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 11:57:49,656 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 11:57:49,661 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 11:58:29,658 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 11:58:29,663 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 11:58:29,667 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 11:58:39,348 INFO: Fibre_cost__€/T_
+2026-04-06 11:58:51,038 INFO: Steam__€/T_
+2026-04-06 11:59:54,928 INFO: Electricity__€/T_
+2026-04-06 12:00:16,870 INFO: Starch__€/T_
+2026-04-06 12:00:48,730 INFO: Fibre_cost__€/T_
+2026-04-06 12:01:00,971 INFO: Steam__€/T_
+2026-04-06 12:02:02,054 INFO: Electricity__€/T_
+2026-04-06 12:02:19,915 INFO: Starch__€/T_
+2026-04-06 12:02:49,211 INFO: Fibre_cost__€/T_
+2026-04-06 12:02:59,909 INFO: Steam__€/T_
+2026-04-06 12:04:00,867 INFO: Electricity__€/T_
+2026-04-06 12:04:18,194 INFO: Starch__€/T_
+2026-04-06 12:04:52,127 INFO: Fibre_cost__€/T_
+2026-04-06 12:05:04,844 INFO: Steam__€/T_
+2026-04-06 12:06:06,630 INFO: Electricity__€/T_
+2026-04-06 12:06:25,495 INFO: Starch__€/T_
+2026-04-06 12:06:46,120 INFO [llm] === Entering llm chunk ===
+2026-04-06 12:06:46,126 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 12:06:46,132 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-06 12:06:46,144 INFO [llm] boto3 session created
+2026-04-06 12:06:46,324 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-06 12:06:47,527 INFO [llm] Credentials available: True
+2026-04-06 12:06:47,527 INFO [llm] Access key prefix: ASIA3M***
+2026-04-06 12:06:47,535 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-06 12:06:47,535 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-06 12:06:47,535 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-06 12:06:47,610 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-06 12:06:48,071 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-06 12:06:48,071 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-06 12:06:48,447 INFO [llm] === Entering summary chunk ===
+2026-04-06 12:06:48,450 INFO [llm] LANG: en
+2026-04-06 12:06:48,450 INFO [llm] descriptions count: 22
+2026-04-06 12:06:48,450 INFO [llm] non-empty descriptions count: 22
+2026-04-06 12:06:48,450 INFO [llm] prompt_body length: 6693
+2026-04-06 12:06:48,450 INFO [llm] prompt preview: For all considered grades, TOTAL cost saw a decrease of 1.10 €/t, resulting in 279.73 €/t.
+
+Breaking down the overall cost change, +0.87 €/t was driven by a more expensive mix of grades, and -1.97 €/t was due to an improvement in the process..For grade 3200115, TOTAL cost saw a decrease of 2.85 €/t, resulting in 274.89 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 5.61 €/t, resulting in 284.05 €/t.
+
+For grade 6010100, TOTAL cost saw an increase of 1.21 €/t, resulting in 284.16 €/t.
+
+For grade 6010120, TOTAL cost saw an increase of 0.05 €/t, resulting in 277.86 €/t.
+
+Looking across individual grades, the strongest cost increase was observed for grade 6010100 (+1.21 €/t) and the strongest cost decrease was observed for grade 6010085 (-5.61 €/t). These movements stand out and may require further investigation..Average change by component:
+
+- **Starch__€/T_** decreased on average (-1.27 €/t).
+
+- **Steam__€/T_** decreased on average (-1.24 €/t).
+
+- **Fibre_cost__€/T_** increased on average (+0.61 €/t).
+
+- **Chemicals__€/T_** increased on average (+0.09 €/t).
+
+- **Electricity__€/T_** increased on average (+0.01 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Fibre_cost__€/T_** (+0.61 €/t on average), with the highest increase in grade 6010100 (+0.83 €/t) and the largest average decrease comes from **Starch__€/T_** (-1.27 €/t on average), with the biggest drop in grade 6010120 (-1.61 €/t). These components stand out and may require further investigation..For all considered grades, TOTAL overprocessing saw an increase of 0.65 %, resulting in 7.32 %..For grade 3200115, TOTAL overprocessing saw a decrease of 1.84 %, resulting in 6.81 %.
+
+For grade 6010085, TOTAL overprocessing saw a decrease of 0.64 %, resulting in 6.67 %.
+
+For grade 6010100, TOTAL overprocessing saw an increase of 3.52 %, resulting in 12.22 %.
+
+For grade 6010120, TOTAL overprocessing saw an increase of 0.94 %, resulting in 5.83 %.
+
+Looking across ind
+2026-04-06 12:06:48,450 INFO [llm] final prompt length: 6872
+2026-04-06 12:06:48,450 INFO [llm] Calling rag.ask(prompt)
+2026-04-06 12:07:45,222 INFO [llm] rag.ask returned object type: <class 'dict'>
+2026-04-06 12:07:45,222 INFO [llm] rag.ask returned repr: {'answer': '# Summary, Diagnosis, and Action Plan\n\n## SUMMARY\n\n### Overall Performance\nThe mill achieved a **net cost reduction of 1.10 €/t** (resulting in 279.73 €/t) across all grades, despite an unfavorable grade mix (+0.87 €/t). Process improvements delivered -1.97 €/t in savings, demonstrating operational excellence.\n\n### Grade-Specific Performance\n- **Grade 6010085**: Best performer with -5.61 €/t reduction (284.05 €/t final)\n- **Grade 3200115**: Strong improvement at -2.85 €/t (274.89 €/t final)\n- **Grade 6010100**: Cost increase of +1.21 €/t (284.16 €/t final) - **requires attention**\n- **Grade 6010120**: Minimal increase of +0.05 €/t (277.86 €/t final)\n\n### Cost Component Trends\n**Cost Reducers:**\n- **Starch** (Size Press section): -1.27 €/t average savings\n- **Steam** (Pre Dryier/After Dryier sections): -1.24 €/t average savings\n\n**Cost Increasers:**\n- **Fibre cost**: +0.61 €/t average increase (highest in grade 6010100: +0.83 €/t)\n- **Chemicals**: +0.09 €/t average increase\n- **Electricity** (Pre Dryier section): +0.01 €/t minimal increase\n\n### Overprocessing Trends\nOverall overprocessing increased by 0.65% to 7.32%, indicating quality targets are being exceeded unnecessarily.\n\n**Critical Issues:**\n- **Grade 6010100**: +3.52% overprocessing increase (12.22% total) - **significant waste**\n- **CMT30** strength property: +2.90% average overprocessing across grades\n- **Grade 6010100 CMT30**: +4.24% overprocessing - highest contributor\n\n---\n\n## DIAGNOSIS\n\n### Grade 6010100 - Primary Concern\n\nThis grade shows **simultaneous cost increases and severe overprocessing**, indicating process instability:\n\n**Cost Drivers (Combined Cost section):**\n- Reduced reel moisture (Scanner section: Current reel moisture average) causing overdrying\n- Increased DG4 Temperature Inlet Air (After Dryier section: +24.37 units) - excessive steam usage\n- Decreased Linepressure shoe press bar (Press Section: -0.12 bar) - poor dewatering\n- Increased Temperature starch working tank 2 (Size Press section: +2.58 units) - starch quality issues\n\n**Overprocessing Drivers:**\n- CMT30 strength +4.24% above target - excessive refining or fiber usage\n- Poor moisture control leading to quality variability\n\n**Root Cause Analysis:**\nPer [papermaking_science_technology.pdf:d6f6f20ccb65b658:4601:0], grade changes affect "dewatering in the forming, pressing and drying sections" and require "carefully designed" adjustments. The data suggests **incomplete grade change optimization** for 6010100, with:\n- Press section underperformance (low shoe press pressure)\n- Compensatory overdrying (high dryer temperatures, low final moisture)\n- Overcompensation in strength properties (excessive CMT30)\n\n### Grade 6010085 - Best Practice Reference\n\nThis grade demonstrates **optimal process control**:\n\n**Success Factors:**\n- Reduced DG4 Temperature Inlet Air (After Dryier: -12.35 units) - efficient drying\n- Increased dissolved gas before dilution water deculator (Press Section area) - improved dewatering\n- Optimized starch uptake (Size Press: -0.66 g/m²) - reduced waste\n- Decreased moisture after SpeedSizer (Size Press: -0.57%) - better moisture profile\n- Decreased concentration starch working tank 1 (Size Press: -0.07) - optimized starch usage\n\n### Steam Efficiency Achievement\n\nAcross all grades, steam costs decreased -1.24 €/t through:\n- Lower dryer inlet air temperatures (DG1, DG4 in After Dryier section)\n- Improved press section dewatering (reduced moisture to dryers)\n- Better moisture profiling through the machine\n\nPer [papermaking_science_technology.pdf:d6f6f20ccb65b658:4601:0], "the purpose of changing the steam pressure is to feed the required amount of heat to the cylinders in order to minimise temperature and heat flow fluctuations."\n\n### Fiber Cost Pressure\n\nThe +0.61 €/t fiber cost increase (highest in 6010100: +0.83 €/t) reflects:\n- Raw material price volatility - per [papermaking_science_tech
+2026-04-06 12:07:45,222 INFO [llm] answer length: 9892
+2026-04-06 12:07:45,223 INFO [llm] answer preview: # Summary, Diagnosis, and Action Plan
+
+## SUMMARY
+
+### Overall Performance
+The mill achieved a **net cost reduction of 1.10 €/t** (resulting in 279.73 €/t) across all grades, despite an unfavorable grade mix (+0.87 €/t). Process improvements delivered -1.97 €/t in savings, demonstrating operational excellence.
+
+### Grade-Specific Performance
+- **Grade 6010085**: Best performer with -5.61 €/t reduction (284.05 €/t final)
+- **Grade 3200115**: Strong improvement at -2.85 €/t (274.89 €/t final)
+- **Grade 6010100**: Cost increase of +1.21 €/t (284.16 €/t final) - **requires attention**
+- **Grade 6010120**: Minimal increase of +0.05 €/t (277.86 €/t final)
+
+### Cost Component Trends
+**Cost Reducers:**
+- **Starch** (Size Press section): -1.27 €/t average savings
+- **Steam** (Pre Dryier/After Dryier sections): -1.24 €/t average savings
+
+**Cost Increasers:**
+- **Fibre cost**: +0.61 €/t average increase (highest in grade 6010100: +0.83 €/t)
+- **Chemicals**: +0.09 €/t average increase
+- **Electricity** (Pre Dryier section): +0.01 €/t minimal increase
+
+### Overprocessing Trends
+Overall overprocessing increased by 0.65% to 7.32%, indicating quality targets are being exceeded unnecessarily.
+
+**Critical Issues:**
+- **Grade 6010100**: +3.52% overprocessing increase (12.22% total) - **significant waste**
+- **CMT30** strength property: +2.90% average overprocessing across grades
+- **Grade 6010100 CMT30**: +4.24% overprocessing - highest contributor
+
+---
+
+## DIAGNOSIS
+
+### Grade 6010100 - Primary Concern
+
+This grade shows **simultaneous cost increases and severe overprocessing**, indicating process instability:
+
+**Cost Drivers (Combined Cost section):**
+- Reduced reel moisture (Scanner section: Current reel moisture average) causing overdrying
+- Increased DG4 Temperature Inlet Air (After Dryier section: +24.37 units) - excessive steam usage
+- Decreased Linepressure shoe press bar (Press Section: -0.12 bar) - poor dewatering
+- Increased Temperature starch working tank 2 (Size Press sect
+2026-04-06 15:37:48,865 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 15:37:48,872 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 15:37:48,875 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 15:38:44,388 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 15:38:44,396 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 15:38:44,410 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 15:38:56,116 INFO: Fibre_cost__€/T_
+2026-04-06 15:39:11,395 INFO: Steam__€/T_
+2026-04-06 15:40:34,721 INFO: Electricity__€/T_
+2026-04-06 15:41:02,512 INFO: Starch__€/T_
+2026-04-06 15:41:43,794 INFO: Fibre_cost__€/T_
+2026-04-06 15:41:58,657 INFO: Steam__€/T_
+2026-04-06 15:43:24,902 INFO: Electricity__€/T_
+2026-04-06 15:43:46,903 INFO: Starch__€/T_
+2026-04-06 15:44:26,214 INFO: Fibre_cost__€/T_
+2026-04-06 15:44:38,874 INFO: Steam__€/T_
+2026-04-06 15:46:02,254 INFO: Electricity__€/T_
+2026-04-06 15:46:24,838 INFO: Starch__€/T_
+2026-04-06 15:47:06,018 INFO: Fibre_cost__€/T_
+2026-04-06 15:47:21,348 INFO: Steam__€/T_
+2026-04-06 15:48:48,763 INFO: Electricity__€/T_
+2026-04-06 15:49:14,484 INFO: Starch__€/T_
+2026-04-06 15:49:43,958 INFO [llm] === Entering llm chunk ===
+2026-04-06 15:49:43,966 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 15:49:43,973 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-06 15:49:44,004 INFO [llm] boto3 session created
+2026-04-06 15:49:44,782 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-06 15:49:45,631 WARNING [botocore.tokens] SSO token refresh attempt failed
+Traceback (most recent call last):
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\tokens.py", line 304, in _refresh_access_token
+    return self._attempt_create_token(token)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\tokens.py", line 263, in _attempt_create_token
+    response = self._client.create_token(
+        grantType=self._GRANT_TYPE,
+    ...<2 lines>...
+        refreshToken=token["refreshToken"],
+    )
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 602, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\client.py", line 1078, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.InvalidGrantException: An error occurred (InvalidGrantException) when calling the CreateToken operation: 
+2026-04-06 15:49:45,699 WARNING [botocore.credentials] Refreshing temporary credentials failed during mandatory refresh period.
+Traceback (most recent call last):
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\credentials.py", line 572, in _protected_refresh
+    metadata = self._refresh_using()
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\credentials.py", line 722, in fetch_credentials
+    return self._get_cached_credentials()
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\credentials.py", line 732, in _get_cached_credentials
+    response = self._get_credentials()
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\credentials.py", line 2289, in _get_credentials
+    token = initial_token_data.get_frozen_token().token
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\tokens.py", line 89, in get_frozen_token
+    self._refresh()
+    ~~~~~~~~~~~~~^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\tokens.py", line 102, in _refresh
+    self._protected_refresh()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\tokens.py", line 129, in _protected_refresh
+    raise TokenRetrievalError(
+    ...<2 lines>...
+    )
+botocore.exceptions.TokenRetrievalError: Error when retrieving token from sso: Token has expired and refresh failed
+2026-04-06 15:49:45,720 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 10, in <module>
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\credentials.py", line 669, in get_frozen_credentials
+    self._refresh()
+    ~~~~~~~~~~~~~^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\credentials.py", line 556, in _refresh
+    self._protected_refresh(is_mandatory=is_mandatory_refresh)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\credentials.py", line 572, in _protected_refresh
+    metadata = self._refresh_using()
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\credentials.py", line 722, in fetch_credentials
+    return self._get_cached_credentials()
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\credentials.py", line 732, in _get_cached_credentials
+    response = self._get_credentials()
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\credentials.py", line 2289, in _get_credentials
+    token = initial_token_data.get_frozen_token().token
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\tokens.py", line 89, in get_frozen_token
+    self._refresh()
+    ~~~~~~~~~~~~~^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\tokens.py", line 102, in _refresh
+    self._protected_refresh()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\WORKSP~1\COSTIM~1\VENV~1\Lib\site-packages\botocore\tokens.py", line 129, in _protected_refresh
+    raise TokenRetrievalError(
+    ...<2 lines>...
+    )
+botocore.exceptions.TokenRetrievalError: Error when retrieving token from sso: Token has expired and refresh failed
+2026-04-06 15:49:46,044 INFO [llm] === Entering summary chunk ===
+2026-04-06 15:49:46,049 INFO [llm] LANG: en
+2026-04-06 15:49:46,049 INFO [llm] descriptions count: 25
+2026-04-06 15:49:46,049 INFO [llm] non-empty descriptions count: 25
+2026-04-06 15:49:46,049 INFO [llm] prompt_body length: 9358
+2026-04-06 15:49:46,049 INFO [llm] prompt preview: For all considered grades, TOTAL cost saw a decrease of 1.10 €/t, resulting in 279.73 €/t.
+
+Breaking down the overall cost change, +0.87 €/t was driven by a more expensive mix of grades, and -1.97 €/t was due to an improvement in the process..For grade 3200115, TOTAL cost saw a decrease of 2.85 €/t, resulting in 274.89 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 5.61 €/t, resulting in 284.05 €/t.
+
+For grade 6010100, TOTAL cost saw an increase of 1.21 €/t, resulting in 284.16 €/t.
+
+For grade 6010120, TOTAL cost saw an increase of 0.05 €/t, resulting in 277.86 €/t.
+
+Looking across individual grades, the strongest cost increase was observed for grade 6010100 (+1.21 €/t) and the strongest cost decrease was observed for grade 6010085 (-5.61 €/t). These movements stand out and may require further investigation..Average change by component:
+
+- **Starch__€/T_** decreased on average (-1.27 €/t).
+
+- **Steam__€/T_** decreased on average (-1.24 €/t).
+
+- **Fibre_cost__€/T_** increased on average (+0.61 €/t).
+
+- **Chemicals__€/T_** increased on average (+0.09 €/t).
+
+- **Electricity__€/T_** increased on average (+0.01 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Fibre_cost__€/T_** (+0.61 €/t on average), with the highest increase in grade 6010100 (+0.83 €/t) and the largest average decrease comes from **Starch__€/T_** (-1.27 €/t on average), with the biggest drop in grade 6010120 (-1.61 €/t). These components stand out and may require further investigation..Average change by steam:
+
+- **Steam_Whitewater** decreased on average (-0.79 €/t).
+
+- **Steam_Predryers** decreased on average (-0.33 €/t).
+
+- **Steam_Afterdryers** decreased on average (-0.16 €/t).
+
+- **Steam_Starchkitchen** increased on average (+0.03 €/t).
+
+- **Steam_Heatexchangers** increased on average (+0.00 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Steam_Starchkitchen** (+0.03 €/t on average), with the
+2026-04-06 15:49:46,049 INFO [llm] final prompt length: 9537
+2026-04-06 15:49:46,049 INFO [llm] Calling rag.ask(prompt)
+2026-04-06 15:49:46,049 ERROR [llm] Failure in summary chunk
+Traceback (most recent call last):
+  File "<string>", line 30, in <module>
+NameError: name 'rag' is not defined
+2026-04-06 15:55:23,996 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 15:55:24,000 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 15:55:24,003 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 15:56:08,694 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 15:56:08,701 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 15:56:08,705 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 15:56:19,155 INFO: Fibre_cost__€/T_
+2026-04-06 15:56:31,166 INFO: Steam__€/T_
+2026-04-06 15:57:35,259 INFO: Electricity__€/T_
+2026-04-06 15:57:54,245 INFO: Starch__€/T_
+2026-04-06 15:58:24,418 INFO: Fibre_cost__€/T_
+2026-04-06 15:58:36,612 INFO: Steam__€/T_
+2026-04-06 15:59:42,148 INFO: Electricity__€/T_
+2026-04-06 16:00:06,706 INFO: Starch__€/T_
+2026-04-06 16:00:57,882 INFO: Fibre_cost__€/T_
+2026-04-06 16:01:12,334 INFO: Steam__€/T_
+2026-04-06 16:03:00,267 INFO: Electricity__€/T_
+2026-04-06 16:03:22,471 INFO: Starch__€/T_
+2026-04-06 16:04:17,061 INFO: Fibre_cost__€/T_
+2026-04-06 16:04:33,167 INFO: Steam__€/T_
+2026-04-06 16:06:14,233 INFO: Electricity__€/T_
+2026-04-06 16:06:40,803 INFO: Starch__€/T_
+2026-04-06 16:07:16,953 INFO [llm] === Entering llm chunk ===
+2026-04-06 16:07:16,964 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 16:07:16,969 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-06 16:07:17,002 INFO [llm] boto3 session created
+2026-04-06 16:07:17,678 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-06 16:07:19,172 INFO [llm] Credentials available: True
+2026-04-06 16:07:19,172 INFO [llm] Access key prefix: ASIA3M***
+2026-04-06 16:07:19,215 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-06 16:07:19,216 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-06 16:07:19,216 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-06 16:07:19,337 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-06 16:07:22,723 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-06 16:07:22,723 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-06 16:07:23,055 INFO [llm] === Entering summary chunk ===
+2026-04-06 16:07:23,059 INFO [llm] LANG: en
+2026-04-06 16:07:23,060 INFO [llm] descriptions count: 25
+2026-04-06 16:07:23,060 INFO [llm] non-empty descriptions count: 25
+2026-04-06 16:07:23,060 INFO [llm] prompt_body length: 9358
+2026-04-06 16:07:23,060 INFO [llm] prompt preview: For all considered grades, TOTAL cost saw a decrease of 1.10 €/t, resulting in 279.73 €/t.
+
+Breaking down the overall cost change, +0.87 €/t was driven by a more expensive mix of grades, and -1.97 €/t was due to an improvement in the process..For grade 3200115, TOTAL cost saw a decrease of 2.85 €/t, resulting in 274.89 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 5.61 €/t, resulting in 284.05 €/t.
+
+For grade 6010100, TOTAL cost saw an increase of 1.21 €/t, resulting in 284.16 €/t.
+
+For grade 6010120, TOTAL cost saw an increase of 0.05 €/t, resulting in 277.86 €/t.
+
+Looking across individual grades, the strongest cost increase was observed for grade 6010100 (+1.21 €/t) and the strongest cost decrease was observed for grade 6010085 (-5.61 €/t). These movements stand out and may require further investigation..Average change by component:
+
+- **Starch__€/T_** decreased on average (-1.27 €/t).
+
+- **Steam__€/T_** decreased on average (-1.24 €/t).
+
+- **Fibre_cost__€/T_** increased on average (+0.61 €/t).
+
+- **Chemicals__€/T_** increased on average (+0.09 €/t).
+
+- **Electricity__€/T_** increased on average (+0.01 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Fibre_cost__€/T_** (+0.61 €/t on average), with the highest increase in grade 6010100 (+0.83 €/t) and the largest average decrease comes from **Starch__€/T_** (-1.27 €/t on average), with the biggest drop in grade 6010120 (-1.61 €/t). These components stand out and may require further investigation..Average change by steam:
+
+- **Steam_Whitewater** decreased on average (-0.79 €/t).
+
+- **Steam_Predryers** decreased on average (-0.33 €/t).
+
+- **Steam_Afterdryers** decreased on average (-0.16 €/t).
+
+- **Steam_Starchkitchen** increased on average (+0.03 €/t).
+
+- **Steam_Heatexchangers** increased on average (+0.00 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Steam_Starchkitchen** (+0.03 €/t on average), with the
+2026-04-06 16:07:23,068 INFO [llm] final prompt length: 9537
+2026-04-06 16:07:23,068 INFO [llm] Calling rag.ask(prompt)
+2026-04-06 16:08:18,791 INFO [llm] rag.ask returned object type: <class 'dict'>
+2026-04-06 16:08:18,791 INFO [llm] rag.ask returned repr: {'answer': '# Summary, Diagnosis, and Action Plan\n\n## Executive Summary\n\nOverall production costs decreased by 1.10 €/t to 279.73 €/t across all grades. While the grade mix added 0.87 €/t in costs, process improvements delivered savings of 1.97 €/t. However, significant grade-specific variations and rising overprocessing levels (now at 7.32%, up 0.65%) indicate operational inconsistencies requiring immediate attention.\n\n**Critical Finding**: Grade 6010100 shows concerning trends with cost increases (+1.21 €/t) and the highest overprocessing level (12.22%, up 3.52%), suggesting substantial inefficiencies.\n\n---\n\n## Diagnosis by Section\n\n### Cost Components Analysis\n\n**Fibre Cost Section** [data_glossary.csv:e633305a49e7e154:1:0]\n- **Issue**: Average increase of +0.61 €/t across grades\n- **Worst performer**: Grade 6010100 (+0.83 €/t)\n- **Root cause**: Increased fibre usage without corresponding quality improvements\n- **Purpose**: Raw material costs for pulp/fibre furnish\n\n**Starch Section** (Size Press) [data_glossary.csv:e633305a49e7e154:1:0]\n- **Positive**: Average decrease of -1.27 €/t\n- **Best performer**: Grade 6010120 (-1.61 €/t)\n- **Driver**: Reduced starch uptake (g/m²) and improved concentration control in starch working tank 1\n- **Purpose**: Surface sizing for strength and printability\n\n**Steam Section** (Pre Dryier, After Dryier) [data_glossary.csv:e633305a49e7e154:1:0]\n- **Positive**: Average decrease of -1.24 €/t\n- **Key improvements**:\n  - Steam_Whitewater: -0.79 €/t (best: grade 6010085 at -1.40 €/t)\n  - Steam_Predryers: -0.33 €/t\n  - Steam_Afterdryers: -0.16 €/t\n- **Drivers**: Lower DG4 Temperature Inlet Air (-12.35°C for 6010085) and improved drying efficiency\n- **Purpose**: Evaporation energy for moisture removal [papermaking_science_technology.pdf:d6f6f20ccb65b658:4629:0]\n\n**Chemicals Section** (Cost) [data_glossary.csv:e633305a49e7e154:1:0]\n- **Issue**: Slight average increase of +0.09 €/t\n- **Mixed performance**:\n  - Fixative_2: +0.07 €/t (retention aid)\n  - Sizing_Agent: -0.14 €/t (surface treatment)\n- **Purpose**: Retention, sizing, strength, and process control additives\n\n**Electricity Section** (Pre Dryier, After Dryier, Press Section) [data_glossary.csv:e633305a49e7e154:1:0]\n- **Minimal impact**: +0.01 €/t average\n- **Concern**: Electricity_Other increased +0.14 €/t (grade 3200115: +0.34 €/t)\n- **Purpose**: Drive systems, vacuum pumps, and auxiliary equipment\n\n### Scanner Section Quality Metrics [data_glossary.csv:e633305a49e7e154:1:0]\n\n**Grade 6010100 - Critical Issues**:\n- Current reel moisture average decreased by 0.13% (insufficient drying)\n- DG4 Temperature Inlet Air increased +24.37°C (overcompensation)\n- Moisture after SpeedSizer variations affecting final quality\n- **Purpose**: Real-time quality monitoring and control feedback\n\n**Grade 3200115 - Positive Performance**:\n- Speed increased +86.06 m/min (improved productivity)\n- DG1 temperature Inlet Air decreased -10.39°C (energy efficiency)\n- Moisture after SpeedSizer decreased -0.49% (better water removal)\n\n### Press Section Performance [data_glossary.csv:e633305a49e7e154:1:0]\n\n**Grade 6010100 Issues**:\n- Linepressure shoe press bar decreased -0.12 bar (reduced dewatering)\n- Jet/wire ratio decreased -19.55 (formation impact)\n- **Purpose**: Mechanical water removal before drying [papermaking_science_technology.pdf:d6f6f20ccb65b658:4602:0]\n\n**Grade 6010085 Improvements**:\n- Linepressure 1st press DS bar optimized\n- Dissolved gas before dilution water deculator increased +0.27 (better retention)\n\n---\n\n## Root Cause Analysis\n\n### Grade 6010100 - Primary Concern\n\n1. **Overprocessing Crisis** (12.22%, +3.52%):\n   - Excessive material usage without quality justification\n   - Indicates poor process control and grade change management [papermaking_science_technology.pdf:d6f6f20ccb65b658:7053:0]\n\n2. **Drying Section Imbalance**:\n   - Insufficient final moisture removal (reel m
+2026-04-06 16:08:18,791 INFO [llm] answer length: 9612
+2026-04-06 16:08:18,791 INFO [llm] answer preview: # Summary, Diagnosis, and Action Plan
+
+## Executive Summary
+
+Overall production costs decreased by 1.10 €/t to 279.73 €/t across all grades. While the grade mix added 0.87 €/t in costs, process improvements delivered savings of 1.97 €/t. However, significant grade-specific variations and rising overprocessing levels (now at 7.32%, up 0.65%) indicate operational inconsistencies requiring immediate attention.
+
+**Critical Finding**: Grade 6010100 shows concerning trends with cost increases (+1.21 €/t) and the highest overprocessing level (12.22%, up 3.52%), suggesting substantial inefficiencies.
+
+---
+
+## Diagnosis by Section
+
+### Cost Components Analysis
+
+**Fibre Cost Section** [data_glossary.csv:e633305a49e7e154:1:0]
+- **Issue**: Average increase of +0.61 €/t across grades
+- **Worst performer**: Grade 6010100 (+0.83 €/t)
+- **Root cause**: Increased fibre usage without corresponding quality improvements
+- **Purpose**: Raw material costs for pulp/fibre furnish
+
+**Starch Section** (Size Press) [data_glossary.csv:e633305a49e7e154:1:0]
+- **Positive**: Average decrease of -1.27 €/t
+- **Best performer**: Grade 6010120 (-1.61 €/t)
+- **Driver**: Reduced starch uptake (g/m²) and improved concentration control in starch working tank 1
+- **Purpose**: Surface sizing for strength and printability
+
+**Steam Section** (Pre Dryier, After Dryier) [data_glossary.csv:e633305a49e7e154:1:0]
+- **Positive**: Average decrease of -1.24 €/t
+- **Key improvements**:
+  - Steam_Whitewater: -0.79 €/t (best: grade 6010085 at -1.40 €/t)
+  - Steam_Predryers: -0.33 €/t
+  - Steam_Afterdryers: -0.16 €/t
+- **Drivers**: Lower DG4 Temperature Inlet Air (-12.35°C for 6010085) and improved drying efficiency
+- **Purpose**: Evaporation energy for moisture removal [papermaking_science_technology.pdf:d6f6f20ccb65b658:4629:0]
+
+**Chemicals Section** (Cost) [data_glossary.csv:e633305a49e7e154:1:0]
+- **Issue**: Slight average increase of +0.09 €/t
+- **Mixed performance**:
+  - Fixative_2: +0.07 €/t (retention aid)
+  - S
+2026-04-06 16:17:15,754 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 16:17:15,757 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 16:17:15,760 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 16:18:05,379 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 16:18:05,383 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 16:18:05,388 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 16:18:16,035 INFO: Fibre_cost__€/T_
+2026-04-06 16:18:27,967 INFO: Steam__€/T_
+2026-04-06 16:19:42,925 INFO: Electricity__€/T_
+2026-04-06 16:20:04,156 INFO: Starch__€/T_
+2026-04-06 16:20:35,200 INFO: Fibre_cost__€/T_
+2026-04-06 16:20:46,833 INFO: Steam__€/T_
+2026-04-06 16:21:46,981 INFO: Electricity__€/T_
+2026-04-06 16:22:04,021 INFO: Starch__€/T_
+2026-04-06 16:22:31,809 INFO: Fibre_cost__€/T_
+2026-04-06 16:22:41,963 INFO: Steam__€/T_
+2026-04-06 16:23:45,439 INFO: Electricity__€/T_
+2026-04-06 16:24:04,603 INFO: Starch__€/T_
+2026-04-06 16:24:39,141 INFO: Fibre_cost__€/T_
+2026-04-06 16:24:51,798 INFO: Steam__€/T_
+2026-04-06 16:25:57,028 INFO: Electricity__€/T_
+2026-04-06 16:26:16,485 INFO: Starch__€/T_
+2026-04-06 16:26:41,416 INFO [llm] === Entering llm chunk ===
+2026-04-06 16:26:41,419 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 16:26:41,422 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-06 16:26:41,435 INFO [llm] boto3 session created
+2026-04-06 16:26:41,869 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-06 16:26:43,177 INFO [llm] Credentials available: True
+2026-04-06 16:26:43,177 INFO [llm] Access key prefix: ASIA3M***
+2026-04-06 16:26:43,218 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-06 16:26:43,219 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-06 16:26:43,219 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-06 16:26:43,300 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-06 16:26:46,358 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-06 16:26:46,358 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-06 16:26:46,591 INFO [llm] === Entering summary chunk ===
+2026-04-06 16:26:46,595 INFO [llm] LANG: en
+2026-04-06 16:26:46,595 INFO [llm] descriptions count: 25
+2026-04-06 16:26:46,595 INFO [llm] non-empty descriptions count: 25
+2026-04-06 16:26:46,595 INFO [llm] prompt_body length: 9358
+2026-04-06 16:26:46,595 INFO [llm] prompt preview: For all considered grades, TOTAL cost saw a decrease of 1.10 €/t, resulting in 279.73 €/t.
+
+Breaking down the overall cost change, +0.87 €/t was driven by a more expensive mix of grades, and -1.97 €/t was due to an improvement in the process..For grade 3200115, TOTAL cost saw a decrease of 2.85 €/t, resulting in 274.89 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 5.61 €/t, resulting in 284.05 €/t.
+
+For grade 6010100, TOTAL cost saw an increase of 1.21 €/t, resulting in 284.16 €/t.
+
+For grade 6010120, TOTAL cost saw an increase of 0.05 €/t, resulting in 277.86 €/t.
+
+Looking across individual grades, the strongest cost increase was observed for grade 6010100 (+1.21 €/t) and the strongest cost decrease was observed for grade 6010085 (-5.61 €/t). These movements stand out and may require further investigation..Average change by component:
+
+- **Starch__€/T_** decreased on average (-1.27 €/t).
+
+- **Steam__€/T_** decreased on average (-1.24 €/t).
+
+- **Fibre_cost__€/T_** increased on average (+0.61 €/t).
+
+- **Chemicals__€/T_** increased on average (+0.09 €/t).
+
+- **Electricity__€/T_** increased on average (+0.01 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Fibre_cost__€/T_** (+0.61 €/t on average), with the highest increase in grade 6010100 (+0.83 €/t) and the largest average decrease comes from **Starch__€/T_** (-1.27 €/t on average), with the biggest drop in grade 6010120 (-1.61 €/t). These components stand out and may require further investigation..Average change by steam:
+
+- **Steam_Whitewater** decreased on average (-0.79 €/t).
+
+- **Steam_Predryers** decreased on average (-0.33 €/t).
+
+- **Steam_Afterdryers** decreased on average (-0.16 €/t).
+
+- **Steam_Starchkitchen** increased on average (+0.03 €/t).
+
+- **Steam_Heatexchangers** increased on average (+0.00 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Steam_Starchkitchen** (+0.03 €/t on average), with the
+2026-04-06 16:26:46,595 INFO [llm] final prompt length: 9537
+2026-04-06 16:26:46,595 INFO [llm] Calling rag.ask(prompt)
+2026-04-06 16:27:38,108 INFO [llm] rag.ask returned object type: <class 'dict'>
+2026-04-06 16:27:38,109 INFO [llm] rag.ask returned repr: {'answer': '# Summary, Diagnosis, and Action Plan\n\n## Executive Summary\n\nOverall production costs decreased by 1.10 €/t to 279.73 €/t across all grades. While the grade mix added 0.87 €/t in costs, process improvements delivered savings of 1.97 €/t. However, significant grade-specific variations and increasing overprocessing trends (up 0.65% to 7.32%) require immediate attention, particularly for grade 6010100 which shows concerning cost increases and overprocessing levels.\n\n---\n\n## Diagnosis by Section\n\n### Cost Performance Analysis\n\n**Overall Cost Components:**\n- **Starch (Cost Section)**: Largest average decrease at -1.27 €/t, with grade 6010120 showing the biggest drop (-1.61 €/t) [data_glossary.csv:e633305a49e7e154:1:0]\n- **Steam (Cost Section)**: Second-largest decrease at -1.24 €/t, driven primarily by efficiency gains\n- **Fibre Cost (Cost Section)**: Largest average increase at +0.61 €/t, with grade 6010100 showing highest increase (+0.83 €/t)\n- **Chemicals (Cost Section)**: Minor increase of +0.09 €/t\n- **Electricity (Cost Section)**: Minimal increase of +0.01 €/t\n\n**Grade-Specific Performance:**\n- **Grade 6010085**: Best performer with -5.61 €/t reduction (now 284.05 €/t)\n- **Grade 6010100**: Worst performer with +1.21 €/t increase (now 284.16 €/t) - **CRITICAL CONCERN**\n- **Grade 3200115**: Good performance with -2.85 €/t reduction (now 274.89 €/t)\n- **Grade 6010120**: Stable with +0.05 €/t increase (now 277.86 €/t)\n\n### Steam Subsystem Analysis (After Dryer & Pre Dryer Sections)\n\n**Steam consumption breakdown:**\n- **Steam_Whitewater**: Largest decrease at -0.79 €/t (grade 6010085: -1.40 €/t) [data_glossary.csv - After Dryier & Pre Dryier sections]\n- **Steam_Predryers**: Decreased -0.33 €/t\n- **Steam_Afterdryers**: Decreased -0.16 €/t\n- **Steam_Starchkitchen (Size Press Section)**: Increased +0.03 €/t (grade 3200115: +0.07 €/t)\n- **Steam_Heatexchangers**: Minimal increase\n\n**Key drivers identified:**\n- Grade 6010085: DG4 Temperature Inlet Air decreased by 12.35°C - major steam savings [data_glossary.csv - After Dryier section]\n- Grade 3200115: DG1 Temperature Inlet Air decreased by 10.39°C - contributing to steam reduction [data_glossary.csv - Pre Dryier section]\n- Grade 6010100: DG4 Temperature Inlet Air **increased** by 24.37°C - driving cost increases [papermaking_science_technology.pdf:d6f6f20ccb65b658:4629:0]\n\n### Electricity Subsystem Analysis (Pre Dryer, After Dryer, Press Section)\n\n**Electricity consumption breakdown:**\n- **Electricity_Specific (Pre Dryer Section)**: Decreased -0.22 €/t (grade 3200115: -0.33 €/t) [data_glossary.csv - Pre Dryier section]\n- **Electricity_Other**: Increased +0.14 €/t (grade 3200115: +0.34 €/t)\n- **Electricity_Freqconverters**: Increased +0.06 €/t\n- **Electricity_Wiresection**: Increased +0.02 €/t\n- **Electricity_Press_and_Steambox (Press Section)**: Increased +0.01 €/t [data_glossary.csv - Press Section]\n\n### Chemical Subsystem Analysis (Size Press & Cost Sections)\n\n**Chemical consumption patterns:**\n- **Sizing_Agent (Size Press Section)**: Decreased -0.14 €/t (grade 3200115: -0.14 €/t) [data_glossary.csv - Size Press section]\n- **Fixative_2 (Cost Section)**: Increased +0.07 €/t (grade 3200115: +0.09 €/t)\n- **Defoamer (Size Press Section)**: Increased +0.05 €/t [data_glossary.csv - Size Press section]\n- **Bentonite_2 (Cost Section)**: Increased +0.04 €/t\n\n### Overprocessing Analysis (Scanner Section)\n\n**Critical overprocessing trends:**\n- **Grade 6010100**: Alarming increase of +3.52% to 12.22% - **IMMEDIATE ACTION REQUIRED** [data_glossary.csv - Scaner section]\n- **Grade 6010120**: Moderate increase of +0.94% to 5.83%\n- **Grade 3200115**: Improved with -1.84% decrease to 6.81%\n- **Grade 6010085**: Slight improvement with -0.64% decrease to 6.67%\n\n### Process Variable Analysis by Section\n\n**Size Press Section Issues:**\n- Grade 6010085: Starch uptake decreased by 0.66 g/m², Moisture after SpeedSizer decreased by 
+2026-04-06 16:27:38,109 INFO [llm] answer length: 9417
+2026-04-06 16:27:38,109 INFO [llm] answer preview: # Summary, Diagnosis, and Action Plan
+
+## Executive Summary
+
+Overall production costs decreased by 1.10 €/t to 279.73 €/t across all grades. While the grade mix added 0.87 €/t in costs, process improvements delivered savings of 1.97 €/t. However, significant grade-specific variations and increasing overprocessing trends (up 0.65% to 7.32%) require immediate attention, particularly for grade 6010100 which shows concerning cost increases and overprocessing levels.
+
+---
+
+## Diagnosis by Section
+
+### Cost Performance Analysis
+
+**Overall Cost Components:**
+- **Starch (Cost Section)**: Largest average decrease at -1.27 €/t, with grade 6010120 showing the biggest drop (-1.61 €/t) [data_glossary.csv:e633305a49e7e154:1:0]
+- **Steam (Cost Section)**: Second-largest decrease at -1.24 €/t, driven primarily by efficiency gains
+- **Fibre Cost (Cost Section)**: Largest average increase at +0.61 €/t, with grade 6010100 showing highest increase (+0.83 €/t)
+- **Chemicals (Cost Section)**: Minor increase of +0.09 €/t
+- **Electricity (Cost Section)**: Minimal increase of +0.01 €/t
+
+**Grade-Specific Performance:**
+- **Grade 6010085**: Best performer with -5.61 €/t reduction (now 284.05 €/t)
+- **Grade 6010100**: Worst performer with +1.21 €/t increase (now 284.16 €/t) - **CRITICAL CONCERN**
+- **Grade 3200115**: Good performance with -2.85 €/t reduction (now 274.89 €/t)
+- **Grade 6010120**: Stable with +0.05 €/t increase (now 277.86 €/t)
+
+### Steam Subsystem Analysis (After Dryer & Pre Dryer Sections)
+
+**Steam consumption breakdown:**
+- **Steam_Whitewater**: Largest decrease at -0.79 €/t (grade 6010085: -1.40 €/t) [data_glossary.csv - After Dryier & Pre Dryier sections]
+- **Steam_Predryers**: Decreased -0.33 €/t
+- **Steam_Afterdryers**: Decreased -0.16 €/t
+- **Steam_Starchkitchen (Size Press Section)**: Increased +0.03 €/t (grade 3200115: +0.07 €/t)
+- **Steam_Heatexchangers**: Minimal increase
+
+**Key drivers identified:**
+- Grade 6010085: DG4 Temperature Inlet Air decreased by 12.35°C - m
+2026-04-06 16:29:18,247 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 16:29:18,252 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 16:29:18,255 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 16:29:58,150 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-06 16:29:58,156 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 16:29:58,160 INFO: Working directory: c:\workspace\costimiser
+2026-04-06 16:30:09,460 INFO: Fibre_cost__€/T_
+2026-04-06 16:30:21,622 INFO: Steam__€/T_
+2026-04-06 16:31:30,608 INFO: Electricity__€/T_
+2026-04-06 16:31:55,772 INFO: Starch__€/T_
+2026-04-06 16:32:31,390 INFO: Fibre_cost__€/T_
+2026-04-06 16:32:43,269 INFO: Steam__€/T_
+2026-04-06 16:33:48,738 INFO: Electricity__€/T_
+2026-04-06 16:34:05,859 INFO: Starch__€/T_
+2026-04-06 16:34:37,672 INFO: Fibre_cost__€/T_
+2026-04-06 16:34:47,581 INFO: Steam__€/T_
+2026-04-06 16:35:55,142 INFO: Electricity__€/T_
+2026-04-06 16:36:13,905 INFO: Starch__€/T_
+2026-04-06 16:36:48,349 INFO: Fibre_cost__€/T_
+2026-04-06 16:37:00,915 INFO: Steam__€/T_
+2026-04-06 16:38:09,213 INFO: Electricity__€/T_
+2026-04-06 16:38:29,586 INFO: Starch__€/T_
+2026-04-06 16:38:54,172 INFO [llm] === Entering llm chunk ===
+2026-04-06 16:38:54,181 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-06 16:38:54,188 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-06 16:38:54,218 INFO [llm] boto3 session created
+2026-04-06 16:38:54,647 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-06 16:38:55,891 INFO [llm] Credentials available: True
+2026-04-06 16:38:55,891 INFO [llm] Access key prefix: ASIA3M***
+2026-04-06 16:38:55,897 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-06 16:38:55,898 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-06 16:38:55,898 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-06 16:38:55,981 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-06 16:38:56,421 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-06 16:38:56,421 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-06 16:38:56,591 INFO [llm] === Entering summary chunk ===
+2026-04-06 16:38:56,595 INFO [llm] LANG: en
+2026-04-06 16:38:56,595 INFO [llm] descriptions count: 25
+2026-04-06 16:38:56,595 INFO [llm] non-empty descriptions count: 25
+2026-04-06 16:38:56,595 INFO [llm] prompt_body length: 9358
+2026-04-06 16:38:56,595 INFO [llm] prompt preview: For all considered grades, TOTAL cost saw a decrease of 1.10 €/t, resulting in 279.73 €/t.
+
+Breaking down the overall cost change, +0.87 €/t was driven by a more expensive mix of grades, and -1.97 €/t was due to an improvement in the process..For grade 3200115, TOTAL cost saw a decrease of 2.85 €/t, resulting in 274.89 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 5.61 €/t, resulting in 284.05 €/t.
+
+For grade 6010100, TOTAL cost saw an increase of 1.21 €/t, resulting in 284.16 €/t.
+
+For grade 6010120, TOTAL cost saw an increase of 0.05 €/t, resulting in 277.86 €/t.
+
+Looking across individual grades, the strongest cost increase was observed for grade 6010100 (+1.21 €/t) and the strongest cost decrease was observed for grade 6010085 (-5.61 €/t). These movements stand out and may require further investigation..Average change by component:
+
+- **Starch__€/T_** decreased on average (-1.27 €/t).
+
+- **Steam__€/T_** decreased on average (-1.24 €/t).
+
+- **Fibre_cost__€/T_** increased on average (+0.61 €/t).
+
+- **Chemicals__€/T_** increased on average (+0.09 €/t).
+
+- **Electricity__€/T_** increased on average (+0.01 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Fibre_cost__€/T_** (+0.61 €/t on average), with the highest increase in grade 6010100 (+0.83 €/t) and the largest average decrease comes from **Starch__€/T_** (-1.27 €/t on average), with the biggest drop in grade 6010120 (-1.61 €/t). These components stand out and may require further investigation..Average change by steam:
+
+- **Steam_Whitewater** decreased on average (-0.79 €/t).
+
+- **Steam_Predryers** decreased on average (-0.33 €/t).
+
+- **Steam_Afterdryers** decreased on average (-0.16 €/t).
+
+- **Steam_Starchkitchen** increased on average (+0.03 €/t).
+
+- **Steam_Heatexchangers** increased on average (+0.00 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Steam_Starchkitchen** (+0.03 €/t on average), with the
+2026-04-06 16:38:56,595 INFO [llm] final prompt length: 9537
+2026-04-06 16:38:56,595 INFO [llm] Calling rag.ask(prompt)
+2026-04-06 16:39:53,135 INFO [llm] rag.ask returned object type: <class 'dict'>
+2026-04-06 16:39:53,136 INFO [llm] rag.ask returned repr: {'answer': '# Executive Summary, Diagnosis, and Action Plan\n\n## Executive Summary\n\n### Overall Performance\nThe mill achieved a **net cost reduction of 1.10 €/t** (resulting in 279.73 €/t total cost) across all grades, driven by:\n- **Process improvements**: -1.97 €/t (positive impact)\n- **Grade mix effect**: +0.87 €/t (negative impact - more expensive grades produced)\n\nHowever, **overprocessing increased by 0.65%** to 7.32%, indicating efficiency concerns despite cost improvements.\n\n### Grade-Specific Performance\n**Best performer**: Grade 6010085 (-5.61 €/t cost reduction)  \n**Worst performer**: Grade 6010100 (+1.21 €/t cost increase, +3.52% overprocessing to 12.22%)\n\n---\n\n## Detailed Diagnosis\n\n### Section One: Cost Component Analysis\n\n#### Major Cost Drivers (Average Changes)\n\n**Cost Reductions:**\n- **Starch** (Size Press section): -1.27 €/t average\n  - Best improvement: Grade 6010120 (-1.61 €/t)\n  - Driven by reduced starch uptake and optimized concentration in working tank 1\n  \n- **Steam** (Pre-Dryer, After-Dryer sections): -1.24 €/t average\n  - Steam_Whitewater: -0.79 €/t (largest steam reduction)\n  - Steam_Predryers: -0.33 €/t\n  - Steam_Afterdryers: -0.16 €/t\n  - Best improvement: Grade 6010085 (-1.40 €/t in whitewater steam)\n\n**Cost Increases:**\n- **Fibre cost**: +0.61 €/t average\n  - Worst: Grade 6010100 (+0.83 €/t)\n  - This is a raw material cost issue, not process-controllable\n\n- **Chemicals**: +0.09 €/t average\n  - Fixative_2: +0.07 €/t increase\n  - Defoamer: +0.05 €/t increase\n  - Sizing_Agent: -0.14 €/t decrease (positive)\n\n- **Electricity**: +0.01 €/t average (minimal impact)\n\n### Section Two: Grade-Specific Root Cause Analysis\n\n#### Grade 6010085 (Best Performance: -5.61 €/t)\n**Scanner Section Variables:**\n- Reduced starch uptake: -0.66 g/m²\n- Reduced moisture after SpeedSizer: -0.57%\n\n**After-Dryer Section:**\n- DG4 Temperature Inlet Air decreased: -12.35°C (major steam savings)\n- Improved dissolved gas management (+0.27 before dilution water deculator)\n\n**Press Section:**\n- Linepressure 1st press DS decreased: -0.05 bar (minor negative)\n\n**Pre-Dryer Section:**\n- Increased draw PS-PD1: +0.10% (slight tension increase)\n\n**Size Press Section:**\n- Concentration starch working tank 1 decreased: -0.07% (optimization)\n\n**Diagnosis**: Excellent drying optimization with lower inlet air temperature while maintaining quality. Efficient starch application.\n\n#### Grade 6010100 (Worst Performance: +1.21 €/t, +3.52% overprocessing)\n**Scanner Section:**\n- Current reel moisture average decreased: -0.13% (overdrying indicator)\n\n**Pre-Dryer Section:**\n- Speed PD1 increased: +167.31 m/min (production increase)\n- Vacuum uhle-box bottom felt decreased: -0.13 bar\n- Linepressure 1st press DS increased: +0.17 bar (improved pressing)\n- Jet/wire ratio decreased: -19.55% (formation optimization)\n\n**After-Dryer Section:**\n- DG4 Temperature Inlet Air increased: +24.37°C (excessive drying energy)\n\n**Press Section:**\n- Linepressure shoe press decreased: -0.12 bar (dewatering loss)\n\n**Size Press Section:**\n- Concentration starch working tank 1 decreased: -0.11%\n- Temperature starch working tank 2 increased: +2.58°C (viscosity issue)\n- Lip settings decreased: -1.36 mm\n\n**Diagnosis**: **Critical overprocessing issue**. High speed increase (+173.48 m/min) combined with excessive after-dryer temperature (+24.37°C) and reduced shoe press pressure causing overdrying (12.22% overprocessing). Compensating with excessive energy rather than optimizing mechanical dewatering.\n\n#### Grade 3200115 (-2.85 €/t)\n**Scanner/Pre-Dryer Sections:**\n- Speed increased: +86.06 m/min\n- DG1 temperature Inlet Air decreased: -10.39°C (good optimization)\n- Moisture after SpeedSizer decreased: -0.49%\n\n**Press Section:**\n- Vacuum wire suction box 2 decreased: -0.05 bar\n\n**After-Dryer Section:**\n- Cylinder 40-53 differential pressure increased: +0.01 bar\n\n**Size Press Section
+2026-04-06 16:39:53,137 INFO [llm] answer length: 9872
+2026-04-06 16:39:53,137 INFO [llm] answer preview: # Executive Summary, Diagnosis, and Action Plan
+
+## Executive Summary
+
+### Overall Performance
+The mill achieved a **net cost reduction of 1.10 €/t** (resulting in 279.73 €/t total cost) across all grades, driven by:
+- **Process improvements**: -1.97 €/t (positive impact)
+- **Grade mix effect**: +0.87 €/t (negative impact - more expensive grades produced)
+
+However, **overprocessing increased by 0.65%** to 7.32%, indicating efficiency concerns despite cost improvements.
+
+### Grade-Specific Performance
+**Best performer**: Grade 6010085 (-5.61 €/t cost reduction)  
+**Worst performer**: Grade 6010100 (+1.21 €/t cost increase, +3.52% overprocessing to 12.22%)
+
+---
+
+## Detailed Diagnosis
+
+### Section One: Cost Component Analysis
+
+#### Major Cost Drivers (Average Changes)
+
+**Cost Reductions:**
+- **Starch** (Size Press section): -1.27 €/t average
+  - Best improvement: Grade 6010120 (-1.61 €/t)
+  - Driven by reduced starch uptake and optimized concentration in working tank 1
+  
+- **Steam** (Pre-Dryer, After-Dryer sections): -1.24 €/t average
+  - Steam_Whitewater: -0.79 €/t (largest steam reduction)
+  - Steam_Predryers: -0.33 €/t
+  - Steam_Afterdryers: -0.16 €/t
+  - Best improvement: Grade 6010085 (-1.40 €/t in whitewater steam)
+
+**Cost Increases:**
+- **Fibre cost**: +0.61 €/t average
+  - Worst: Grade 6010100 (+0.83 €/t)
+  - This is a raw material cost issue, not process-controllable
+
+- **Chemicals**: +0.09 €/t average
+  - Fixative_2: +0.07 €/t increase
+  - Defoamer: +0.05 €/t increase
+  - Sizing_Agent: -0.14 €/t decrease (positive)
+
+- **Electricity**: +0.01 €/t average (minimal impact)
+
+### Section Two: Grade-Specific Root Cause Analysis
+
+#### Grade 6010085 (Best Performance: -5.61 €/t)
+**Scanner Section Variables:**
+- Reduced starch uptake: -0.66 g/m²
+- Reduced moisture after SpeedSizer: -0.57%
+
+**After-Dryer Section:**
+- DG4 Temperature Inlet Air decreased: -12.35°C (major steam savings)
+- Improved dissolved gas management (+0.27 before dilution water deculator)
+
+**Press S
+2026-04-07 14:28:55,181 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-07 14:28:55,186 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-07 14:28:55,189 INFO: Working directory: c:\workspace\costimiser
+2026-04-07 14:29:52,954 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-04-07 14:29:52,968 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-07 14:29:52,980 INFO: Working directory: c:\workspace\costimiser
+2026-04-07 14:30:07,043 INFO: Fibre_cost__€/T_
+2026-04-07 14:30:20,086 INFO: Steam__€/T_
+2026-04-07 14:32:26,177 INFO: Electricity__€/T_
+2026-04-07 14:32:49,590 INFO: Starch__€/T_
+2026-04-07 14:33:48,838 INFO: Fibre_cost__€/T_
+2026-04-07 14:34:03,609 INFO: Steam__€/T_
+2026-04-07 14:35:56,887 INFO: Electricity__€/T_
+2026-04-07 14:37:01,722 INFO: Starch__€/T_
+2026-04-07 14:38:05,078 INFO: Fibre_cost__€/T_
+2026-04-07 14:38:18,062 INFO: Steam__€/T_
+2026-04-07 14:39:27,588 INFO: Electricity__€/T_
+2026-04-07 14:39:46,135 INFO: Starch__€/T_
+2026-04-07 14:40:22,318 INFO: Fibre_cost__€/T_
+2026-04-07 14:40:38,143 INFO: Steam__€/T_
+2026-04-07 14:41:49,426 INFO: Electricity__€/T_
+2026-04-07 14:42:11,814 INFO: Starch__€/T_
+2026-04-07 14:42:38,037 INFO [llm] === Entering llm chunk ===
+2026-04-07 14:42:38,043 INFO [llm] Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-04-07 14:42:38,047 INFO [llm] Working directory: c:\workspace\costimiser
+2026-04-07 14:42:38,065 INFO [llm] boto3 session created
+2026-04-07 14:42:38,796 INFO [botocore.tokens] Loading cached SSO token for dssmith
+2026-04-07 14:42:39,830 INFO [botocore.tokens] SSO Token refresh succeeded
+2026-04-07 14:42:40,956 INFO [llm] Credentials available: True
+2026-04-07 14:42:40,956 INFO [llm] Access key prefix: ASIA3M***
+2026-04-07 14:42:41,005 INFO [faiss.loader] Loading faiss with AVX512 support.
+2026-04-07 14:42:41,005 INFO [faiss.loader] Could not load library with AVX512 support due to:
+ModuleNotFoundError("No module named 'faiss.swigfaiss_avx512'")
+2026-04-07 14:42:41,005 INFO [faiss.loader] Loading faiss with AVX2 support.
+2026-04-07 14:42:41,093 INFO [faiss.loader] Successfully loaded faiss with AVX2 support.
+2026-04-07 14:42:44,384 INFO [llm] knowledge_retrieval imported from: c:\workspace\costimiser\knowledge_retrieval.py
+2026-04-07 14:42:44,384 ERROR [llm] Failure in llm chunk
+Traceback (most recent call last):
+  File "<string>", line 18, in <module>
+NameError: name 'importlib' is not defined. Did you forget to import 'importlib'?
+2026-04-07 14:42:44,715 INFO [llm] === Entering summary chunk ===
+2026-04-07 14:42:44,719 INFO [llm] LANG: de
+2026-04-07 14:42:44,719 INFO [llm] descriptions count: 25
+2026-04-07 14:42:44,719 INFO [llm] non-empty descriptions count: 25
+2026-04-07 14:42:44,719 INFO [llm] prompt_body length: 10138
+2026-04-07 14:42:44,719 INFO [llm] prompt preview: Für alle betrachteten Sorten, TOTAL Kosten verzeichnete einen Rückgang of 1.10 €/t, was zu 279.73 €/t.
+
+Bei der Aufschlüsselung der gesamten Veränderung der Kosten ergibt sich, dass +0.87 €/t durch eine teurer Sortenmischung verursacht wurden und -1.97 €/t auf einer Verbesserung im Prozess zurückzuführen sind..Für Sorte 3200115, TOTAL Kosten verzeichnete einen Rückgang of 2.85 €/t, was zu 274.89 €/t.
+
+Für Sorte 6010085, TOTAL Kosten verzeichnete einen Rückgang of 5.61 €/t, was zu 284.05 €/t.
+
+Für Sorte 6010100, TOTAL Kosten saw an Anstieg of 1.21 €/t, was zu 284.16 €/t.
+
+Für Sorte 6010120, TOTAL Kosten saw an Anstieg of 0.05 €/t, was zu 277.86 €/t.
+
+Über alle einzelnen Sorten betrachtet der stärkste Kosten-Anstieg wurde für Sorte 6010100 beobachtet (+1.21 €/t) und der stärkste Kosten-Rückgang wurde für Sorte 6010085 beobachtet (-5.61 €/t). Diese Bewegungen stechen hervor und sollten ggf. weiter untersucht werden..Durchschnittliche Veränderung je Komponente:
+
+- **Starch__€/T_** ist im Durchschnitt gesunken (-1.27 €/t).
+
+- **Steam__€/T_** ist im Durchschnitt gesunken (-1.24 €/t).
+
+- **Fibre_cost__€/T_** ist im Durchschnitt gestiegen (+0.61 €/t).
+
+- **Chemicals__€/T_** ist im Durchschnitt gestiegen (+0.09 €/t).
+
+- **Electricity__€/T_** ist im Durchschnitt gestiegen (+0.01 €/t).
+
+Eine detailliertere Aufschlüsselung nach Komponenten zeigt, dass die größte durchschnittliche Zunahme stammt von **Fibre_cost__€/T_** (im Mittel +0.61 €/t), mit dem höchsten Anstieg in Sorte 6010100 (+0.83 €/t) und die größte durchschnittliche Abnahme stammt von **Starch__€/T_** (im Mittel -1.27 €/t), mit dem stärksten Rückgang in Sorte 6010120 (-1.61 €/t). Diese Komponenten stechen hervor und sollten ggf. weiter untersucht werden..Durchschnittliche Veränderung je Dampf:
+
+- **Steam_Whitewater** ist im Durchschnitt gesunken (-0.79 €/t).
+
+- **Steam_Predryers** ist im Durchschnitt gesunken (-0.33 €/t).
+
+- **Steam_Afterdryers** ist im Durchschnitt gesunken (-0.16 €/t).
+
+- **Steam_Starchkitchen** is
+2026-04-07 14:42:44,719 INFO [llm] final prompt length: 10380
+2026-04-07 14:42:44,719 INFO [llm] Calling rag.ask(prompt)
+2026-04-07 14:43:36,588 INFO [llm] rag.ask returned object type: <class 'dict'>
+2026-04-07 14:43:36,589 INFO [llm] rag.ask returned repr: {'answer': '# Zusammenfassung\n\n## Gesamtüberblick über alle Sorten\n\nFür alle betrachteten Sorten verzeichneten die **TOTAL Kosten** einen Rückgang von **1.10 €/t auf 279.73 €/t**. Diese Gesamtveränderung setzt sich zusammen aus:\n- **+0.87 €/t** durch eine teurere Sortenmischung (Mix-Effekt)\n- **-1.97 €/t** durch Prozessverbesserungen\n\nDie **TOTAL Überverarbeitung** stieg um **0.65% auf 7.32%**, was auf Ineffizienzen in der Produktion hinweist.\n\n## Sortenspezifische Entwicklungen\n\n**Sorte 6010085** (größte Kostenreduktion):\n- Kosten: -5.61 €/t → 284.05 €/t\n- Überverarbeitung: -0.64% → 6.67%\n\n**Sorte 3200115**:\n- Kosten: -2.85 €/t → 274.89 €/t\n- Überverarbeitung: -1.84% → 6.81%\n\n**Sorte 6010100** (größter Kostenanstieg):\n- Kosten: +1.21 €/t → 284.16 €/t\n- Überverarbeitung: +3.52% → 12.22% (kritisch hoch)\n\n**Sorte 6010120**:\n- Kosten: +0.05 €/t → 277.86 €/t\n- Überverarbeitung: +0.94% → 5.83%\n\n## Kostenkomponenten-Analyse\n\n**Hauptkostentreiber (Zunahmen):**\n- **Fibre_cost__€/T_**: +0.61 €/t (höchster Anstieg bei Sorte 6010100: +0.83 €/t)\n- **Chemicals__€/T_**: +0.09 €/t\n- **Electricity__€/T_**: +0.01 €/t\n\n**Hauptkostensenkungen:**\n- **Starch__€/T_**: -1.27 €/t (stärkster Rückgang bei Sorte 6010120: -1.61 €/t)\n- **Steam__€/T_**: -1.24 €/t\n\n## Detaillierte Dampfkosten-Analyse\n\n**Dampfkostensenkungen:**\n- **Steam_Whitewater**: -0.79 €/t (größter Rückgang bei Sorte 6010085: -1.40 €/t)\n- **Steam_Predryers**: -0.33 €/t\n- **Steam_Afterdryers**: -0.16 €/t\n\n**Dampfkostenzunahmen:**\n- **Steam_Starchkitchen**: +0.03 €/t (höchster Anstieg bei Sorte 3200115: +0.07 €/t)\n- **Steam_Heatexchangers**: +0.00 €/t (vernachlässigbar)\n\n## Detaillierte Stromkosten-Analyse\n\n**Stromkostensenkungen:**\n- **Electricity_Specific**: -0.22 €/t (stärkster Rückgang bei Sorte 3200115: -0.33 €/t)\n- **Electricity_Afterdryer**: -0.00 €/t (vernachlässigbar)\n\n**Stromkostenzunahmen:**\n- **Electricity_Other**: +0.14 €/t (höchster Anstieg bei Sorte 3200115: +0.34 €/t)\n- **Electricity_Freqconverters**: +0.06 €/t\n- **Electricity_Wiresection**: +0.02 €/t\n- **Electricity_Press_and_Steambox**: +0.01 €/t\n- **Electricity_Predryer**: +0.00 €/t (vernachlässigbar)\n\n## Detaillierte Chemikalien-Analyse\n\n**Chemikalienkostensenkungen:**\n- **Sizing_Agent__€/T_**: -0.14 €/t (stärkster Rückgang bei Sorte 3200115: -0.14 €/t)\n- **Deaerator__€/T_**: -0.01 €/t\n- **Bentonite_1__€/T_**: -0.00 €/t (vernachlässigbar)\n- **Retention_Aid__€/T_**: -0.00 €/t (vernachlässigbar)\n\n**Chemikalienkostenzunahmen:**\n- **Fixative_2__€/T_**: +0.07 €/t (höchster Anstieg bei Sorte 3200115: +0.09 €/t)\n- **Defoamer__€/T_**: +0.05 €/t\n- **Bentonite_2__€/T_**: +0.04 €/t\n- **Natriumhydroxide__€/T_**: +0.00 €/t (vernachlässigbar)\n- **Dry_Strength_Agent__€/T_**: 0.00 €/t (unverändert)\n\n---\n\n# Diagnose\n\n## Positive Entwicklungen\n\n1. **Erfolgreiche Dampfoptimierung**: Die Reduktion der Dampfkosten um -1.24 €/t zeigt wirksame Energieeffizienzmaßnahmen, insbesondere bei Steam_Whitewater (-0.79 €/t).\n\n2. **Stärkeeinsparungen**: Der Rückgang der Stärkekosten um -1.27 €/t deutet auf verbesserte Stärkeapplikation oder optimierte Rezepturen hin.\n\n3. **Sorte 6010085 als Best Practice**: Diese Sorte zeigt die stärkste Kostenreduktion (-5.61 €/t) bei gleichzeitiger Verbesserung der Überverarbeitung (-0.64%).\n\n4. **Spezifischer Stromverbrauch**: Die Reduktion von Electricity_Specific um -0.22 €/t zeigt Effizienzgewinne.\n\n## Kritische Problemfelder\n\n### Sorte 6010100 - Kritischer Zustand\n\n**Hauptprobleme:**\n- Höchste Überverarbeitung: 12.22% (+3.52%)\n- Kostenanstieg: +1.21 €/t\n- Höchster Faserkostenanstieg: +0.83 €/t\n\n**Prozessvariablen-Analyse zeigt:**\n- **Current reel moisture average(reel)** gesunken (-0.13) → kostentreibend, deutet auf Übertrocknung hin\n- **DG4 Temperature Inlet Air** gestiegen (+24.37) → kostentreibend, übermäßige Trocknungsenergie\n- **Linepressure shoe press bar** gesunken (-0.12) → kostentreibend, schlechtere
+2026-04-07 14:43:36,590 INFO [llm] answer length: 6805
+2026-04-07 14:43:36,590 INFO [llm] answer preview: # Zusammenfassung
+
+## Gesamtüberblick über alle Sorten
+
+Für alle betrachteten Sorten verzeichneten die **TOTAL Kosten** einen Rückgang von **1.10 €/t auf 279.73 €/t**. Diese Gesamtveränderung setzt sich zusammen aus:
+- **+0.87 €/t** durch eine teurere Sortenmischung (Mix-Effekt)
+- **-1.97 €/t** durch Prozessverbesserungen
+
+Die **TOTAL Überverarbeitung** stieg um **0.65% auf 7.32%**, was auf Ineffizienzen in der Produktion hinweist.
+
+## Sortenspezifische Entwicklungen
+
+**Sorte 6010085** (größte Kostenreduktion):
+- Kosten: -5.61 €/t → 284.05 €/t
+- Überverarbeitung: -0.64% → 6.67%
+
+**Sorte 3200115**:
+- Kosten: -2.85 €/t → 274.89 €/t
+- Überverarbeitung: -1.84% → 6.81%
+
+**Sorte 6010100** (größter Kostenanstieg):
+- Kosten: +1.21 €/t → 284.16 €/t
+- Überverarbeitung: +3.52% → 12.22% (kritisch hoch)
+
+**Sorte 6010120**:
+- Kosten: +0.05 €/t → 277.86 €/t
+- Überverarbeitung: +0.94% → 5.83%
+
+## Kostenkomponenten-Analyse
+
+**Hauptkostentreiber (Zunahmen):**
+- **Fibre_cost__€/T_**: +0.61 €/t (höchster Anstieg bei Sorte 6010100: +0.83 €/t)
+- **Chemicals__€/T_**: +0.09 €/t
+- **Electricity__€/T_**: +0.01 €/t
+
+**Hauptkostensenkungen:**
+- **Starch__€/T_**: -1.27 €/t (stärkster Rückgang bei Sorte 6010120: -1.61 €/t)
+- **Steam__€/T_**: -1.24 €/t
+
+## Detaillierte Dampfkosten-Analyse
+
+**Dampfkostensenkungen:**
+- **Steam_Whitewater**: -0.79 €/t (größter Rückgang bei Sorte 6010085: -1.40 €/t)
+- **Steam_Predryers**: -0.33 €/t
+- **Steam_Afterdryers**: -0.16 €/t
+
+**Dampfkostenzunahmen:**
+- **Steam_Starchkitchen**: +0.03 €/t (höchster Anstieg bei Sorte 3200115: +0.07 €/t)
+- **Steam_Heatexchangers**: +0.00 €/t (vernachlässigbar)
+
+## Detaillierte Stromkosten-Analyse
+
+**Stromkostensenkungen:**
+- **Electricity_Specific**: -0.22 €/t (stärkster Rückgang bei Sorte 3200115: -0.33 €/t)
+- **Electricity_Afterdryer**: -0.00 €/t (vernachlässigbar)
+
+**Stromkostenzunahmen:**
+- **Electricity_Other**: +0.14 €/t (höchster Anstieg bei Sorte 3200115: +0.34 €/t)
+- **Electricity_Freqconverters**: +0.06 €/t
+- **Electric

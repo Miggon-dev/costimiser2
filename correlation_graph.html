@@ -1,0 +1,321 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 1200px;
+                 height: 800px;
+                 background-color: white;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "font": {"color": "black"}, "id": "Bentonite_1_mass_flow__g/T_", "label": "Bentonite_1_mass_f...", "shape": "dot", "size": 22, "title": "Bentonite_1_mass_flow__g/T_"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "PD5_fabric_tension_bottom", "label": "PD5_fabric_tension...", "shape": "dot", "size": 22, "title": "PD5_fabric_tension_bottom"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "AD7_fabric_tension_bottom", "label": "AD7_fabric_tension...", "shape": "dot", "size": 22, "title": "AD7_fabric_tension_bottom"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Act_Deaerator_mass_flow__g/T_", "label": "Act_Deaerator_mass...", "shape": "dot", "size": 22, "title": "Act_Deaerator_mass_flow__g/T_"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "dewatering", "label": "dewatering", "shape": "dot", "size": 22, "title": "dewatering"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Steam_pressure_for_PM", "label": "Steam_pressure_for...", "shape": "dot", "size": 22, "title": "Steam_pressure_for_PM"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Stock_deculator_temperature", "label": "Stock_deculator_te...", "shape": "dot", "size": 22, "title": "Stock_deculator_temperature"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "PD5_fabric_tension_top", "label": "PD5_fabric_tension...", "shape": "dot", "size": 22, "title": "PD5_fabric_tension_top"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "pH_measurement_white_water_B41", "label": "pH_measurement_whi...", "shape": "dot", "size": 22, "title": "pH_measurement_white_water_B41"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Water_flow_Afterdryer_input", "label": "Water_flow_Afterdr...", "shape": "dot", "size": 22, "title": "Water_flow_Afterdryer_input"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "PD2_Fabric_tension", "label": "PD2_Fabric_tension", "shape": "dot", "size": 22, "title": "PD2_Fabric_tension"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Thick_Stock_Consistency__%_", "label": "Thick_Stock_Consis...", "shape": "dot", "size": 22, "title": "Thick_Stock_Consistency__%_"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Bottom_wire_tension", "label": "Bottom_wire_tensio...", "shape": "dot", "size": 22, "title": "Bottom_wire_tension"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Top_wire_tenstion", "label": "Top_wire_tenstion", "shape": "dot", "size": 22, "title": "Top_wire_tenstion"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "PD1_Fabric_tension", "label": "PD1_Fabric_tension", "shape": "dot", "size": 22, "title": "PD1_Fabric_tension"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Linepressure_1st_press_FS__bar_", "label": "Linepressure_1st_p...", "shape": "dot", "size": 22, "title": "Linepressure_1st_press_FS__bar_"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Web_tension_AD6", "label": "Web_tension_AD6", "shape": "dot", "size": 22, "title": "Web_tension_AD6"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Draw_PD3-PD4", "label": "Draw_PD3-PD4", "shape": "dot", "size": 22, "title": "Draw_PD3-PD4"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Conductivity_white_water_B46", "label": "Conductivity_white...", "shape": "dot", "size": 22, "title": "Conductivity_white_water_B46"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Draw_PD1-PD2", "label": "Draw_PD1-PD2", "shape": "dot", "size": 22, "title": "Draw_PD1-PD2"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Linepressure_shoe_press__bar_", "label": "Linepressure_shoe_...", "shape": "dot", "size": 22, "title": "Linepressure_shoe_press__bar_"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Draw_WS-PS", "label": "Draw_WS-PS", "shape": "dot", "size": 22, "title": "Draw_WS-PS"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Linepressure_2nd_press_DS__bar_", "label": "Linepressure_2nd_p...", "shape": "dot", "size": 22, "title": "Linepressure_2nd_press_DS__bar_"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "DG3_Ventilator_Revolution_Output", "label": "DG3_Ventilator_Rev...", "shape": "dot", "size": 22, "title": "DG3_Ventilator_Revolution_Output"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Draw_PS-PD1", "label": "Draw_PS-PD1", "shape": "dot", "size": 22, "title": "Draw_PS-PD1"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "retention", "label": "retention", "shape": "dot", "size": 22, "title": "retention"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Linepressure_1st_press_DS__bar_", "label": "Linepressure_1st_p...", "shape": "dot", "size": 22, "title": "Linepressure_1st_press_DS__bar_"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Airturn_pillow_pressure", "label": "Airturn_pillow_pre...", "shape": "dot", "size": 22, "title": "Airturn_pillow_pressure"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Steam_temperature_for_PM", "label": "Steam_temperature_...", "shape": "dot", "size": 22, "title": "Steam_temperature_for_PM"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "DG1_Ventilator_Revolution_Output", "label": "DG1_Ventilator_Rev...", "shape": "dot", "size": 22, "title": "DG1_Ventilator_Revolution_Output"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "flow_diluted_starch", "label": "flow_diluted_starc...", "shape": "dot", "size": 22, "title": "flow_diluted_starch"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "DG2_Ventilator_Revolution_Output", "label": "DG2_Ventilator_Rev...", "shape": "dot", "size": 22, "title": "DG2_Ventilator_Revolution_Output"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Inlet_Air_1_Temperature", "label": "Inlet_Air_1_Temper...", "shape": "dot", "size": 22, "title": "Inlet_Air_1_Temperature"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Inlet_Air_2_Temperature", "label": "Inlet_Air_2_Temper...", "shape": "dot", "size": 22, "title": "Inlet_Air_2_Temperature"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Draw_PD4-PD5", "label": "Draw_PD4-PD5", "shape": "dot", "size": 22, "title": "Draw_PD4-PD5"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "PD4_fabric_tension", "label": "PD4_fabric_tension", "shape": "dot", "size": 22, "title": "PD4_fabric_tension"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Linepressure_2nd_press_FS__bar_", "label": "Linepressure_2nd_p...", "shape": "dot", "size": 22, "title": "Linepressure_2nd_press_FS__bar_"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Bottom_Felt_Tension", "label": "Bottom_Felt_Tensio...", "shape": "dot", "size": 22, "title": "Bottom_Felt_Tension"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Bentonite_2_mass_flow__g/T_", "label": "Bentonite_2_mass_f...", "shape": "dot", "size": 22, "title": "Bentonite_2_mass_flow__g/T_"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Storage_tank_temperature", "label": "Storage_tank_tempe...", "shape": "dot", "size": 22, "title": "Storage_tank_temperature"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "grammage", "label": "grammage", "shape": "dot", "size": 22, "title": "grammage"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Draw_PD2-PD3", "label": "Draw_PD2-PD3", "shape": "dot", "size": 22, "title": "Draw_PD2-PD3"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Retention_Aid_mass_flow__g/T_", "label": "Retention_Aid_mass...", "shape": "dot", "size": 22, "title": "Retention_Aid_mass_flow__g/T_"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Natriumhydroxide_mass_flow__g/T_", "label": "Natriumhydroxide_m...", "shape": "dot", "size": 22, "title": "Natriumhydroxide_mass_flow__g/T_"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "ambient_temp_C", "label": "ambient_temp_C", "shape": "dot", "size": 22, "title": "ambient_temp_C"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "White_water_temperature", "label": "White_water_temper...", "shape": "dot", "size": 22, "title": "White_water_temperature"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "pH-Messung_Verd\u00fcnnungswasser__2..12_pH_", "label": "pH-Messung_Verd\u00fcnn...", "shape": "dot", "size": 22, "title": "pH-Messung_Verd\u00fcnnungswasser__2..12_pH_"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Jet/wire_ratio", "label": "Jet/wire_ratio", "shape": "dot", "size": 22, "title": "Jet/wire_ratio"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "AD6_fabric_tension", "label": "AD6_fabric_tension", "shape": "dot", "size": 22, "title": "AD6_fabric_tension"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Fixative_2_mass_flow__g/T_", "label": "Fixative_2_mass_fl...", "shape": "dot", "size": 22, "title": "Fixative_2_mass_flow__g/T_"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Top_Felt_Tension", "label": "Top_Felt_Tension", "shape": "dot", "size": 22, "title": "Top_Felt_Tension"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Uhle_box_1_flow___l/min_", "label": "Uhle_box_1_flow___...", "shape": "dot", "size": 22, "title": "Uhle_box_1_flow___l/min_"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Cylinder_1-5_steam_temperature", "label": "Cylinder_1-5_steam...", "shape": "dot", "size": 22, "title": "Cylinder_1-5_steam_temperature"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Cylinder_1-5_fresh_steam", "label": "Cylinder_1-5_fresh...", "shape": "dot", "size": 22, "title": "Cylinder_1-5_fresh_steam"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Stock_deculator_pressure", "label": "Stock_deculator_pr...", "shape": "dot", "size": 22, "title": "Stock_deculator_pressure"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Water_flow_Afterdryer_output", "label": "Water_flow_Afterdr...", "shape": "dot", "size": 22, "title": "Water_flow_Afterdryer_output"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Air_pressure_of_rod_clamping_hose_Top_Roll", "label": "Air_pressure_of_ro...", "shape": "dot", "size": 22, "title": "Air_pressure_of_rod_clamping_hose_Top_Roll"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Water_flow_Predryer", "label": "Water_flow_Predrye...", "shape": "dot", "size": 22, "title": "Water_flow_Predryer"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Lip_settings", "label": "Lip_settings", "shape": "dot", "size": 22, "title": "Lip_settings"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "PickUp_Tension", "label": "PickUp_Tension", "shape": "dot", "size": 22, "title": "PickUp_Tension"}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "Steam__kWh/T_", "label": "Steam__kWh/T_", "shape": "dot", "size": 22, "title": "Steam__kWh/T_"}]);
+                  edges = new vis.DataSet([{"from": "Bentonite_1_mass_flow__g/T_", "title": "0.61", "to": "Draw_PS-PD1", "value": 0.6074461165855721, "width": 3.4297844663422885}, {"from": "Bentonite_1_mass_flow__g/T_", "title": "0.61", "to": "Bentonite_2_mass_flow__g/T_", "value": 0.6074598579503363, "width": 3.429839431801345}, {"from": "Bentonite_1_mass_flow__g/T_", "title": "0.70", "to": "pH-Messung_Verd\u00fcnnungswasser__2..12_pH_", "value": 0.6990268294280555, "width": 3.796107317712222}, {"from": "Bentonite_1_mass_flow__g/T_", "title": "0.68", "to": "AD6_fabric_tension", "value": 0.6838744903054613, "width": 3.7354979612218453}, {"from": "Bentonite_1_mass_flow__g/T_", "title": "0.78", "to": "Air_pressure_of_rod_clamping_hose_Top_Roll", "value": 0.7786688462250944, "width": 4.114675384900377}, {"from": "PD5_fabric_tension_bottom", "title": "0.66", "to": "Bentonite_2_mass_flow__g/T_", "value": 0.6621370789991055, "width": 3.648548315996422}, {"from": "Steam_pressure_for_PM", "title": "0.62", "to": "Steam_temperature_for_PM", "value": 0.615303421581636, "width": 3.461213686326544}, {"from": "Stock_deculator_temperature", "title": "0.70", "to": "ambient_temp_C", "value": 0.6990163322387686, "width": 3.7960653289550743}, {"from": "Stock_deculator_temperature", "title": "0.60", "to": "White_water_temperature", "value": 0.6047960470911085, "width": 3.419184188364434}, {"from": "Stock_deculator_temperature", "title": "0.63", "to": "Steam__kWh/T_", "value": 0.6275236319237786, "width": 3.5100945276951143}, {"from": "PD5_fabric_tension_top", "title": "0.67", "to": "Steam__kWh/T_", "value": 0.6674188400992012, "width": 3.6696753603968046}, {"from": "Water_flow_Afterdryer_input", "title": "0.88", "to": "flow_diluted_starch", "value": 0.8768237927063767, "width": 4.507295170825507}, {"from": "Water_flow_Afterdryer_input", "title": "0.65", "to": "grammage", "value": 0.6548192977801801, "width": 3.6192771911207204}, {"from": "Water_flow_Afterdryer_input", "title": "0.72", "to": "Water_flow_Predryer", "value": 0.7214096504597398, "width": 3.8856386018389593}, {"from": "Water_flow_Afterdryer_input", "title": "0.66", "to": "Lip_settings", "value": 0.6642229526606446, "width": 3.6568918106425783}, {"from": "Web_tension_AD6", "title": "1.00", "to": "Airturn_pillow_pressure", "value": 0.998731294594958, "width": 4.994925178379832}, {"from": "Draw_PD3-PD4", "title": "0.61", "to": "Conductivity_white_water_B46", "value": 0.6145005086980087, "width": 3.4580020347920346}, {"from": "DG3_Ventilator_Revolution_Output", "title": "0.60", "to": "DG2_Ventilator_Revolution_Output", "value": 0.6004918537112287, "width": 3.401967414844915}, {"from": "DG3_Ventilator_Revolution_Output", "title": "0.61", "to": "grammage", "value": 0.6099321620399404, "width": 3.4397286481597615}, {"from": "DG3_Ventilator_Revolution_Output", "title": "0.80", "to": "Water_flow_Predryer", "value": 0.7966504926122135, "width": 4.186601970448854}, {"from": "DG3_Ventilator_Revolution_Output", "title": "0.65", "to": "Lip_settings", "value": 0.6463463544890512, "width": 3.585385417956205}, {"from": "Draw_PS-PD1", "title": "0.64", "to": "Air_pressure_of_rod_clamping_hose_Top_Roll", "value": 0.6428407128760487, "width": 3.571362851504195}, {"from": "retention", "title": "0.67", "to": "grammage", "value": 0.6741816437059214, "width": 3.6967265748236855}, {"from": "retention", "title": "0.64", "to": "Lip_settings", "value": 0.6388606519609586, "width": 3.5554426078438346}, {"from": "DG2_Ventilator_Revolution_Output", "title": "0.68", "to": "grammage", "value": 0.6823368437927022, "width": 3.729347375170809}, {"from": "DG2_Ventilator_Revolution_Output", "title": "0.61", "to": "Cylinder_1-5_steam_temperature", "value": 0.6116777048132578, "width": 3.446710819253031}, {"from": "DG2_Ventilator_Revolution_Output", "title": "0.80", "to": "Water_flow_Predryer", "value": 0.8011134521921306, "width": 4.204453808768522}, {"from": "DG2_Ventilator_Revolution_Output", "title": "0.69", "to": "Lip_settings", "value": 0.685320355348905, "width": 3.74128142139562}, {"from": "DG2_Ventilator_Revolution_Output", "title": "0.65", "to": "Steam__kWh/T_", "value": 0.6458140107071988, "width": 3.583256042828795}, {"from": "grammage", "title": "0.64", "to": "Retention_Aid_mass_flow__g/T_", "value": 0.6397615378846383, "width": 3.559046151538553}, {"from": "grammage", "title": "0.72", "to": "Water_flow_Predryer", "value": 0.7196121031288484, "width": 3.8784484125153935}, {"from": "grammage", "title": "0.95", "to": "Lip_settings", "value": 0.9506654431597029, "width": 4.802661772638812}, {"from": "Retention_Aid_mass_flow__g/T_", "title": "0.65", "to": "Lip_settings", "value": 0.6545856117803083, "width": 3.618342447121233}, {"from": "ambient_temp_C", "title": "0.72", "to": "Steam__kWh/T_", "value": 0.721486847508267, "width": 3.885947390033068}, {"from": "pH-Messung_Verd\u00fcnnungswasser__2..12_pH_", "title": "0.64", "to": "AD6_fabric_tension", "value": 0.6406213214090055, "width": 3.562485285636022}, {"from": "pH-Messung_Verd\u00fcnnungswasser__2..12_pH_", "title": "0.62", "to": "Air_pressure_of_rod_clamping_hose_Top_Roll", "value": 0.6214624251323103, "width": 3.4858497005292413}, {"from": "Stock_deculator_pressure", "title": "0.64", "to": "Steam__kWh/T_", "value": 0.6389961600390424, "width": 3.5559846401561694}, {"from": "Air_pressure_of_rod_clamping_hose_Top_Roll", "title": "0.65", "to": "Steam__kWh/T_", "value": 0.6498845252198115, "width": 3.599538100879246}, {"from": "Water_flow_Predryer", "title": "0.74", "to": "Lip_settings", "value": 0.7412299271927917, "width": 3.9649197087711667}, {"from": "Water_flow_Predryer", "title": "0.65", "to": "Steam__kWh/T_", "value": 0.6519939798349693, "width": 3.6079759193398773}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {"interaction": {"hover": true}, "physics": {"barnesHut": {"gravitationalConstant": -3000, "springLength": 180}}};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

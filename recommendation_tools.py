@@ -320,6 +320,8 @@ def build_recommendations(
         top_n=max(top_n, 7), # broader pool before RAG filtering
     )
 
+    #print("top_driver_records",top_driver_records)
+
     diff_map = _differences_by_variable(extreme_cluster_differences)
 
     # ----------------------------
@@ -345,9 +347,12 @@ def build_recommendations(
     # ----------------------------
     # Knowledge / engineering classification
     # ----------------------------
+    # print("knowledge_text",knowledge_text)
     actionability_map = _extract_actionability_map_from_json(knowledge_text)
     if not actionability_map:
         actionability_map = _extract_actionability_map(knowledge_text) # fallback
+
+    # print("actionability_map",actionability_map)
 
     def _normalize_direction_from_knowledge(direction_text: Optional[str]) -> Optional[str]:
         if not direction_text:

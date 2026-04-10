@@ -906,7 +906,10 @@ def plot_cost_breakdown(
  
     # whitegrid styling
     base_width=800
-    apect_ratio=9/16
+    if len(cost_order) == 1:
+        apect_ratio=9/16
+    else:
+        apect_ratio=16/16
     fig.update_layout(
         template="simple_white",
         plot_bgcolor="white",
@@ -1475,7 +1478,7 @@ def shapley_for_pair_filtered(
         x1 = float(row1[f])
         x2 = float(row2[f])
         delta = x2 - x1
-
+        
         if f not in process_data.columns:
             std = np.nan
             p05 = np.nan
@@ -1484,6 +1487,8 @@ def shapley_for_pair_filtered(
             delta_over_range = np.nan
             keep = True
         else:
+            
+
             s = pd.to_numeric(process_data[f], errors="coerce").dropna()
 
             if len(s) == 0:
@@ -1493,7 +1498,7 @@ def shapley_for_pair_filtered(
                 delta_over_std = np.nan
                 delta_over_range = np.nan
                 keep = True
-            else:
+            else:                
                 std = float(s.std(ddof=1)) if len(s) > 1 else 0.0
                 p05 = float(s.quantile(0.05))
                 p95 = float(s.quantile(0.95))
@@ -1583,6 +1588,61 @@ def make_model_cost(model, feature_fn):
         df.iloc[0] = [row[c] for c in cols]
         return float(model.predict(df)[0])
  
+    return cost
+
+def make_models_cost(models, feature_fns, agg="sum"):
+    """
+    Parameters
+    ----------
+    models : dict[str, estimator]
+        Trained models.
+    feature_fns : dict[str, callable]
+        Mapping model name -> function returning that model's expected columns.
+    agg : {"sum", "mean"} | callable
+        Aggregation rule across model predictions.
+    """
+    if not isinstance(models, dict):
+        raise ValueError("For different feature sets, models must be a dict.")
+    if not isinstance(feature_fns, dict):
+        raise ValueError("For different feature sets, feature_fns must be a dict.")
+
+    buffers = {}
+    for name, model in models.items():
+        cols = feature_fns[name]
+        buffers[name] = {
+            "cols": cols,
+            "df": pd.DataFrame([[0.0] * len(cols)], columns=cols)
+        }
+
+    def _aggregate(preds_dict):
+        if callable(agg):
+            return float(agg(preds_dict))
+        elif agg == "sum":
+            return float(sum(preds_dict.values()))
+        elif agg == "mean":
+            return float(np.mean(list(preds_dict.values())))
+        else:
+            raise ValueError(f"Unknown agg='{agg}'")
+
+    def cost(row, return_components=False):
+        preds = {}
+
+        for name, model in models.items():
+            cols = buffers[name]["cols"]
+            df = buffers[name]["df"]
+            df.iloc[0] = [row[c] for c in cols]
+            preds[name] = float(model.predict(df)[0])
+
+        total = _aggregate(preds)
+
+        if return_components:
+            return {
+                "components": preds,
+                "total": total,
+            }
+
+        return total
+
     return cost
 
 def _prediction_models(models_dir):
@@ -1723,7 +1783,7 @@ def _component_features(raw_data=None):
     return [v for v in component_features if v in raw_data.columns.to_list()]
 
 def _costs_to_consider():
-    return ['Steam__€/T_','Electricity__€/T_','Starch__€/T_','Sizing_Agent__€/T_']
+    return ['Steam__€/T_','Electricity__€/T_','Starch__€/T_','Fibre_cost__€/T_']
 
 def _costs_to_consider2():
     return ['Steam__€/T_','Electricity__€/T_','Starch__€/T_','Chemicals__€/T_','Fibre_cost__€/T_']
@@ -1733,6 +1793,15 @@ def _agg_cost_label():
 
 def _agg_cost_label2():
     return "Combined_cost__€/T_"
+
+def _chemical_names():
+    return ['Retention_Aid__€/T_','Bentonite_1__€/T_','Bentonite_2__€/T_','Fixative_2__€/T_','Deaerator__€/T_','Defoamer__€/T_','Sizing_Agent__€/T_','Dry_Strength_Agent__€/T_','Natriumhydroxide__€/T_']
+
+def _steam_names():
+    return ['Steam_Predryers','Steam_Afterdryers','Steam_Starchkitchen','Steam_Heatexchangers','Steam_Whitewater']
+
+def _electricity_names():
+    return ['Electricity_Wiresection', 'Electricity_Press_and_Steambox', 'Electricity_Freqconverters', 'Electricity_Other', 'Electricity_Predryer', 'Electricity_Afterdryer', 'Electricity_Specific']
 
 def _overprocessing_vars():
     return ['Overprocessing_SCT_CD', 'Overprocessing_Burst', 'Overprocessing_CMT30']
@@ -1968,7 +2037,522 @@ def impute_outside_limits_with_grade_median(
     out.loc[mask_bad, var] = grade_median[mask_bad]
     return out
 
+def detect_outliers(
+    df: pd.DataFrame,
+    value_col: str,
+    method: str = "robust_z",
+    group_col: str = None,
+    window: int = None,
+    threshold: float = 3.0,
+    contamination: float = 0.01,
+) -> pd.Series:
+    """
+    Returns a boolean Series indicating outliers.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+    value_col : str
+        Column with values to analyze
+    method : str
+        One of: "robust_z", "iqr", "rolling_robust_z", "isolation_forest"
+    group_col : str, optional
+        Apply detection per group (e.g., grade)
+    window : int, optional
+        Window size for rolling method
+    threshold : float
+        Threshold for z-score methods
+    contamination : float
+        Used only for isolation forest
+
+    Returns
+    -------
+    pd.Series (bool)
+    """
+    import numpy as np
+    import pandas as pd
+    from sklearn.ensemble import IsolationForest
+     
+    def _robust_z(x):
+        median = np.median(x)
+        mad = np.median(np.abs(x - median))
+        if mad == 0:
+            return pd.Series([False] * len(x), index=x.index)
+        z = 0.6745 * (x - median) / mad
+        return np.abs(z) > threshold
+
+    def _iqr(x):
+        q1 = x.quantile(0.25)
+        q3 = x.quantile(0.75)
+        iqr = q3 - q1
+        lower = q1 - 1.5 * iqr
+        upper = q3 + 1.5 * iqr
+        return (x < lower) | (x > upper)
+
+    def _rolling_robust_z(x):
+        if window is None:
+            raise ValueError("window must be provided for rolling method")
+
+        rolling_median = x.rolling(window).median()
+        rolling_mad = x.rolling(window).apply(
+            lambda v: np.median(np.abs(v - np.median(v))), raw=True
+        )
+
+        z = 0.6745 * (x - rolling_median) / rolling_mad
+        return np.abs(z) > threshold
+
+    def _isolation_forest(x):
+        model = IsolationForest(
+            contamination=contamination,
+            random_state=42
+        )
+        preds = model.fit_predict(x.values.reshape(-1, 1))
+        return pd.Series(preds == -1, index=x.index)
+
+    method_map = {
+        "robust_z": _robust_z,
+        "iqr": _iqr,
+        "rolling_robust_z": _rolling_robust_z,
+        "isolation_forest": _isolation_forest,
+    }
+
+    if method not in method_map:
+        raise ValueError(f"Unknown method: {method}")
+
+    func = method_map[method]
+
+    if group_col:
+        return df.groupby(group_col)[value_col].transform(func)
+    else:
+        return func(df[value_col])
+
+def impute(
+    df: pd.DataFrame,
+    value_col: str,
+    outlier_flag, # <-- Series / array-like
+    method: str = "median",
+    group_col: str = None,
+    constant_value=None,
+    time_col: str = None,
+    inplace: bool = False,
+    new_col: str = None,
+):
+    """
+    Impute values using an external outlier flag.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+    value_col : str
+    outlier_flag : array-like or pd.Series (bool)
+        True = outlier (will be imputed)
+    method : str
+        "median", "median_by_group", "ffill", "constant"
+    group_col : str, optional
+    constant_value : any
+    time_col : str, optional
+    inplace : bool
+    new_col : str, optional
+
+    Returns
+    -------
+    pd.Series or None
+    """
+
+    # Convert flag to Series aligned with df
+    flag = pd.Series(outlier_flag, index=df.index)
+
+    if len(flag) != len(df):
+        raise ValueError("outlier_flag must have same length as df")
+
+    # Copy values
+    s = df[value_col].copy()
+
+    # Replace flagged values with NaN
+    s[flag] = np.nan
+
+    # ---- Imputation ----
+    if method == "median":
+        result = s.fillna(s.median())
+
+    elif method == "median_by_group":
+        if group_col is None:
+            raise ValueError("group_col required for median_by_group")
+
+        result = s.fillna(
+            df.groupby(group_col)[value_col].transform("median")
+        )
+
+    elif method == "ffill":
+        if time_col:
+            order = df[time_col].argsort()
+            s_sorted = s.iloc[order].ffill()
+
+            result = pd.Series(index=s.index, dtype=float)
+            result.iloc[order] = s_sorted
+        else:
+            result = s.ffill()
+
+    elif method == "constant":
+        if constant_value is None:
+            raise ValueError("constant_value must be provided")
+
+        result = s.fillna(constant_value)
+
+    else:
+        raise ValueError(f"Unknown method: {method}")
+
+    # ---- Output ----
+    if inplace:
+        target_col = new_col if new_col else value_col
+        df[target_col] = result
+        return None
+    else:
+        return result
+
 def _feature_engineering(turnup, setpoint_df, steam_null):
+    from datetime import datetime
+    import numpy as np
+
+    for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
+        turnup[v]=turnup[v].astype("float32")
+
+    turnup['MBS_Current_reel_ID']=turnup['MBS_Current_reel_ID'].astype(int)
+    turnup['AB_Grade_ID']=turnup['AB_Grade_ID'].astype(int)
+    turnup['Wedge_Time']=pd.to_datetime(turnup['Wedge_Time'])
+
+    
+    turnup = turnup.assign(
+        grammage = turnup["AB_Grade_ID"].mod(1000),
+        paper_type = (turnup["AB_Grade_ID"] // 1000).astype("string")
+    )
+
+    turnup = turnup[turnup.grammage.isin([85,90,95,100,110,115,120,125,130,135])]
+    turnup = turnup[turnup.paper_type.isin(["3200", "6010", "3300"])]
+
+    update_turnup_grammage(turnup)
+
+    paper_type = pd.get_dummies(turnup["paper_type"])
+    turnup = pd.concat([turnup, paper_type], axis=1)
+
+    
+    cost_dict={}
+    cost_dict["Natriumhydroxide_mass_flow__g/T_"] = {"unitary_cost": 0.30 / 1000, "cost_name":"Natriumhydroxide__€/T_"}
+    cost_dict["Defoamer_mass_flow__g/T_"] = {"unitary_cost": 4.22 / 1000, "cost_name":"Defoamer__€/T_"}
+    cost_dict["Act_Deaerator_mass_flow__g/T_"] = {"unitary_cost": 1.53 / 1000, "cost_name":"Deaerator__€/T_"}
+    cost_dict["Sizing_Agent__g/T_"] = {"unitary_cost":  0.84 / 1000, "cost_name":"Sizing_Agent__€/T_"}
+    cost_dict["Dry_Strength_Agent_mass_flow__kg/T_"] = {"unitary_cost":  0.30, "cost_name":"Dry_Strength_Agent__€/T_"}
+    cost_dict["Steam__kWh/T_"] = {"unitary_cost": 89.03 / 1000, "cost_name":"Steam__€/T_"}
+    cost_dict["Electricity__kWh/T_"] = {"unitary_cost": 113.66 / 1000, "cost_name":"Electricity__€/T_"}
+    cost_dict["Fibre_usage__T/T_"] = {"unitary_cost": 146.46, "cost_name":"Fibre_cost__€/T_"}
+    cost_dict["Starch_mass_flow__kg/T_"] = {"unitary_cost": 434.22 / 1000, "cost_name":"Starch__€/T_"}
+    
+
+    impute_outside_limits_with_grade_median(turnup, "Natriumhydroxide_mass_flow__g/T_", 1000, 2000, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Defoamer_mass_flow__g/T_", 50, 200, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Act_Deaerator_mass_flow__g/T_", 70, 200, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Sizing_Agent__g/T_", 3500, 6000, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Dry_Strength_Agent_mass_flow__kg/T_", 10, 16, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Steam__kWh/T_", 850, 1200, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Electricity__kWh/T_", 250, 400, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Starch_mass_flow__kg/T_", 35, 80, inplace=True)
+    turnup["Fibre_usage__T/T_"]=(turnup["Current_basis_weight"]*(1-turnup["Current_reel_moisture_average(reel)"]/100)-turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]-turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"])/turnup["Current_basis_weight"]
+
+    turnup[_chemical_names()]=turnup[_chemical_names()].fillna(value=0)
+
+    for c in cost_dict.keys():
+        turnup[cost_dict[c]["cost_name"]] = turnup[c] * cost_dict[c]["unitary_cost"]
+
+    turnup['Chemicals__€/T_'] = turnup[_chemical_names()].sum(axis=1)
+
+    turnup[_agg_cost_label()] = turnup[_costs_to_consider()].sum(axis=1)
+    turnup[_agg_cost_label2()] = turnup[_costs_to_consider2()].sum(axis=1)
+
+    for v in [v for v in turnup.columns if "speedsizer" not in v.lower() and "speed" in v.lower()]:
+        impute_outside_limits_with_grade_median(turnup, v, 950, 1400, inplace=True)
+
+    for v in [v for v in turnup.columns if "speedsizer_linepressure" in v.lower()]:
+        impute_outside_limits_with_grade_median(turnup, v, 55, 80, inplace=True)
+
+    impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Top_Roll', 0.35, 0.55, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Bottom_Roll~^0', 0.14, 0.35, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Current_reel_moisture_average(SpeedSizer)', 8.5, 9.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Current_reel_moisture_average(reel)', 7, 10, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Actual_moisture', 7, 10, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Current_reel_dry_average', 60, 120, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Production_Rate__T/h_', 45, 75, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'BSW_2_sigma', 0.5, 3, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Mois_Size_Press_2_sigma', 0.5, 3, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Mois_2_sigma', 0.5, 3, inplace=True)
+    for d in ['Draw_AD7-PR', 'Draw_SS-AD6', 'Draw_AD6-AD7','Draw_PD5-SS','Draw_WS-PS']:
+        impute_outside_limits_with_grade_median(turnup, v, 0, 0.5, inplace=True)
+
+    for v in ['Draw_PS-PD1','Draw_PD1-PD2','Draw_PD2-PD3', 'Draw_PD3-PD4', 'Draw_PD4-PD5']:
+        impute_outside_limits_with_grade_median(turnup, v, 1, 3, inplace=True) 
+
+    for v in ['Contact_pressure_reel_holders', 'Reel_discharge_pressure','Contact_pressure_secondary_arm_OS','Contact_pressure_secondary_arm_DS']:
+        impute_outside_limits_with_grade_median(turnup, v, 40, 60, inplace=True)
+
+    impute_outside_limits_with_grade_median(turnup, 'CO2_mass_flow__g/T_', 600, 1400, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Consistency_starch_main_line', 10, 30, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Consistency_white_water', 1, 305, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Headbox_consistency', 1, 2, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Thick_Stock_Consistency__%_', 4, 4.4, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Machine_chest_consistency', 4, 4.4, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Short_fibre_B06_consistency', 3.5, 6, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Long_fibre_consistency_B07', 3.5, 6, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Wet_broke_consistency', 2.5, 3.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Pulper_consistency', 1, 10, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Multifractor_1_consistency', 2.5, 3.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Multifractor_2_consistency', 2.5, 3.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Multifractor_3_consistency', 2.5, 3.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_inlet_consistency', 0.3, 1.8, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'LF_screen_3_inlet_consistency', 0, 1, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'DG4_Temperature_Inlet_Air', 70, 130, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'DG5_Temperature_Inlet_Air', 70, 130, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'AirTurn_Temperature', 70, 100, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Reactor_Temperature', 40, 100, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Storage_tank_temperature', 80, 120, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Temperature_starch_working_tank_1', 60, 90, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Temperature_starch_working_tank_2', 60, 90, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Cylinder_1-5_steam_temperature', 100, 140, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Inlet_Air_1_Temperature', 10, 50, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Inlet_Air_2_Temperature', 10, 50, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'DG1_temperature_Inlet_Air', 80, 120, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'DG2_temperature_Inlet_Air', 80, 120, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'DG3_temperature_Inlet_Air', 110, 140, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'White_water_temperature', 25, 55, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Dilution_water_deculator_temperature', 25, 55, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Stock_deculator_temperature', 25, 55, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Steam_temperature_for_PM', 150, 185, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Starch_uptake_by_paper_Top_Roll__g/m2_', 1, 2.7, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Starch_uptake_by_paper_Bottom_Roll__g/m2_', 1.5, 4, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Bottom_Roll~^0', 0.1, 0.4, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Top_Roll', 0.3, 0.6, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Starch_consumption_Bottom___m³/h_', 0.5, 3.0, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Starch_consumption_Top__m³/h_', 0.4, 1.6, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Flow_starch_main_line_to_working_tank_2~^0', 2, 8, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Flow_starch_main_line_to_working_tank_2~^0', 3, 14, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Starch_Top_Roll__ml/m²_', 20, 50, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Starch_Bottom_Roll__ml/m²_', 10, 40, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Starch_flow_to_inactivation', 10000, 20000, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Starch_application_FW_in_ml', 10, 40, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Starch_application_BW_in_ml', 5, 25, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Web_tension_AD6', 50, 150, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'AD7_fabric_tension_bottom', 0.5, 1.2, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'AD6_fabric_tension', 1, 1.4, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'PD1_Fabric_tension', 3.5, 4.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'PD2_Fabric_tension', 3.5, 4.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'PD4_fabric_tension', 2.5, 4.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'PD4_fabric_tension_bottom', 1.4, 2.4, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'PD5_fabric_tension_bottom', 0.8, 1.4, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'PD5_fabric_tension_top', 0.3, 1.1, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'PickUp_Tension', 2.4, 4.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Top_Felt_Tension', 3.0, 4.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Bottom_Felt_Tension', 3.0, 4.0, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Bottom_wire_tension', 7.8, 8.2, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'SpeedSizer_Linepressure_DS', 50, 80, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'SpeedSizer_Linepressure_FS', 50, 80, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Linepressure_1st_press_FS__bar_', 75, 80, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Linepressure_1st_press_DS__bar_', 75, 80, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Linepressure_2nd_press_FS__bar_', 90, 110, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Linepressure_2nd_press_DS__bar_', 90, 110, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Linepressure_shoe_press__bar_', 90, 110, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Airturn_pillow_pressure', 30, 90, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Rod_Pressure_Bottom_Roll', 0.4, 3.0, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Rod_pressure_Top_Roll', 0.4, 3.0, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Rod_clamping_pressure_Bottom_Roll', 1.5, 2.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Air_pressure_of_rod_clamping_hose_Bottom_Roll', 1.5, 2.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Rod_clamping_pressure_Top_Roll', 1.5, 2.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Air_pressure_of_rod_clamping_hose_Top_Roll', 1.5, 2.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Pressure_slurry_pipe_3', 0, 12, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Pressure_slurry_main_pipe', 0.5, 5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Reactor_steam_pressure', 0.2, 0.8, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Pressure_to_inactivation', 2, 5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Pressure_after_inactivation', 1.5, 2.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_filter_storage_tank_1', -0.1, 0.1, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_filter_storage_tank_2', -0.1, 0.1, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Fresh_water_main_pipe_pressure', 2, 5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Compressor_1_outgoing_pressure', 0.2, 1, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Compressor_2_outgoing_pressure', 0.2, 1, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_retention_aid_filter', -0.1, 1, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Inlet_pressure_TrumpJet_station_A1-A4', 3, 7, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_A1-A4_between_stock_and_chemical', 2, 3, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_C1-C4_between_stock_and_chemical', 0.5, 1.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Pre_pressure_TrumpJet', 2, 5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Pressure_of_pressure_amplifying_pump_for_retention_aid_injection', 5, 15, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_B1-B4_between_stock_and_chemical', -0.5, 1.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Headbox_pressure', 1, 3, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Headbox_pressure_DS', 1, 3, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Headbox_pressure_FS', 1, 3, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Dilution_water_deculator_pressure', -1.2, -0.8, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Stock_deculator_pressure', -1.2, -0.8, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'ATS1_differential_pressure', -0.2, 1, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'ATS2_differential_pressure', 1, 1.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Pressure_main_steam_line', 4, 8, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Steam_pressure_for_PM', 4, 8, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Auftrag_Stärkeslurry_FW', 4, 20, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Auftrag_Stärkeslurry_BW', 4, 20, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'VariSTEP_div._Hauben+Lueftung_Ventilatoren', 0.2, 1.2, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Dilution_water_working_tank_1', 2.0, 8.0, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Dilution_water_working_tank_2', 1.8, 7.0, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_white_water_heating', 0.0, 10.0, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Steam_energy_from_power_plant_to_paper_plant', 20, 80.0, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_AfterDryers', 15, 30, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_heat_exchangers', 0.2, 1.4, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_from_power_plant_to_PM', 0, 120, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_PreDryers', 0, 100, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Press_and_Steambox', 14, 30, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'LF_screen_1_power', 100, 140, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_power', 100, 140, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'LF_screen_1_accept_flow', 600, 1000, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_accept_flow', 400, 500, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'LF_screen_1_reject_flow', 130, 150, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_reject_flow', 35, 50, inplace=True)
+    turnup['LF_screen_3_power']=np.where((turnup['LF_screen_3_power']>20) &  (turnup['LF_screen_3_power']<100),turnup['LF_screen_2_power'],0)
+    turnup['LF_screen_3_accept_flow']=np.where((turnup['LF_screen_3_accept_flow']>150) &  (turnup['LF_screen_3_accept_flow']<250),turnup['LF_screen_3_accept_flow'],0)
+    turnup['LF_screen_3_reject_flow']=np.where((turnup['LF_screen_3_reject_flow']>10) &  (turnup['LF_screen_3_reject_flow']<40),turnup['LF_screen_3_reject_flow'],0)
+    turnup['Headbox_total_flow']=0
+    impute_outside_limits_with_grade_median(turnup, 'Multifractor_1_long_fibre_flow', 200, 400, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Multifractor_2_long_fibre_flow', 200, 400, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Multifractor_3_long_fibre_flow', 200, 400, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Multifractor_1_short_fibre_flow', 600, 1000, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Multifractor_2_short_fibre_flow', 600, 1000, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Multifractor_3_short_fibre_flow', 600, 1000, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Multifractor_1_Long_fibre_fraction', 25, 50, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Multifractor_2_long_fibre_fraction', 25, 50, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Multifractor_3_long_fibre_fraction', 25, 50, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Short_fibre_flow', 8000, 18000, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Long_fibre_flow', 3500, 8500, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'ATS1_light_reject_flow', 130, 160, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'ATS2_light_reject_flow', 130, 160, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Approach_flow_returns', 0.8, 1.3, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Stock_Valve_Opening_From_Machine_Chest', 50, 70, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Condensate_energy_from_paper_plant_to_power_plant', 2, 10, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'ATS1_power', 200, 700, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'ATS2_power', 200, 400, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Combisorter_1_power', 50, 150, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Combisorter_2_power', 50, 150, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Contaminex_1_power', 20, 120, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Contaminex_2_power', 20, 120, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Contaminex_3_power', 0, 120, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Jet/wire_ratio', -50, -10, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Inlet_Thickerner_2__m3/h_', 50, 70, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Act_Production_Rate_Gross', 40, 80, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'MC_SF_LF_Demand', 20, 80, inplace=True)
+
+    impute_outside_limits_with_grade_median(turnup, 'MBS_SCT_MD', 2.2, 4.5, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'MBS_SCT_CD', 1.4, 2.4, inplace=True)
+    
+    for v in ['Moisture_after_SpeedSizer',
+                'Actual_moisture',
+                'SP1:_1-000-FC028_01____NaOH-Dosierung_Pulper_:__MESSWERT',
+                'SP1:_1-000-FC028_02____NaOH-Dosierung_Kurzfaser-SF_:__MESSWE',
+                'SP1:_1-000-FC028_03____NaOH-Dosierung_Langfaser-SF_:__MESSWE',
+                'Starch_uptake_by_paper_Top_Roll__g/m2_',
+                'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
+                'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
+                'Conductivity_white_water_B46'
+                ]:
+        outlier_flag = detect_outliers(turnup,v,
+                                        method="iqr",
+                                        #group_col="AB_Grade_ID" 
+                                        )
+        
+    for v in ['Starch_uptake_by_paper_Top_Roll__g/m2_',
+            'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
+            ]:
+        outlier_flag = detect_outliers(turnup,v,
+                                        method="iqr",
+                                        group_col="AB_Grade_ID" 
+                                        )
+
+        impute(turnup,
+            value_col = v,
+            outlier_flag = outlier_flag, 
+            method = "ffill",
+            group_col = "AB_Grade_ID",
+            constant_value=None,
+            time_col = "Wedge_Time",
+            inplace = True,
+            new_col = None,
+        )
+
+    turnup["MBS_SCT_MD"]=turnup["MBS_SCT_MD"].bfill()
+    turnup["MBS_SCT_CD"]=turnup["MBS_SCT_CD"].bfill()
+    turnup["MBS_Burst"]=turnup["MBS_Burst"].bfill()
+    turnup.loc[(turnup["AB_Grade_ID"]=="6010100") &  ( turnup["MBS_CMT30"] > 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]=="6010100"]["MBS_CMT30"].mean()
+    turnup.loc[(turnup["AB_Grade_ID"]=="6010100") &  ( turnup["MBS_CMT30"].isnull()), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]=="6010100"]["MBS_CMT30"].mean()
+    turnup.loc[(turnup["AB_Grade_ID"]=="6010120") &  ( turnup["MBS_CMT30"] < 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]=="6010120"]["MBS_CMT30"].mean()
+    turnup.loc[(turnup["AB_Grade_ID"]=="6010120") &  ( turnup["MBS_CMT30"].isnull()), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]=="6010120"]["MBS_CMT30"].mean()
+    turnup.loc[(turnup["AB_Grade_ID"]!="6010120") &  (turnup["AB_Grade_ID"]!="6010100"), "MBS_CMT30"] = 0
+    
+
+    # TO ADD
+    if not steam_null:
+        turnup = turnup[turnup["Steam_flow_to_PreDryers"]>42] 
+        turnup = turnup[~((turnup.Wedge_Time > "2025-10-23 11:56") & (turnup.Wedge_Time <"2025-11-16 10:00"))]
+    # END TO ADD
+
+    # TODO
+    turnup = turnup.copy()
+    turnup["Starch_uptake__g/m2_"]=turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]+turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"]
+    turnup["concentration_starch_working_tank_1"]=turnup["Flow_starch_main_line_to_working_tank_1~^0"]/(turnup["Dilution_water_working_tank_1"]+turnup["Flow_starch_main_line_to_working_tank_1~^0"])
+    turnup["concentration_starch_working_tank_2"]=turnup["Flow_starch_main_line_to_working_tank_2~^0"]/(turnup["Dilution_water_working_tank_2"]+turnup["Flow_starch_main_line_to_working_tank_2~^0"])
+    turnup["retention"]=1-turnup['Consistency_white_water']/(10*turnup['Headbox_consistency'])
+
+    steam_flows=['Steam_flow_to_PreDryers','Steam_flow_to_AfterDryers','Steam_flow_to_starch_kitchen','Steam_flow_to_heat_exchangers','Steam_flow_to_white_water_heating']
+    turnup['Steam_Predryers'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_PreDryers'] / turnup[steam_flows].sum(axis=1)
+    turnup['Steam_Afterdryers'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_AfterDryers'] / turnup[steam_flows].sum(axis=1)
+    turnup['Steam_Starchkitchen'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_starch_kitchen'] / turnup[steam_flows].sum(axis=1)
+    turnup['Steam_Heatexchangers'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_heat_exchangers'] / turnup[steam_flows].sum(axis=1)
+    turnup['Steam_Whitewater'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_white_water_heating'] / turnup[steam_flows].sum(axis=1)
+
+    electricity_consumptions=['Electrical_Consumtion_Wire_Section',"Press_and_Steambox",'PM_Freq_Converters_1_to_3','Other_PM_1_to_10','Predryers_sensor_10_to_25','Afterdryers_sensor_1_to_9','Spezifischer_Energieverbrauch_APA_']
+    turnup['Electricity_Wiresection'] = turnup['Electricity__€/T_'] * turnup['Electrical_Consumtion_Wire_Section'] / turnup[electricity_consumptions].sum(axis=1)
+    turnup['Electricity_Press_and_Steambox'] = turnup['Electricity__€/T_'] * turnup['Press_and_Steambox'] / turnup[electricity_consumptions].sum(axis=1)
+    turnup['Electricity_Freqconverters'] = turnup['Electricity__€/T_'] * turnup['PM_Freq_Converters_1_to_3'] / turnup[electricity_consumptions].sum(axis=1)
+    turnup['Electricity_Other'] = turnup['Electricity__€/T_'] * turnup['Other_PM_1_to_10'] / turnup[electricity_consumptions].sum(axis=1)
+    turnup['Electricity_Predryer'] = turnup['Electricity__€/T_'] * turnup['Predryers_sensor_10_to_25'] / turnup[electricity_consumptions].sum(axis=1)
+    turnup['Electricity_Afterdryer'] = turnup['Electricity__€/T_'] * turnup['Afterdryers_sensor_1_to_9'] / turnup[electricity_consumptions].sum(axis=1)
+    turnup['Electricity_Specific'] = turnup['Electricity__€/T_'] * turnup['Spezifischer_Energieverbrauch_APA_'] / turnup[electricity_consumptions].sum(axis=1)
+
+    coef_df = pd.DataFrame({
+        "property": ["MBS_SCT_MD", "MBS_SCT_CD", "MBS_Burst", "MBS_CMT30"],
+        "starch_coef": [0.1356332061139627, 0.15738688100760012, 10.8090692825425, 3.701831560389852]
+    })
+
+    turnup["Wedge_Date"] = turnup["Wedge_Time"].dt.date
+
+    turnup.drop_duplicates(["MBS_Current_reel_ID"],keep="last", inplace=True)
+
+    overprocessing=pd.melt(turnup[["Wedge_Time",'AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_','MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30']], id_vars=['Wedge_Time','AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_'], value_vars=['MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30'],var_name="property").merge(setpoint_df.pivot(index=["AB_Grade_ID","property"], columns=["variable"], values="value").reset_index(), on=["AB_Grade_ID","property"], how="left").dropna()
+    overprocessing=pd.merge(overprocessing,coef_df,on=["property"],how="left")
+    overprocessing["property_diff"]=overprocessing["value"]-overprocessing["min"]
+    overprocessing["property_pct"]=overprocessing["property_diff"]/overprocessing["min"]
+    overprocessing["overprocessing_std"]=(overprocessing["value"]-(overprocessing["min"] + overprocessing["target"])/2)/((overprocessing["target"] - overprocessing["min"])/2)
+    overprocessing["overprocessing_score"]=(overprocessing["overprocessing_std"]-1).clip(0)
+    overprocessing["underprocessing_score"]=(-overprocessing["overprocessing_std"]-1).clip(0)
+    overprocessing["starch_uptake_diff"]=overprocessing["property_diff"]*overprocessing["starch_coef"]
+    overprocessing["starch_mass_flow_diff_avg"]=overprocessing["starch_uptake_diff"]*1000/overprocessing['Current_basis_weight'] #kg/T
+    overprocessing["starch_cost_diff"]=overprocessing["starch_mass_flow_diff_avg"]* 434.22 / 1000
+    overprocessing = overprocessing[["MBS_Current_reel_ID","property","property_pct","starch_cost_diff","overprocessing_std","overprocessing_score","underprocessing_score"]]
+    overprocessingT=overprocessing.groupby('MBS_Current_reel_ID').agg({"property_pct":"mean","starch_cost_diff":"mean", "overprocessing_std":"mean","overprocessing_score":"sum","underprocessing_score":"sum"}).reset_index()
+    overprocessingT["property"]="ALL"
+    overprocessing=pd.concat([overprocessing,overprocessingT],axis=0)
+    overprocessing.pivot(index=["MBS_Current_reel_ID"],columns="property",values=["property_pct","overprocessing_std","starch_cost_diff"])
+    overprocessing=overprocessing.pivot(index=["MBS_Current_reel_ID"],columns="property",values=["property_pct","overprocessing_std","starch_cost_diff"])
+    overprocessing1=overprocessing["property_pct"].rename(columns={"ALL":"Overprocessing_percentage","MBS_SCT_CD":"Overprocessing_SCT_CD","MBS_Burst":"Overprocessing_Burst","MBS_CMT30":"Overprocessing_CMT30"})
+    overprocessing2=overprocessing["starch_cost_diff"][["ALL"]].rename(columns={"ALL":"Overprocessing_cost__€/T_"})
+    overprocessing3=overprocessingT[["MBS_Current_reel_ID","overprocessing_std","overprocessing_score","underprocessing_score"]].set_index("MBS_Current_reel_ID")
+    overprocessing4=overprocessing["overprocessing_std"].rename(columns={"ALL":"Overprocessing_std_ALL","MBS_SCT_CD":"Overprocessing_std_SCT_CD","MBS_Burst":"Overprocessing_std_Burst","MBS_CMT30":"Overprocessing_std_CMT30"})
+    overprocessing=pd.concat([overprocessing1,overprocessing2,overprocessing3,overprocessing4],axis=1)
+    overprocessing=overprocessing.reset_index()[["MBS_Current_reel_ID","Overprocessing_percentage","Overprocessing_SCT_CD","Overprocessing_Burst","Overprocessing_CMT30","Overprocessing_cost__€/T_",'Overprocessing_std_ALL', 'Overprocessing_std_Burst',
+        'Overprocessing_std_CMT30', 'Overprocessing_std_SCT_CD',"overprocessing_std","overprocessing_score","underprocessing_score"]]
+    turnup=pd.merge(turnup,overprocessing,on='MBS_Current_reel_ID',how="left")
+    return turnup
+
+def _feature_engineering_DEPRECATED(turnup, setpoint_df, steam_null):
     from datetime import datetime
     import numpy as np
 
@@ -2136,6 +2720,8 @@ def _feature_engineering(turnup, setpoint_df, steam_null):
 
     turnup["Wedge_Date"] = turnup["Wedge_Time"].dt.date
 
+    turnup.drop_duplicates(["MBS_Current_reel_ID"],keep="last", inplace=True)
+
     overprocessing=pd.melt(turnup[["Wedge_Time",'AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_','MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30']], id_vars=['Wedge_Time','AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_'], value_vars=['MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30'],var_name="property").merge(setpoint_df.pivot(index=["AB_Grade_ID","property"], columns=["variable"], values="value").reset_index(), on=["AB_Grade_ID","property"], how="left").dropna()
     overprocessing=pd.merge(overprocessing,coef_df,on=["property"],how="left")
     overprocessing["property_diff"]=overprocessing["value"]-overprocessing["min"]
@@ -2162,7 +2748,6 @@ def _feature_engineering(turnup, setpoint_df, steam_null):
     turnup=pd.merge(turnup,overprocessing,on='MBS_Current_reel_ID',how="left")
     return turnup
 
-
 def _turnup_data(local, bucket, fs, setpoint_df, steam_null):
     from datetime import datetime
     import numpy as np
@@ -2171,7 +2756,7 @@ def _turnup_data(local, bucket, fs, setpoint_df, steam_null):
 
         turnup=[]
 
-        for time_ref in ["2025-06-01","2025-07-01","2025-08-01","2025-09-01","2025-10-01","2025-11-01","2025-12-01","2026-01-01","2026-02-01","2026-03-01"]:
+        for time_ref in ["2025-06-01","2025-07-01","2025-08-01","2025-09-01","2025-10-01","2025-11-01","2025-12-01","2026-01-01","2026-02-01","2026-03-01","2026-04-01"]:
             #print(time_ref)
             turnup.append(pd.read_parquet(f"./data/costimier_turnup_{time_ref}.parquet",engine="fastparquet"))
         turnup=pd.concat(turnup,axis=0).copy()
@@ -2246,6 +2831,7 @@ def shapley_contribution_filtered(process_data,df1, df2, cost_component, fibre_c
   starch_feats = starch_features()
   fibre_feats = fibre_features()
 
+  
   results = []
   for idx in list(set(df1.index) & set(df2.index)):
       row1 = df1.loc[idx]
@@ -2390,79 +2976,113 @@ def _process_data_clustered_summary(process_data_clustered, cost_component, grad
 
 
 
-def drilldown_df(dfp, level, object_drilldown, reference_drilldown):
-  import numpy as np
+def drilldown_df(dfp, level, object_drilldown, reference_drilldown, secondary_object_drilldown="chemicals"):
+    import numpy as np
 
-  if reference_drilldown=="week":
-      x_variable_summary="week"
-  else:
-      x_variable_summary="target"
+    if reference_drilldown=="week":
+        x_variable_summary="week"
+    else:
+        x_variable_summary="target"
 
-  if object_drilldown=="cost":
-      y_variable_summary = "Combined_cost__€/T_"
-  elif object_drilldown=="overprocessing":
-      y_variable_summary = "Overprocessing_percentage"    
+    if object_drilldown=="cost":
+        y_variable_summary = "Combined_cost__€/T_"
+    elif object_drilldown=="overprocessing":
+        y_variable_summary = "Overprocessing_percentage"    
 
-  if level==1:
-      color_variable_summary ="none"                
-      df, dfg, c, x_var, color_var = get_process_grouped(dfp, y_variable_summary,x_variable_summary,color_variable_summary,_agg_cost_label2(), _costs_to_consider2(), _overprocessing_vars())
-      if object_drilldown=="cost":            
-          dfg["cost"]="TOTAL"
-      elif object_drilldown=="overprocessing":
-          dfg["cost"]="AVERAGE"
+    if level==1:
+        color_variable_summary ="none"                
+        df, dfg, c, x_var, color_var = get_process_grouped(dfp, y_variable_summary,x_variable_summary,color_variable_summary,_agg_cost_label2(), _costs_to_consider2(), _overprocessing_vars())
+        if object_drilldown=="cost":            
+            dfg["cost"]="TOTAL"
+        elif object_drilldown=="overprocessing":
+            dfg["cost"]="AVERAGE"
 
-      if reference_drilldown=="week":
-          t = dfg.Wedge_Week.max() - 1                                
-          C=dfg[(dfg.Wedge_Week==(t+1))].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.Wedge_Week==(t))].rename(columns={y_variable_summary:"previous_cost"})[["cost","previous_cost" ]], on= ["cost"], how="left" )
-          
-      else:
-          C=dfg[(dfg.target=="current")].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.target=="historic")].rename(columns={y_variable_summary:"previous_cost"})[["cost","previous_cost" ]], on= ["cost"], how="left" )
-      C["AB_Grade_ID"]="ALL" 
+        if reference_drilldown=="week":
+            t = dfg.Wedge_Week.max() - 1                                
+            C=dfg[(dfg.Wedge_Week==(t+1))].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.Wedge_Week==(t))].rename(columns={y_variable_summary:"previous_cost"})[["cost","previous_cost" ]], on= ["cost"], how="left" )
+            
+        else:
+            C=dfg[(dfg.target=="current")].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.target=="historic")].rename(columns={y_variable_summary:"previous_cost"})[["cost","previous_cost" ]], on= ["cost"], how="left" )
+        C["AB_Grade_ID"]="ALL" 
       
-  elif level==0:
-      color_variable_summary ="cost"                             
-      df, dfg, c, x_var, color_var = get_process_grouped(dfp, y_variable_summary,x_variable_summary,color_variable_summary,_agg_cost_label2(), _costs_to_consider2(), _overprocessing_vars())
-      if reference_drilldown=="week":
-          t = dfg.Wedge_Week.max() - 1
-          C=dfg[(dfg.Wedge_Week==(t+1))].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.Wedge_Week==(t))].rename(columns={y_variable_summary:"previous_cost"})[["cost","previous_cost" ]], on= ["cost"], how="left" )
-      else:
-          C=dfg[(dfg.target=="current")].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.target=="historic")].rename(columns={y_variable_summary:"previous_cost"})[["cost","previous_cost" ]], on= ["cost"], how="left" )
+    elif level==0:
+        color_variable_summary ="cost"                             
+        df, dfg, c, x_var, color_var = get_process_grouped(dfp, y_variable_summary,x_variable_summary,color_variable_summary,_agg_cost_label2(), _costs_to_consider2(), _overprocessing_vars())
+        if reference_drilldown=="week":
+            t = dfg.Wedge_Week.max() - 1
+            C=dfg[(dfg.Wedge_Week==(t+1))].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.Wedge_Week==(t))].rename(columns={y_variable_summary:"previous_cost"})[["cost","previous_cost" ]], on= ["cost"], how="left" )
+        else:
+            C=dfg[(dfg.target=="current")].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.target=="historic")].rename(columns={y_variable_summary:"previous_cost"})[["cost","previous_cost" ]], on= ["cost"], how="left" )
 
-      C["AB_Grade_ID"]="ALL" 
-  elif level==2:
-      color_variable_summary ="grade"                             
-      df, dfg, c, x_var, color_var = get_process_grouped(dfp, y_variable_summary,x_variable_summary,color_variable_summary,_agg_cost_label2(), _costs_to_consider2(), _overprocessing_vars())
-      if object_drilldown=="cost":            
-          dfg["cost"]="TOTAL"
-      elif object_drilldown=="overprocessing":
-          dfg["cost"]="AVERAGE"
-      if reference_drilldown=="week":
-          t = dfg.Wedge_Week.max() - 1                
-          C=dfg[(dfg.Wedge_Week==(t+1))].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.Wedge_Week==(t))].rename(columns={y_variable_summary:"previous_cost"})[["AB_Grade_ID","cost","previous_cost" ]], on= ["AB_Grade_ID","cost"], how="left" )
-      else:
-          C=dfg[(dfg.target=="current")].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.target=="historic")].rename(columns={y_variable_summary:"previous_cost"})[["AB_Grade_ID","cost","previous_cost" ]], on= ["AB_Grade_ID","cost"], how="left" )
-  elif level==3:
-      color_variable_summary ="grade"                       
-      df, dfg1, c, x_var, color_var = get_process_grouped(dfp, y_variable_summary,x_variable_summary,color_variable_summary,_agg_cost_label2(), _costs_to_consider2(), _overprocessing_vars())
-      
-      if object_drilldown=="cost":
-          color_variable_summary ="cost_grade"
-          dfg1["cost"]="TOTAL"
-      elif object_drilldown=="overprocessing":
-          color_variable_summary ="overprocessing_grade"        
-          dfg1["cost"]="AVERAGE"
+        C["AB_Grade_ID"]="ALL" 
+    elif level==2:
+        color_variable_summary ="grade"                             
+        df, dfg, c, x_var, color_var = get_process_grouped(dfp, y_variable_summary,x_variable_summary,color_variable_summary,_agg_cost_label2(), _costs_to_consider2(), _overprocessing_vars())
+        if object_drilldown=="cost":            
+            dfg["cost"]="TOTAL"
+        elif object_drilldown=="overprocessing":
+            dfg["cost"]="AVERAGE"
+        if reference_drilldown=="week":
+            t = dfg.Wedge_Week.max() - 1                
+            C=dfg[(dfg.Wedge_Week==(t+1))].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.Wedge_Week==(t))].rename(columns={y_variable_summary:"previous_cost"})[["AB_Grade_ID","cost","previous_cost" ]], on= ["AB_Grade_ID","cost"], how="left" )
+        else:
+            C=dfg[(dfg.target=="current")].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.target=="historic")].rename(columns={y_variable_summary:"previous_cost"})[["AB_Grade_ID","cost","previous_cost" ]], on= ["AB_Grade_ID","cost"], how="left" )
+    elif level==3:
+        color_variable_summary ="grade"                       
+        df, dfg1, c, x_var, color_var = get_process_grouped(dfp, y_variable_summary,x_variable_summary,color_variable_summary,_agg_cost_label2(), _costs_to_consider2(), _overprocessing_vars())
+        
+        if object_drilldown=="cost":
+            color_variable_summary ="cost_grade"
+            dfg1["cost"]="TOTAL"
+        elif object_drilldown=="overprocessing":
+            color_variable_summary ="overprocessing_grade"        
+            dfg1["cost"]="AVERAGE"
 
-      df, dfg2, c, x_var, color_var = get_process_grouped(dfp, y_variable_summary,x_variable_summary,color_variable_summary,_agg_cost_label2(), _costs_to_consider2(), _overprocessing_vars())
-      dfg = pd.concat([dfg1,dfg2],axis=0).dropna()
-      
-      if reference_drilldown=="week":
-          t = dfg.Wedge_Week.max() - 1
-          C=dfg[(dfg.Wedge_Week==(t+1))].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.Wedge_Week==(t))].rename(columns={y_variable_summary:"previous_cost"})[["AB_Grade_ID","cost","previous_cost" ]], on= ["AB_Grade_ID","cost"], how="left" )
-      else:
-          C=dfg[(dfg.target=="current")].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.target=="historic")].rename(columns={y_variable_summary:"previous_cost"})[["AB_Grade_ID","cost","previous_cost" ]], on= ["AB_Grade_ID","cost"], how="left" )
-  C["pct_cost"]=(C["current_cost"]-C["previous_cost"])
-  C["pct_cost"]=C["pct_cost"].replace(np.inf,1)
-  return C
+        df, dfg2, c, x_var, color_var = get_process_grouped(dfp, y_variable_summary,x_variable_summary,color_variable_summary,_agg_cost_label2(), _costs_to_consider2(), _overprocessing_vars())
+        dfg = pd.concat([dfg1,dfg2],axis=0).dropna()
+        
+        if reference_drilldown=="week":
+            t = dfg.Wedge_Week.max() - 1
+            C=dfg[(dfg.Wedge_Week==(t+1))].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.Wedge_Week==(t))].rename(columns={y_variable_summary:"previous_cost"})[["AB_Grade_ID","cost","previous_cost" ]], on= ["AB_Grade_ID","cost"], how="left" )
+        else:
+            C=dfg[(dfg.target=="current")].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.target=="historic")].rename(columns={y_variable_summary:"previous_cost"})[["AB_Grade_ID","cost","previous_cost" ]], on= ["AB_Grade_ID","cost"], how="left" )
+    elif level==4:
+        if object_drilldown=="cost":
+            color_variable_summary ="grade"                       
+        
+            if secondary_object_drilldown == "chemicals":
+                y_variable_summary = 'Chemicals__€/T_'
+                agg_cost_label = 'Chemicals__€/T_'
+                costs_to_consider = _chemical_names()
+                overprocessing_vars = _overprocessing_vars()
+            elif secondary_object_drilldown == "steam":
+                y_variable_summary = 'Steam__€/T_'
+                agg_cost_label = 'Steam__€/T_'
+                costs_to_consider = _steam_names()
+                overprocessing_vars = _overprocessing_vars()
+            elif secondary_object_drilldown == "electricity":
+                y_variable_summary = 'Electricity__€/T_'
+                agg_cost_label = 'Electricity__€/T_'
+                costs_to_consider = _electricity_names()
+                overprocessing_vars = _overprocessing_vars()
+
+            df, dfg1, c, x_var, color_var = get_process_grouped(dfp, y_variable_summary,x_variable_summary,color_variable_summary,agg_cost_label, costs_to_consider, _overprocessing_vars())
+            
+            color_variable_summary ="cost_grade"
+            dfg1["cost"]=secondary_object_drilldown
+
+            df, dfg2, c, x_var, color_var = get_process_grouped(dfp, y_variable_summary,x_variable_summary,color_variable_summary,agg_cost_label, costs_to_consider, _overprocessing_vars())
+            dfg = pd.concat([dfg1,dfg2],axis=0).dropna()
+
+            if reference_drilldown=="week":
+                t = dfg.Wedge_Week.max() - 1
+                C=dfg[(dfg.Wedge_Week==(t+1))].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.Wedge_Week==(t))].rename(columns={y_variable_summary:"previous_cost"})[["AB_Grade_ID","cost","previous_cost" ]], on= ["AB_Grade_ID","cost"], how="left" )
+            else:
+                C=dfg[(dfg.target=="current")].rename(columns={y_variable_summary:"current_cost"}).merge(dfg[(dfg.target=="historic")].rename(columns={y_variable_summary:"previous_cost"})[["AB_Grade_ID","cost","previous_cost" ]], on= ["AB_Grade_ID","cost"], how="left" )
+
+    C["pct_cost"]=(C["current_cost"]-C["previous_cost"])
+    C["pct_cost"]=C["pct_cost"].replace(np.inf,1)
+    return C
 
 def _process_data(turnup_data, target_range, baseline_range, steam_null):
   df = _raw_data(turnup_data).copy()
@@ -4673,12 +5293,19 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
     # Breakdown detection:
     # - cost: any component != TOTAL
     # - overprocessing: any component != AVERAGE
+    sub_components = ["chemicals","steam","electricity"]
     breakdown_flag_value = "AVERAGE" if is_overprocessing else "TOTAL"
     breakdown_exists = False
     if has_component_col:
         breakdown_exists = (
             ~drilldown[component_col].astype(str).str.upper().eq(breakdown_flag_value)
         ).any()
+
+    sub_components_ = list(set(drilldown[component_col].astype(str).unique()).intersection(set(sub_components)))
+    if len(sub_components_)>0:
+        sub_component = sub_components_[0]
+    else:
+        sub_component = ""
 
     # ----------------------------
     # Formatting helpers
@@ -4721,6 +5348,7 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
             return _t("decreased", "gesunken")
         return _t("was unchanged", "unverändert geblieben")
 
+    
     # ----------------------------
     # Detect ALL-only case (for mix/process line)
     # ----------------------------
@@ -4763,15 +5391,24 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
         if dd_comp.empty:
             return "\n\n".join(extra_lines) if extra_lines else ""
 
+
         # Average change per component
-        avg_by_comp = dd_comp.groupby(component_col, as_index=False)["pct_cost"].mean()
+        avg_by_comp = dd_comp[(dd_comp.current_cost>0) & ~dd_comp.cost.isin(sub_components)].groupby(component_col, as_index=False)["pct_cost"].mean()
+
 
         lines = []
 
         # 1) Average change by component
-        lines.append(_t("Average change by component:", "Durchschnittliche Veränderung je Komponente:"))
+        if sub_component=="chemicals":
+            lines.append(_t("Average change by chemicals:", "Durchschnittliche Veränderung je Chemikalie:"))
+        elif sub_component=="steam":
+            lines.append(_t("Average change by steam:", "Durchschnittliche Veränderung je Dampf:"))
+        elif sub_component=="electricity":
+            lines.append(_t("Average change by electricity:", "Durchschnittliche Veränderung je Strom:"))
+        else:    
+            lines.append(_t("Average change by component:", "Durchschnittliche Veränderung je Komponente:"))
 
-        avg_sorted = avg_by_comp.copy()
+        avg_sorted = avg_by_comp.copy()        
         avg_sorted["abs_avg"] = avg_sorted["pct_cost"].abs()
         avg_sorted = avg_sorted.sort_values(["abs_avg", component_col], ascending=[False, True])
 
@@ -5214,6 +5851,15 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             elif v == "square_Rod_pressure_Top_Roll":
                 dd.append("Rod_pressure_Top_Roll")
 
+            elif v == "dewatering":
+                dd.extend([
+                    "Dewatering_Shoe_press",
+                    "Dewatering_Suction_Press_Roll",
+                    "Dewatering_top_wire_suction_box_zone_2",
+                    "Total_Dewatering_Press",
+                    "Dewatering_First_Press_Roll",
+                ])
+
         return list(set(dd))
 
     def fit(self, X, y=None):
@@ -5228,6 +5874,13 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             self.fit(X)
 
         X_df = self._to_dataframe(X)
+
+        if self.features_to_create is not None:
+            X_df = X_df.drop(
+                [v for v in self.features_to_create if v in X_df.columns],
+                axis=1
+            )
+
         if self.copy:
             X_df = X_df.copy()
 
@@ -5424,6 +6077,19 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
         ) ** 2
         return df
 
+    @staticmethod
+    def _add_dewatering(df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        cols = [
+            "Dewatering_Shoe_press",
+            "Dewatering_Suction_Press_Roll",
+            "Dewatering_top_wire_suction_box_zone_2",
+            "Total_Dewatering_Press",
+            "Dewatering_First_Press_Roll",
+        ]
+        df["dewatering"] = df[cols].sum(axis=1)
+        return df
+
     @classmethod
     def _registry(cls):
         return {
@@ -5439,6 +6105,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             "inv_Rod_pressure_Top_Roll": cls._add_inv_rod_pressure_top_roll,
             "square_Rod_Pressure_Bottom_Roll": cls._add_square_rod_pressure_bottom_roll,
             "square_Rod_pressure_Top_Roll": cls._add_square_rod_pressure_top_roll,
+            "dewatering": cls._add_dewatering,
         }
         
 def calculate_manual_shap(model, X_sample, grade_id=None, X_reference=None, grade_col=None):
@@ -6185,3 +6852,252 @@ def bounds_to_cobyla_constraints(bounds, n_vars=None):
     return cons
 
 
+
+import numpy as np
+import pandas as pd
+
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.cross_decomposition import PLSRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.utils.validation import check_is_fitted
+
+
+class GroupwisePLSTransformer(BaseEstimator, TransformerMixin):
+    """
+    Apply PLS on selected columns, optionally fitting one PLS model per group
+    (e.g. per grammage), and pass the remaining columns through.
+
+    If group_col is None, a single global PLS is fitted.
+
+    Parameters
+    ----------
+    pls_columns : list[str]
+        Columns to transform with PLS.
+
+    group_col : str or None, default=None
+        Column defining the groups. If None, no grouping is applied.
+
+    n_components : int, default=2
+        Number of PLS components.
+
+    score_prefix : str, default="pls"
+        Prefix for generated score columns.
+
+    scale : bool, default=True
+        Whether to standardize pls_columns before PLS.
+
+    remainder : {"passthrough", "drop"}, default="passthrough"
+        Whether to keep non-PLS columns.
+
+    handle_unknown_group : {"error", "global"}, default="global"
+        Only relevant when group_col is not None.
+        What to do at transform time if a group was not seen in fit:
+        - "error": raise an error
+        - "global": use a global fallback PLS fitted on all rows
+
+    copy : bool, default=True
+        Whether to copy input data.
+    """
+
+    def __init__(
+        self,
+        pls_columns,
+        group_col=None,
+        n_components=2,
+        score_prefix="pls",
+        scale=True,
+        remainder="passthrough",
+        handle_unknown_group="global",
+        copy=True,
+    ):
+        self.pls_columns = pls_columns
+        self.group_col = group_col
+        self.n_components = n_components
+        self.score_prefix = score_prefix
+        self.scale = scale
+        self.remainder = remainder
+        self.handle_unknown_group = handle_unknown_group
+        self.copy = copy
+
+    def fit(self, X, y):
+        X = self._validate_X(X)
+
+        if y is None:
+            raise ValueError("GroupwisePLSTransformer requires y in fit because PLS is supervised.")
+
+        y = self._validate_y(y, X.index)
+
+        required_cols = list(self.pls_columns)
+        if self.group_col is not None:
+            required_cols.append(self.group_col)
+
+        missing = [c for c in required_cols if c not in X.columns]
+        if missing:
+            raise ValueError(f"Missing columns in X: {missing}")
+
+        if self.remainder not in ("passthrough", "drop"):
+            raise ValueError("remainder must be 'passthrough' or 'drop'")
+
+        if self.handle_unknown_group not in ("error", "global"):
+            raise ValueError("handle_unknown_group must be 'error' or 'global'")
+
+        self.input_features_ = X.columns.to_list()
+        self.feature_names_in_ = np.asarray(X.columns, dtype=object)
+        self.n_features_in_ = X.shape[1]
+
+        if self.remainder == "passthrough":
+            self.pass_through_columns_ = [c for c in X.columns if c not in set(self.pls_columns)]
+        else:
+            self.pass_through_columns_ = []
+
+        max_possible = min(len(self.pls_columns), X.shape[0] - 1)
+        if max_possible < 1:
+            raise ValueError("Not enough data to fit PLS.")
+
+        self.n_components_ = min(self.n_components, max_possible)
+        self.output_pls_columns_ = [
+            f"{self.score_prefix}_{i+1}" for i in range(self.n_components_)
+        ]
+
+        self.models_ = {}
+        self.global_bundle_ = self._fit_single_bundle(
+            X[self.pls_columns], y, n_components=self.n_components_
+        )
+
+        if self.group_col is None:
+            self.use_grouping_ = False
+        else:
+            self.use_grouping_ = True
+            self.groups_ = pd.Index(X[self.group_col].dropna().unique())
+
+            for group_value, idx in X.groupby(self.group_col, observed=True).groups.items():
+                
+                Xg = X.loc[idx, self.pls_columns]
+                yg = y.loc[idx]
+
+                n_comp_group = min(self.n_components, len(Xg) - 1, len(self.pls_columns))
+                if n_comp_group < 1:
+                    continue
+
+                self.models_[group_value] = self._fit_single_bundle(
+                    Xg, yg, n_components=n_comp_group
+                )
+
+        return self
+
+    def transform(self, X):
+        check_is_fitted(self, ["global_bundle_", "output_pls_columns_", "pass_through_columns_"])
+        X = self._validate_X(X)
+
+        required_cols = list(self.pls_columns)
+        if self.group_col is not None:
+            required_cols.append(self.group_col)
+
+        missing = [c for c in required_cols if c not in X.columns]
+        if missing:
+            raise ValueError(f"Missing columns in X: {missing}")
+
+        X_work = X.copy() if self.copy else X
+
+        if not self.use_grouping_:
+            Z = self._transform_single_bundle(self.global_bundle_, X_work[self.pls_columns])
+
+            scores = pd.DataFrame(
+                Z,
+                index=X_work.index,
+                columns=self.output_pls_columns_[:Z.shape[1]],
+            )
+
+            if Z.shape[1] < self.n_components_:
+                for j in range(Z.shape[1], self.n_components_):
+                    scores[self.output_pls_columns_[j]] = np.nan
+
+            scores = scores[self.output_pls_columns_]
+
+        else:
+            scores = pd.DataFrame(
+                index=X_work.index,
+                columns=self.output_pls_columns_,
+                dtype=float,
+            )
+
+            for group_value, idx in X_work.groupby(self.group_col, observed=True).groups.items():
+                Xg = X_work.loc[idx, self.pls_columns]
+
+                if group_value in self.models_:
+                    bundle = self.models_[group_value]
+                else:
+                    if self.handle_unknown_group == "error":
+                        raise ValueError(f"Unknown group in transform: {group_value}")
+                    bundle = self.global_bundle_
+
+                Z = self._transform_single_bundle(bundle, Xg)
+
+                out = np.full((len(Xg), self.n_components_), np.nan, dtype=float)
+                out[:, :Z.shape[1]] = Z
+                scores.loc[idx, self.output_pls_columns_] = out
+
+        parts = [scores]
+
+        if self.remainder == "passthrough":
+            parts.append(X_work[self.pass_through_columns_])
+
+        return pd.concat(parts, axis=1)
+
+    def get_feature_names_out(self, input_features=None):
+        check_is_fitted(self, ["output_pls_columns_", "pass_through_columns_"])
+
+        if self.remainder == "passthrough":
+            return np.asarray(self.output_pls_columns_ + self.pass_through_columns_, dtype=object)
+
+        return np.asarray(self.output_pls_columns_, dtype=object)
+
+    def _fit_single_bundle(self, X_sub, y_sub, n_components):
+        X_values = pd.DataFrame(X_sub, columns=self.pls_columns).to_numpy(dtype=float)
+        y_values = self._y_to_2d(y_sub)
+
+        scaler = StandardScaler() if self.scale else None
+        if scaler is not None:
+            X_values = scaler.fit_transform(X_values)
+
+        pls = PLSRegression(n_components=n_components)
+        pls.fit(X_values, y_values)
+
+        return {
+            "scaler": scaler,
+            "pls": pls,
+            "n_components": n_components,
+        }
+
+    def _transform_single_bundle(self, bundle, X_sub):
+        X_values = pd.DataFrame(X_sub, columns=self.pls_columns).to_numpy(dtype=float)
+
+        scaler = bundle["scaler"]
+        if scaler is not None:
+            X_values = scaler.transform(X_values)
+
+        Z = bundle["pls"].transform(X_values)
+        return np.asarray(Z)
+
+    @staticmethod
+    def _validate_X(X):
+        if not isinstance(X, pd.DataFrame):
+            raise TypeError("X must be a pandas DataFrame.")
+        return X
+
+    @staticmethod
+    def _validate_y(y, index):
+        if isinstance(y, pd.Series):
+            return y
+        if isinstance(y, pd.DataFrame):
+            if y.shape[1] != 1:
+                raise ValueError("Only a 1D target or single-column DataFrame is supported.")
+            return y.iloc[:, 0]
+        return pd.Series(y, index=index)
+
+    @staticmethod
+    def _y_to_2d(y):
+        y_values = np.asarray(y, dtype=float)
+        if y_values.ndim == 1:
+            y_values = y_values.reshape(-1, 1)
+        return y_values

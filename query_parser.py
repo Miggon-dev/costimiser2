@@ -541,10 +541,10 @@ def parse_levels(query: str):
  
     q_without_l3 = q.replace("by grade and cost component", "")
  
-    if "overall" in q_without_l3:
+    if "overall" in q_without_l3 or "total" in q_without_l3:
         levels.append(1)
  
-    if "by grade" in q_without_l3:
+    if "grade" in q_without_l3 :
         levels.append(2)
  
     if re.search(r"\blevel\s*1\b", q):

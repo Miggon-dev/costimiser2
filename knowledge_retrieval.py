@@ -68,9 +68,9 @@ _session = None
 
 BEDROCK_CONFIG = Config(
     connect_timeout=10,   # time to establish connection
-    read_timeout=300,     # <-- increase this (e.g. 300s = 5 min)
+    read_timeout=3600,     # <-- increase this (e.g. 300s = 5 min)
     retries={
-        "max_attempts": 3,
+        "max_attempts": 10,
         "mode": "standard"
     }
 )
@@ -166,7 +166,7 @@ def validate_embedding_dim(status_cb: StatusFn = None) -> None:
 # ================================
 # Bedrock – Claude (Converse)
 # ================================
-def llm_answer(prompt: str, max_tokens: int = 5000, temperature: float = 0.2) -> str:
+def llm_answer(prompt: str, max_tokens: int = 3000, temperature: float = 0.2) -> str:
     _ensure_clients()
     resp = rt.converse(
         modelId=LLM_MODEL_ID,
