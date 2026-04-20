@@ -6108,6 +6108,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             "dewatering": cls._add_dewatering,
         }
         
+
 def calculate_manual_shap(model, X_sample, grade_id=None, X_reference=None, grade_col=None):
     """
     SHAP (using shap library) for NON-linear pipelines, computed per grade to avoid grade-mix bias.
