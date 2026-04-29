@@ -2494,7 +2494,7 @@ def _feature_engineering(turnup, setpoint_df, steam_null):
         turnup = turnup[~((turnup.Wedge_Time > "2025-10-23 11:56") & (turnup.Wedge_Time <"2025-11-16 10:00"))]
     # END TO ADD
 
-    # TODO
+
     turnup = turnup.copy()
     turnup["Starch_uptake__g/m2_"]=turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]+turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"]
     turnup["concentration_starch_working_tank_1"]=turnup["Flow_starch_main_line_to_working_tank_1~^0"]/(turnup["Dilution_water_working_tank_1"]+turnup["Flow_starch_main_line_to_working_tank_1~^0"])
@@ -5757,7 +5757,362 @@ def _lab_data(local, bucket, fs):
     else:
         return pd.read_parquet(f"s3://{bucket}/turnup/optvsn_df.parquet")
 
+
 class FeatureCreator(BaseEstimator, TransformerMixin):
+    def __init__(self, features_to_create=None, features_to_keep=None, errors="raise", copy=False):
+        self.features_to_create = features_to_create
+        self.features_to_keep = features_to_keep
+        self.errors = errors
+        self.copy = copy
+
+    def fit(self, X, y=None):
+        self.feature_names_in_ = (
+            np.asarray(X.columns, dtype=object) if hasattr(X, "columns") else None
+        )
+        return self
+
+    def transform(self, X):
+        if not hasattr(self, "feature_names_in_"):
+            self.fit(X)
+
+        X_df = self._to_dataframe(X)
+
+        
+        #if self.copy:
+        X_df = X_df.copy()
+
+        registry = self._registry()
+        requested = (
+            list(registry.keys())
+            if self.features_to_create is None
+            else list(self.features_to_create)
+        )
+
+        # Add dependencies in correct order.
+        to_make = self._expand_with_deps(requested)
+
+        # Do not recompute engineered columns already present.
+        for name in to_make:
+            if name in X_df.columns:
+                continue
+
+            fn = registry.get(name)
+            if fn is None:
+                msg = f"Unknown engineered feature '{name}'. Available: {sorted(registry.keys())}"
+                if self.errors == "raise":
+                    raise ValueError(msg)
+                continue
+
+            try:
+                fn(X_df) # in-place
+            except Exception:
+                if self.errors == "raise":
+                    raise
+
+        self.created_features_ = [c for c in to_make if c in X_df.columns]
+
+        if self.features_to_keep is None:
+            return X_df
+
+        missing = [c for c in self.features_to_keep if c not in X_df.columns]
+        if missing and self.errors == "raise":
+            raise ValueError(f"Missing required output columns: {missing}")
+
+        keep = [c for c in self.features_to_keep if c in X_df.columns]
+        return X_df.loc[:, keep]
+
+    def get_feature_names_out(self, input_features=None):
+        if self.features_to_keep is None:
+            if getattr(self, "feature_names_in_", None) is not None:
+                return np.asarray(self.feature_names_in_, dtype=object)
+            return np.asarray([], dtype=object)
+        return np.asarray(self.features_to_keep, dtype=object)
+
+    def features_required(self):
+        required = []
+
+        for v in self.features_to_create or []:
+            required.extend(self._feature_raw_inputs().get(v, []))
+
+        return sorted(set(required))
+
+    def _to_dataframe(self, X):
+        if isinstance(X, pd.DataFrame):
+            return X
+
+        if getattr(self, "feature_names_in_", None) is None:
+            raise ValueError(
+                "FeatureCreator received a numpy array without known column names. "
+                "Pass a pandas DataFrame into the pipeline or fit with a DataFrame first."
+            )
+
+        return pd.DataFrame(X, columns=list(self.feature_names_in_))
+
+    @classmethod
+    def _deps(cls):
+        return {
+            "Fibre__g/m2_": ["Starch_uptake__g/m2_"],
+            "Water_flow": ["Water_flow_Predryer", "Water_flow_Afterdryer"],
+            "Water_flow_Afterdryer_input": ["flow_diluted_starch"],
+        }
+
+    @classmethod
+    def _feature_raw_inputs(cls):
+        return {
+            "Fibre__g/m2_": [
+                "Current_basis_weight",
+                "Current_reel_moisture_average(reel)",
+                "Starch_uptake_by_paper_Top_Roll__g/m2_",
+                "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
+            ],
+            "Starch_uptake__g/m2_": [
+                "Starch_uptake_by_paper_Top_Roll__g/m2_",
+                "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
+            ],
+            "Water_flow_Predryer": [
+                "Current_basis_weight",
+                "Speed_PD1",
+                "Current_reel_width",
+                "Moisture_out_of_PreDryer",
+            ],
+            "Water_flow_Afterdryer": [
+                "Current_basis_weight",
+                "Speed_PD1",
+                "Current_reel_width",
+                "Moisture_after_SpeedSizer",
+                "Actual_moisture",
+            ],
+            "Water_flow": [
+                "Current_basis_weight",
+                "Speed_PD1",
+                "Current_reel_width",
+                "Moisture_out_of_PreDryer",
+                "Moisture_after_SpeedSizer",
+                "Actual_moisture",
+            ],
+            "flow_diluted_starch": [
+                "concentration_starch_working_tank_2",
+                "concentration_starch_working_tank_1",
+                "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
+                "Starch_uptake_by_paper_Top_Roll__g/m2_",
+            ],
+            "flow_diluted_starch_index": [
+                "Flow_starch_main_line_to_working_tank_2~^0",
+                "concentration_starch_working_tank_2",
+                "Flow_starch_main_line_to_working_tank_1~^0",
+                "concentration_starch_working_tank_1",
+                "Production_Rate__T/h_",
+            ],
+            "Water_flow_Afterdryer_input": [
+                "Current_basis_weight",
+                "Speed_PD1",
+                "Current_reel_width",
+                "concentration_starch_working_tank_2",
+                "concentration_starch_working_tank_1",
+                "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
+                "Starch_uptake_by_paper_Top_Roll__g/m2_",
+            ],
+            "Water_flow_Afterdryer_output": [
+                "Current_basis_weight",
+                "Speed_PD1",
+                "Current_reel_width",
+                "Current_reel_moisture_average(reel)",
+                "Moisture_out_of_PreDryer",
+            ],
+            "inv_Rod_Pressure_Bottom_Roll": ["Rod_Pressure_Bottom_Roll"],
+            "inv_Rod_pressure_Top_Roll": ["Rod_pressure_Top_Roll"],
+            "square_Rod_Pressure_Bottom_Roll": ["Rod_Pressure_Bottom_Roll"],
+            "square_Rod_pressure_Top_Roll": ["Rod_pressure_Top_Roll"],
+            "dewatering": [
+                "Dewatering_Shoe_press",
+                "Dewatering_Suction_Press_Roll",
+                "Dewatering_top_wire_suction_box_zone_2",
+                "Total_Dewatering_Press",
+                "Dewatering_First_Press_Roll",
+            ],
+        }
+
+    def _expand_with_deps(self, requested):
+        deps = self._deps()
+        seen = set()
+        order = []
+
+        def visit(f):
+            if f in seen:
+                return
+            seen.add(f)
+            for d in deps.get(f, []):
+                visit(d)
+            order.append(f)
+
+        for f in requested:
+            visit(f)
+
+        return order
+
+    @staticmethod
+    def _safe_inverse(series, eps=1e-9):
+        s = pd.to_numeric(series, errors="coerce")
+        s = s.where(s.abs() > eps, np.nan)
+        return 1.0 / s
+
+    @staticmethod
+    def _add_starch_uptake(df):
+        df["Starch_uptake__g/m2_"] = (
+            df["Starch_uptake_by_paper_Top_Roll__g/m2_"]
+            + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]
+        )
+
+    @staticmethod
+    def _add_fibre(df):
+        df["Fibre__g/m2_"] = (
+            df["Current_basis_weight"]
+            * (1 - df["Current_reel_moisture_average(reel)"] / 100)
+            - df["Starch_uptake__g/m2_"]
+        )
+
+    @staticmethod
+    def _add_water_flow_predryer(df):
+        df["Water_flow_Predryer"] = (
+            df["Current_basis_weight"]
+            * df["Speed_PD1"]
+            * df["Current_reel_width"]
+            * (100 - 35 - df["Moisture_out_of_PreDryer"])
+            * 60
+            / 1e10
+        )
+
+    @staticmethod
+    def _add_water_flow_afterdryer(df):
+        df["Water_flow_Afterdryer"] = (
+            df["Current_basis_weight"]
+            * df["Speed_PD1"]
+            * df["Current_reel_width"]
+            * (df["Moisture_after_SpeedSizer"] - df["Actual_moisture"])
+            * 60
+            / 1e10
+        )
+
+    @staticmethod
+    def _add_water_flow(df):
+        df["Water_flow"] = df["Water_flow_Predryer"] + df["Water_flow_Afterdryer"]
+
+    @staticmethod
+    def _add_flow_diluted_starch(df):
+        df["flow_diluted_starch"] = (
+            df["Starch_uptake_by_paper_Top_Roll__g/m2_"]
+            / df["concentration_starch_working_tank_2"]
+            + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]
+            / df["concentration_starch_working_tank_1"]
+        )
+
+    @staticmethod
+    def _add_flow_diluted_starch_index(df):
+        df["flow_diluted_starch_index"] = (
+            (
+                df["Flow_starch_main_line_to_working_tank_2~^0"]
+                / df["concentration_starch_working_tank_2"]
+                + df["Flow_starch_main_line_to_working_tank_1~^0"]
+                / df["concentration_starch_working_tank_1"]
+            )
+            / df["Production_Rate__T/h_"]
+        )
+
+    @staticmethod
+    def _add_water_flow_afterdryer_input(df):
+        df["Water_flow_Afterdryer_input"] = (
+            df["Current_basis_weight"]
+            * df["Speed_PD1"]
+            * df["Current_reel_width"]
+            * df["flow_diluted_starch"]
+            * 60
+            / 1e10
+        )
+
+    @staticmethod
+    def _add_water_flow_afterdryer_output(df):
+        df["Water_flow_Afterdryer_output"] = (
+            df["Current_basis_weight"]
+            * df["Speed_PD1"]
+            * df["Current_reel_width"]
+            * (
+                df["Current_reel_moisture_average(reel)"]
+                - df["Moisture_out_of_PreDryer"]
+            )
+            * 60
+            / 1e10
+        )
+
+    @staticmethod
+    def _add_inv_rod_pressure_bottom_roll(df):
+        df["inv_Rod_Pressure_Bottom_Roll"] = FeatureCreator._safe_inverse(
+            df["Rod_Pressure_Bottom_Roll"]
+        )
+
+    @staticmethod
+    def _add_inv_rod_pressure_top_roll(df):
+        df["inv_Rod_pressure_Top_Roll"] = FeatureCreator._safe_inverse(
+            df["Rod_pressure_Top_Roll"]
+        )
+
+    @staticmethod
+    def _add_square_rod_pressure_bottom_roll(df):
+        df["square_Rod_Pressure_Bottom_Roll"] = pd.to_numeric(
+            df["Rod_Pressure_Bottom_Roll"], errors="coerce"
+        ) ** 2
+
+    @staticmethod
+    def _add_square_rod_pressure_top_roll(df):
+        df["square_Rod_pressure_Top_Roll"] = pd.to_numeric(
+            df["Rod_pressure_Top_Roll"], errors="coerce"
+        ) ** 2
+
+    @staticmethod
+    def _add_dewatering(df):
+        cols = [
+            "Dewatering_Shoe_press",
+            "Dewatering_Suction_Press_Roll",
+            "Dewatering_top_wire_suction_box_zone_2",
+            "Total_Dewatering_Press",
+            "Dewatering_First_Press_Roll",
+        ]
+        df["dewatering"] = df[cols].sum(axis=1)
+
+    @classmethod
+    def _registry(cls):
+        return {
+            "Starch_uptake__g/m2_": cls._add_starch_uptake,
+            "Fibre__g/m2_": cls._add_fibre,
+            "Water_flow_Predryer": cls._add_water_flow_predryer,
+            "Water_flow_Afterdryer": cls._add_water_flow_afterdryer,
+            "Water_flow": cls._add_water_flow,
+            "flow_diluted_starch": cls._add_flow_diluted_starch,
+            "flow_diluted_starch_index": cls._add_flow_diluted_starch_index,
+            "Water_flow_Afterdryer_input": cls._add_water_flow_afterdryer_input,
+            "Water_flow_Afterdryer_output": cls._add_water_flow_afterdryer_output,
+            "inv_Rod_Pressure_Bottom_Roll": cls._add_inv_rod_pressure_bottom_roll,
+            "inv_Rod_pressure_Top_Roll": cls._add_inv_rod_pressure_top_roll,
+            "square_Rod_Pressure_Bottom_Roll": cls._add_square_rod_pressure_bottom_roll,
+            "square_Rod_pressure_Top_Roll": cls._add_square_rod_pressure_top_roll,
+            "dewatering": cls._add_dewatering,
+        }
+    
+class ColumnSelector(BaseEstimator, TransformerMixin):
+    def __init__(self, columns):
+        self.columns = columns
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        return X.loc[:, self.columns]
+
+    def get_feature_names_out(self, input_features=None):
+        return np.asarray(self.columns, dtype=object)
+    
+
+
+class FeatureCreator_DEPRECATED(BaseEstimator, TransformerMixin):
     """
     A scikit-learn compatible transformer that creates predefined engineered features.
     Only the features listed in `features_to_create` are created (plus any prerequisites).
@@ -5787,7 +6142,12 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             if v == "Fibre__g/m2_":
                 dd.append("Current_basis_weight")
                 dd.append("Current_reel_moisture_average(reel)")
-                dd.append("Starch_uptake__g/m2_")
+                dd.append("Starch_uptake_by_paper_Top_Roll__g/m2_")
+                dd.append("Starch_uptake_by_paper_Bottom_Roll__g/m2_")
+
+            elif v == "Starch_uptake__g/m2_":
+                dd.append("Starch_uptake_by_paper_Top_Roll__g/m2_")
+                dd.append("Starch_uptake_by_paper_Bottom_Roll__g/m2_")
 
             elif v == "Water_flow_Predryer":
                 dd.append("Current_basis_weight")
@@ -5935,6 +6295,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
     @classmethod
     def _deps(cls):
         return {
+            "Fibre__g/m2_": ["Starch_uptake__g/m2_"],
             "Water_flow": ["Water_flow_Predryer", "Water_flow_Afterdryer"],
             "Water_flow_Afterdryer_input": ["flow_diluted_starch"],
         }
@@ -5961,6 +6322,15 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
         s = pd.to_numeric(series, errors="coerce")
         s = s.where(s.abs() > eps, np.nan)
         return 1.0 / s
+
+    @staticmethod
+    def _add_starch_uptake(df: pd.DataFrame) -> pd.DataFrame:
+        df = df.copy()
+        df["Starch_uptake__g/m2_"] = (
+            df["Starch_uptake_by_paper_Top_Roll__g/m2_"]
+            + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]
+        )
+        return df
 
     @staticmethod
     def _add_fibre(df: pd.DataFrame) -> pd.DataFrame:
@@ -6093,6 +6463,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
     @classmethod
     def _registry(cls):
         return {
+            "Starch_uptake__g/m2_": cls._add_starch_uptake,
             "Fibre__g/m2_": cls._add_fibre,
             "Water_flow_Predryer": cls._add_water_flow_predryer,
             "Water_flow_Afterdryer": cls._add_water_flow_afterdryer,
@@ -6107,8 +6478,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             "square_Rod_pressure_Top_Roll": cls._add_square_rod_pressure_top_roll,
             "dewatering": cls._add_dewatering,
         }
-        
-
+    
 def calculate_manual_shap(model, X_sample, grade_id=None, X_reference=None, grade_col=None):
     """
     SHAP (using shap library) for NON-linear pipelines, computed per grade to avoid grade-mix bias.
@@ -6395,6 +6765,9 @@ def update_turnup_grammage(
     tolerance=4.5,
     persist_n=3,
     inplace=True,
+    grade_col="AB_Grade_ID",
+    basis_weight_col="Current_basis_weight",
+    correct_start_batch=False
 ):
     """
     Update basis weight category, classify grammage consistency,
@@ -6443,14 +6816,14 @@ def update_turnup_grammage(
     targets = np.array(targets)
 
     # ---- 1) Initial basis_weight_cat assignment ----
-    values = turnup["Current_basis_weight"].to_numpy()
+    values = turnup[basis_weight_col].to_numpy()
     grammage_values = turnup["grammage"].to_numpy()
 
     diffs = np.abs(values[:, None] - targets)
     closest_idx = diffs.argmin(axis=1)
     min_diff = diffs.min(axis=1)    
 
-    turnup["AB_Grade_ID"] = turnup["AB_Grade_ID"].astype("string")
+    turnup[grade_col] = turnup[grade_col].astype("string")
     turnup["basis_weight_cat"] = np.where(
         min_diff <= tolerance,
         targets[closest_idx],
@@ -6465,7 +6838,8 @@ def update_turnup_grammage(
     next_bw = turnup["basis_weight_cat"].shift(-1).to_numpy()
 
     mask_isolated = (
-        (prev_bw == next_bw) &
+         ~np.isnan(prev_bw) &
+        ((bw != prev_bw) | (prev_bw == next_bw)) &
         (bw != prev_bw) &
         (bw != gr)
     )
@@ -6501,7 +6875,7 @@ def update_turnup_grammage(
     turnup["grammage_check"] = turnup.apply(classify_row, axis=1)
 
     # ---- 4) Prepare available AB_Grade_ID candidates ----
-    available_grades = pd.Series(turnup["AB_Grade_ID"].dropna().astype(str).unique())
+    available_grades = pd.Series(turnup[grade_col].dropna().astype(str).unique())
 
     grades_by_grammage = {}
     for g in available_grades:
@@ -6530,10 +6904,14 @@ def update_turnup_grammage(
         return target_str
 
     # ---- 5) Update AB_Grade_ID and grammage only where grammage is wrong ----
-    mask_wrong = turnup["grammage_check"].eq("grammage_wrong")
+    if correct_start_batch:
+        mask_wrong = turnup["grammage_check"].eq("grammage_wrong") | turnup["grammage_check"].eq("batch_start_ok")        
+    else:
+        mask_wrong = turnup["grammage_check"].eq("grammage_wrong")
 
-    turnup.loc[mask_wrong, "AB_Grade_ID"] = turnup.loc[mask_wrong].apply(
-        lambda row: replace_grade_id(row["AB_Grade_ID"], row["basis_weight_cat"]),
+
+    turnup.loc[mask_wrong, grade_col] = turnup.loc[mask_wrong].apply(
+        lambda row: replace_grade_id(row[grade_col], row["basis_weight_cat"]),
         axis=1
     )
 
@@ -7102,3 +7480,4 @@ class GroupwisePLSTransformer(BaseEstimator, TransformerMixin):
         if y_values.ndim == 1:
             y_values = y_values.reshape(-1, 1)
         return y_values
+

@@ -1,0 +1,1468 @@
+---
+#title: "Cost Analysis"
+title: "Kostenanalyse"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output:
+  pdf_document:
+    toc: true
+    number_sections: true
+    latex_engine: xelatex
+fontsize: 11pt
+geometry: margin=1in
+params:
+  lang: "de"
+
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+
+#knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, error = TRUE, attr.source = c('.numberLines', 'startFrom="1"'))
+ 
+# optional: richer stack traces from tidyverse errors
+options(rlang_backtrace_on_error = "full")
+ 
+# optional (helps some tools show file/line in traces)
+options(keep.source = TRUE)
+
+
+library(reticulate)
+ 
+# Use your exact venv path (the folder, not python.exe)
+reticulate::use_virtualenv("C:/workspace/costimiser/.venv", required = TRUE)
+ 
+# sanity check (optional)
+#reticulate::py_config()
+
+#knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+visualize_plots <- TRUE   # or FALSE
+
+lang <- params$lang
+
+tr <- function(en, de) {
+  if (lang == "de") de else en
+}
+
+```
+
+
+
+```{python, echo=FALSE}
+import logging, time, pathlib
+logfile = pathlib.Path("knit.log")
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=[logging.FileHandler(logfile, mode="a", encoding="utf-8")],
+    format="%(asctime)s %(levelname)s: %(message)s"
+)
+log = logging.getLogger("knitr")
+
+LANG = r.lang
+```
+
+```{python data, echo=FALSE}
+
+import pandas as pd
+from utility import _process_data, _turnup_data, setpoint_df, _summary_cost_plot, make_model_cost, make_models_cost
+from datetime import date, timedelta
+import plotly.io as pio
+from pathlib import Path
+import pickle
+import sys
+import os
+
+log.info("=== Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===")
+log.info(f"Python executable: {sys.executable}")
+log.info(f"Working directory: {os.getcwd()}")
+
+try:
+  steam_null = False
+  turnup_data = _turnup_data(True, "", None, setpoint_df, steam_null)
+
+  max_date = turnup_data["Wedge_Time"].max()
+  min_date = turnup_data["Wedge_Time"].min()
+
+  last_friday = max_date - pd.to_timedelta((max_date.weekday() - 4) % 7, unit="D")
+  target_start = last_friday - pd.Timedelta(days=4)      # Monday
+  target_end_exclusive = last_friday + pd.Timedelta(days=3)  
+  target_range = (target_start.date(), target_end_exclusive.date())
+  end_date=min(target_start.date() - timedelta(days=1),max_date.date())
+  baseline_start = end_date - pd.Timedelta(weeks=4)
+  baseline_end = end_date
+  baseline_range = (baseline_start, baseline_end)
+
+  period_md = f"{baseline_start.strftime('%B %d, %Y')} – {target_end_exclusive.strftime('%B %d, %Y')}"
+
+  process_data =  _process_data(turnup_data, target_range, baseline_range, steam_null)
+
+  plotly_theme = "plotly_white"
+
+  grades_summary = ["3200115", "6010085", "6010100", "6010120"]
+
+  def fibre_cost(row):
+      basis_weight = row["Current_basis_weight"]
+      starch_uptake = row["Starch_uptake__g/m2_"]
+      moisture = row["Current_reel_moisture_average(reel)"]
+      return 146.46*(basis_weight*(1-moisture/100)-starch_uptake)/basis_weight
+
+  def fibre_features():
+      return ["Current_basis_weight","Starch_uptake__g/m2_","Current_reel_moisture_average(reel)"]
+
+  MODELS_DIR = Path("models").resolve()
+
+  with open(MODELS_DIR / "model_electricity.pkl", "rb") as f:
+      electricity_model = pickle.load(f)
+
+  with open(MODELS_DIR / "model_steam.pkl", "rb") as f:
+      steam_model = pickle.load(f)
+
+  with open(MODELS_DIR / "model_starch_top.pkl", "rb") as f:
+      model_starch_top = pickle.load(f)
+
+  with open(MODELS_DIR / "model_starch_bottom.pkl", "rb") as f:
+      model_starch_bottom = pickle.load(f)
+
+  def steam_features():
+      return list(steam_model.best_estimator_.feature_names_in_)
+
+  def electricity_features():
+      return list(electricity_model.best_estimator_.feature_names_in_)
+
+  def starch_features():
+      return list(set(list(model_starch_top.best_estimator_.feature_names_in_) + list(model_starch_bottom.best_estimator_.feature_names_in_)))
+
+  steam_cost = make_model_cost(steam_model, steam_features)
+  electricity_cost = make_model_cost(electricity_model, electricity_features)
+  starch_cost = make_models_cost(
+      models={
+          "bottom": model_starch_bottom,
+          "top": model_starch_top,
+      },
+      feature_fns={
+          "bottom": list(model_starch_bottom.best_estimator_.feature_names_in_),
+          "top": list(model_starch_top.best_estimator_.feature_names_in_),
+      },
+      agg="sum",
+  )
+
+  descriptions = []
+except Exception as e:
+    log.exception("Failure in data chunk")
+    raise
+```
+
+```{r, echo=FALSE, results="asis"}
+cat(paste0("# ", tr("Assumptions", "Annahmen"), "\n\n"))
+ 
+cat(paste0(
+  tr(
+    "The aim of the analysis is to identify the most cost-effective production periods in months of data and recommend optimal operating windows for the corresponding key influencers that can be set as a benchmark for the weekly analysis.",
+    "Ziel der Analyse ist es, die kosteneffizientesten Produktionszeiträume innerhalb mehrerer Monate zu identifizieren und optimale Betriebsfenster für die entsprechenden Schlüsselfaktoren zu empfehlen, die als Benchmark für die wöchentliche Analyse herangezogen werden können."
+  ),
+  "\n\n"
+))
+ 
+cat(paste0("* **", tr("Period Analyzed", "Analysierter Zeitraum"), "**: ", py$period_md, "\n"))
+cat(paste0("* **", tr("Cost Components Included", "Berücksichtigte Kostenkomponenten"), "**: ",
+           tr("Fibre, steam, electricity, starch, and chemicals.",
+              "Faser, Dampf, Strom, Stärke und Chemikalien."), "\n"))
+ 
+cat(paste0("* **", tr("Grades Included", "Berücksichtigte Sorten"), "**: ",
+           tr("Only grades 6010085, 6010100, 601020 and 3200115 are included in this week's analysis.",
+              "In der Analyse dieser Woche sind ausschließlich die Sorten 6010085, 6010100, 601020 und 3200115 enthalten."), "\n"))
+ 
+cat(paste0("* **", tr("Data Selection Criteria", "Datenauswahlkriterien"), "**: ",
+           tr("Only operating conditions where strength properties exceed specification thresholds were considered.",
+              "Es wurden nur Betriebszustände berücksichtigt, bei denen die Festigkeitseigenschaften die Spezifikationsgrenzwerte überschreiten."), "\n"))
+ 
+cat(paste0("* **", tr("Naming Conventions Used", "Verwendete Begriffsdefinitionen"), "**:\n"))
+ 
+cat(paste0("  + **Current**: ",
+           tr("Refers to the last week of the analyzed period.",
+              "Bezieht sich auf die letzte Woche des analysierten Zeitraums."),
+           "\n"))
+ 
+cat(paste0("  + **Historic**: ",
+           tr("Represents the average cost over the monthly interval previous to the \"Current\" period. Used as baseline.",
+              "Entspricht den durchschnittlichen Kosten im monatlichen Intervall vor dem „Current“-Zeitraum. Dient als Basiswert."),
+           "\n"))
+ 
+cat(paste0("  + **Best**: ",
+           tr("Corresponds to the cost associated with the optimal batch configuration.",
+              "Entspricht den Kosten der optimalen Batch-Konfiguration."),
+           "\n"))
+```
+
+
+```{r, echo=FALSE, results="asis"}
+cat(paste0("# ", tr("Executive Summary", "Management-Zusammenfassung"), "\n\n"))
+ 
+cat(paste0(
+  tr(
+    "The following plot illustrates how total cost varies across different grades, enabling a comparison between the current configuration and the historical baseline.",
+    "Die folgende Grafik zeigt, wie sich die Gesamtkosten über verschiedene Sorten hinweg verändern, und ermöglicht einen Vergleich zwischen der aktuellen Konfiguration und der historischen Referenz."
+  ),
+  "\n\n"
+))
+ 
+cat(paste0(
+  tr(
+    "The next plot displays how total cost evolves over time, with a breakdown by grade to show individual contributions.",
+    "Die nächste Grafik stellt dar, wie sich die Gesamtkosten im Zeitverlauf entwickeln, mit einer Aufschlüsselung nach Sorten zur Darstellung der einzelnen Beiträge."
+  ),
+  "\n"
+))
+```
+
+```{python plotly_cost_components_week_grades}
+from utility import _summary_cost_plot
+
+x_variable_summary = "week"
+y_variable_summary = "Combined_cost__€/T_"
+y_variable_summary_secondary = "Overprocessing_percentage"
+color_variable_summary = "grade"
+
+fig = _summary_cost_plot(process_data = process_data, 
+                        x_variable_summary = x_variable_summary, 
+                        y_variable_summary = y_variable_summary, 
+                        y_variable_summary_secondary = y_variable_summary_secondary, 
+                        color_variable_summary = color_variable_summary, 
+                        type_summary = "bar", 
+                        trim_summary = False, 
+                        grades_summary = grades_summary, 
+                        summary_bar_lines=True,
+                        plotly_theme = plotly_theme)
+
+_ = fig.update_layout(legend=dict(orientation="h",xanchor="right",x=0.5),                      
+                      title=dict(text=f"Summary of {y_variable_summary} by {x_variable_summary}")
+                      ),
+
+
+pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+```
+
+```{r}
+if (visualize_plots) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 1000, vheight = 400, zoom = 2)
+}
+
+```
+
+```{python drilldown_analysis_plot_cost_1}
+from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
+
+level = 1
+object_drilldown = "cost"
+reference = "baseline"
+
+drilldown = drilldown_df(process_data[process_data.AB_Grade_ID.isin(grades_summary)], level , object_drilldown, reference)
+mix_contribution = mix_effect(object_drilldown, reference, grades_summary, process_data)
+
+descriptions_md = build_drilldown_text(drilldown.rename(columns={"cost":object_drilldown}), mix_contribution, lang=LANG)
+descriptions.append(descriptions_md)
+
+fig = _drilldown_analysis_plot(drilldown, mix_contribution,  level, object_drilldown, reference)
+fig = fig.update_layout(
+            title="",
+        )
+
+pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+```
+
+```{r}
+if (visualize_plots) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 1000, vheight = 400, zoom = 2)
+}
+```
+
+ `r py$descriptions_md`
+ 
+
+```{python drilldown_analysis_plot_cost_2}
+from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
+
+level = 2
+object_drilldown = "cost"
+reference = "baseline"
+
+drilldown = drilldown_df(process_data[process_data.AB_Grade_ID.isin(grades_summary)], level , object_drilldown, reference)
+mix_contribution = mix_effect(object_drilldown, reference, grades_summary, process_data)
+
+
+descriptions_md = build_drilldown_text(drilldown.rename(columns={"cost":object_drilldown}), lang=LANG)
+descriptions.append(descriptions_md)
+
+fig = _drilldown_analysis_plot(drilldown, mix_contribution,  level, object_drilldown, reference)
+fig = fig.update_layout(
+            title="",
+        )
+
+pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+```
+
+```{r}
+if (visualize_plots) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 1000, vheight = 400, zoom = 2)
+}
+```
+
+ `r py$descriptions_md`
+
+
+```{python drilldown_analysis_plot_cost_3}
+from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
+
+level = 3
+object_drilldown = "cost"
+reference = "baseline"
+
+drilldown = drilldown_df(process_data[process_data.AB_Grade_ID.isin(grades_summary)], level , object_drilldown, reference)
+mix_contribution = mix_effect(object_drilldown, reference, grades_summary, process_data)
+
+descriptions_md = build_drilldown_text(drilldown.rename(columns={"cost":object_drilldown}), lang=LANG)
+descriptions.append(descriptions_md)
+
+fig = _drilldown_analysis_plot(drilldown, mix_contribution,  level, object_drilldown, reference)
+fig = fig.update_layout(
+            title="",
+        )
+
+pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+```
+
+```{r}
+if (visualize_plots) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 1000, vheight = 400, zoom = 2)
+}
+```
+
+ `r py$descriptions_md`
+
+```{python drilldown_analysis_plot_cost_4_steam}
+from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
+
+level = 4
+object_drilldown = "cost"
+reference = "baseline"
+secondary_object_drilldown = "steam"
+
+drilldown = drilldown_df(process_data[process_data.AB_Grade_ID.isin(grades_summary)], level , object_drilldown, reference, secondary_object_drilldown)
+
+descriptions_md = build_drilldown_text(drilldown.rename(columns={"cost":object_drilldown}), lang=LANG)
+descriptions.append(descriptions_md)
+
+fig = _drilldown_analysis_plot(drilldown, mix_contribution,  level, object_drilldown, reference)
+fig = fig.update_layout(
+            title="",
+        )
+
+pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+```
+
+```{r}
+if (visualize_plots) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 1000, vheight = 400, zoom = 2)
+}
+```
+
+ `r py$descriptions_md`
+
+```{python drilldown_analysis_plot_cost_4_electricity}
+from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
+
+level = 4
+object_drilldown = "cost"
+reference = "baseline"
+secondary_object_drilldown = "electricity"
+
+drilldown = drilldown_df(process_data[process_data.AB_Grade_ID.isin(grades_summary)], level , object_drilldown, reference, secondary_object_drilldown)
+
+descriptions_md = build_drilldown_text(drilldown.rename(columns={"cost":object_drilldown}), lang=LANG)
+descriptions.append(descriptions_md)
+
+fig = _drilldown_analysis_plot(drilldown, mix_contribution,  level, object_drilldown, reference)
+fig = fig.update_layout(
+            title="",
+        )
+
+pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+```
+
+```{r}
+if (visualize_plots) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 1000, vheight = 400, zoom = 2)
+}
+```
+
+ `r py$descriptions_md`
+
+```{python drilldown_analysis_plot_cost_4_chemicals}
+from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
+
+level = 4
+object_drilldown = "cost"
+reference = "baseline"
+secondary_object_drilldown = "chemicals"
+
+drilldown = drilldown_df(process_data[process_data.AB_Grade_ID.isin(grades_summary)], level , object_drilldown, reference, secondary_object_drilldown)
+
+descriptions_md = build_drilldown_text(drilldown.rename(columns={"cost":object_drilldown}), lang=LANG)
+descriptions.append(descriptions_md)
+
+fig = _drilldown_analysis_plot(drilldown, mix_contribution,  level, object_drilldown, reference)
+fig = fig.update_layout(
+            title="",
+        )
+
+pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+```
+
+```{r}
+if (visualize_plots) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 1000, vheight = 400, zoom = 2)
+}
+```
+
+ `r py$descriptions_md`
+
+```{python drilldown_analysis_plot_overprocessing_1}
+from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
+
+level = 1
+object_drilldown = "overprocessing"
+reference = "baseline"
+
+drilldown = drilldown_df(process_data[process_data.AB_Grade_ID.isin(grades_summary)], level , object_drilldown, reference)
+mix_contribution = mix_effect(object_drilldown, reference, grades_summary, process_data)
+
+
+descriptions_md = build_drilldown_text(drilldown.rename(columns={"cost":object_drilldown}), lang=LANG)
+descriptions.append(descriptions_md)
+
+fig = _drilldown_analysis_plot(drilldown, mix_contribution,  level, object_drilldown, reference)
+fig = fig.update_layout(
+            title="",
+        )
+
+pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+```
+
+```{r}
+if (visualize_plots) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 1000, vheight = 400, zoom = 2)
+}
+```
+
+ `r py$descriptions_md`
+ 
+```{python drilldown_analysis_plot_overprocessing_2}
+from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
+
+level = 2
+object_drilldown = "overprocessing"
+reference = "baseline"
+
+drilldown = drilldown_df(process_data[process_data.AB_Grade_ID.isin(grades_summary)], level , object_drilldown, reference)
+mix_contribution = mix_effect(object_drilldown, reference, grades_summary, process_data)
+
+
+descriptions_md = build_drilldown_text(drilldown.rename(columns={"cost":object_drilldown}), lang=LANG)
+descriptions.append(descriptions_md)
+
+fig = _drilldown_analysis_plot(drilldown, mix_contribution,  level, object_drilldown, reference)
+fig = fig.update_layout(
+            title="",
+        )
+
+pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+```
+
+```{r}
+if (visualize_plots) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 1000, vheight = 400, zoom = 2)
+}
+```
+
+ `r py$descriptions_md`
+ 
+```{python drilldown_analysis_plot_overprocessing_3}
+from utility import drilldown_df, _drilldown_analysis_plot, mix_effect, build_drilldown_text
+
+level = 3
+object_drilldown = "overprocessing"
+reference = "baseline"
+
+drilldown = drilldown_df(process_data[process_data.AB_Grade_ID.isin(grades_summary)], level , object_drilldown, reference)
+mix_contribution = mix_effect(object_drilldown, reference, grades_summary, process_data)
+
+
+descriptions_md = build_drilldown_text(drilldown.rename(columns={"cost":object_drilldown}), lang=LANG)
+descriptions.append(descriptions_md)
+
+fig = _drilldown_analysis_plot(drilldown, mix_contribution,  level, object_drilldown, reference)
+fig = fig.update_layout(
+            title="",
+        )
+
+pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+```
+
+```{r}
+if (visualize_plots) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 1000, vheight = 400, zoom = 2)
+}
+```
+
+ `r py$descriptions_md`
+
+
+```{r, echo=FALSE, results="asis"}
+cat(paste0("# ", tr("Breakdown by grades", "Aufschlüsselung nach Sorten"), "\n\n"))
+```
+
+```{python check_6010085}
+if "current" in process_data[process_data.AB_Grade_ID=="6010085"].target.unique():
+  current_enabled = True
+else:
+  current_enabled = False
+```
+
+```{r, echo=FALSE, results="asis"} 
+if(py$current_enabled){
+  cat(paste0("## 6010085\n\n"))
+  
+  cat(paste0("### ", tr("Fiber cost", "Faserkosten"), "\n"))
+}
+
+```
+
+```{python drilldown_analysis_plot_fibre_6010085_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+import sys
+import os
+
+log.info("=== Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===")
+log.info(f"Python executable: {sys.executable}")
+log.info(f"Working directory: {os.getcwd()}")
+
+try:
+  if current_enabled:
+    cost_component_drilldown = 'Fibre_cost__€/T_'
+    grade_drilldown = "6010085"
+
+    process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, fibre_features())
+    df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+    shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+    shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+    descriptions.append(shapley_md)
+
+    fig = _cost_driver_plot(shapley_contrib)
+
+    pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+  else:
+    shapley_md = ""
+except Exception as e:
+    log.exception("Failure in drilldown_analysis_plot_fibre_6010085_cost_driver chunk")
+    raise
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_fibre_6010085_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{r, echo=FALSE, results="asis"}
+if(py$current_enabled){
+  cat(paste0("### ", tr("Steam cost", "Dampfkosten"), "\n"))
+}
+```
+
+```{python drilldown_analysis_plot_steam_6010085_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
+if current_enabled:
+  cost_component_drilldown = 'Steam__€/T_'
+  grade_drilldown = "6010085"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, steam_features())
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_steam_6010085_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{r, echo=FALSE, results="asis"}
+if (py$current_enabled){
+  cat(paste0("### ", tr("Electricity cost", "Stromkosten"), "\n"))
+}
+```
+
+```{python drilldown_analysis_plot_electricity_6010085_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
+if current_enabled:
+  cost_component_drilldown = 'Electricity__€/T_'
+  grade_drilldown = "6010085"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, electricity_features())
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_electricity_6010085_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{r, echo=FALSE, results="asis"}
+if (py$current_enabled){
+  cat(paste0("### ", tr("Starch cost", "Stärkekosten"), "\n"))
+}
+```
+
+```{python drilldown_analysis_plot_starch_6010085_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
+if current_enabled:
+  cost_component_drilldown = 'Starch__€/T_'
+  grade_drilldown = "6010085"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, starch_features())
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_starch_6010085_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{python check_3200115}
+if "current" in process_data[process_data.AB_Grade_ID=="3200115"].target.unique():
+  current_enabled = True
+else:
+  current_enabled = False
+```
+
+```{r, echo=FALSE, results="asis"}
+if(py$current_enabled){
+  cat(paste0("## 3200115\n\n"))
+
+  cat(paste0("### ", tr("Fiber cost", "Faserkosten"), "\n"))
+}
+
+```
+
+```{python drilldown_analysis_plot_fibre_3200115_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+
+if current_enabled:
+  cost_component_drilldown = 'Fibre_cost__€/T_'
+  grade_drilldown = "3200115"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, fibre_features())
+
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_fibre_3200115_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{r, echo=FALSE, results="asis"}
+if(py$current_enabled){
+  cat(paste0("### ", tr("Steam cost", "Dampfkosten"), "\n"))
+}
+```
+
+```{python drilldown_analysis_plot_steam_3200115_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
+
+if current_enabled:
+  cost_component_drilldown = 'Steam__€/T_'
+  grade_drilldown = "3200115"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, steam_features())
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_steam_3200115_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{r, echo=FALSE, results="asis"}
+if (py$current_enabled) {
+  cat(paste0("### ", tr("Electricity cost", "Stromkosten"), "\n"))
+}
+```
+
+```{python drilldown_analysis_plot_electricity_3200115_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
+
+if current_enabled:
+  cost_component_drilldown = 'Electricity__€/T_'
+  grade_drilldown = "3200115"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, electricity_features())
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_electricity_3200115_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{r, echo=FALSE, results="asis"}
+if (py$current_enabled){
+  cat(paste0("### ", tr("Starch cost", "Stärkekosten"), "\n"))
+}
+```
+
+```{python drilldown_analysis_plot_starch_3200115_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
+
+if current_enabled:
+  cost_component_drilldown = 'Starch__€/T_'
+  grade_drilldown = "3200115"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, starch_features())
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_starch_3200115_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{python check_6010100}
+if "current" in process_data[process_data.AB_Grade_ID=="6010100"].target.unique():
+  current_enabled = True
+else:
+  current_enabled = False
+```
+
+```{r, echo=FALSE, results="asis"}
+if (py$current_enabled){
+  cat(paste0("## 6010100\n\n"))
+  
+  cat(paste0("### ", tr("Fiber cost", "Faserkosten"), "\n"))
+}
+```
+
+
+```{python drilldown_analysis_plot_fibre_6010100_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+
+if current_enabled:
+  cost_component_drilldown = 'Fibre_cost__€/T_'
+  grade_drilldown = "6010100"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, fibre_features())
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_fibre_6010100_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{r, echo=FALSE, results="asis"}
+if(py$current_enabled){
+  cat(paste0("### ", tr("Steam cost", "Dampfkosten"), "\n"))
+} 
+```
+
+```{python drilldown_analysis_plot_steam_6010100_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
+
+if current_enabled:
+  cost_component_drilldown = 'Steam__€/T_'
+  grade_drilldown = "6010100"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, steam_features())
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_steam_6010100_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{r, echo=FALSE, results="asis"}
+if(py$current_enabled){
+  cat(paste0("### ", tr("Electricity cost", "Stromkosten"), "\n"))
+} 
+```
+
+```{python drilldown_analysis_plot_electricity_6010100_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
+
+if current_enabled:
+  cost_component_drilldown = 'Electricity__€/T_'
+  grade_drilldown = "6010100"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, electricity_features())
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_electricity_6010100_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{r, echo=FALSE, results="asis"}
+if(py$current_enabled){
+  cat(paste0("### ", tr("Starch cost", "Stärkekosten"), "\n"))
+}
+```
+
+```{python drilldown_analysis_plot_starch_6010100_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
+
+if current_enabled:
+  cost_component_drilldown = 'Starch__€/T_'
+  grade_drilldown = "6010100"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, starch_features())
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_starch_6010100_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{python check_6010120}
+if "current" in process_data[process_data.AB_Grade_ID=="6010120"].target.unique():
+  current_enabled = True
+else:
+  current_enabled = False
+```
+
+```{r, echo=FALSE, results="asis"}
+if(py$current_enabled){
+  cat(paste0("## 6010120\n\n"))
+ 
+  cat(paste0("### ", tr("Fiber cost", "Faserkosten"), "\n"))
+}
+```
+
+
+```{python drilldown_analysis_plot_fibre_6010120_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib, _working_plot, _cost_driver_plot, build_shapley_text
+
+if current_enabled:
+  cost_component_drilldown = 'Fibre_cost__€/T_'
+  grade_drilldown = "6010120"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, fibre_features())
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib = _shapley_contrib("", df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_fibre_6010120_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{r, echo=FALSE, results="asis"}
+if(py$current_enabled){
+  cat(paste0("### ", tr("Steam cost", "Dampfkosten"), "\n"))
+}
+
+```
+
+```{python drilldown_analysis_plot_steam_6010120_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
+
+if current_enabled:
+  cost_component_drilldown = 'Steam__€/T_'
+  grade_drilldown = "6010120"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, steam_features())
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_steam_6010120_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{r, echo=FALSE, results="asis"}
+if(py$current_enabled){
+  cat(paste0("### ", tr("Electricity cost", "Stromkosten"), "\n"))
+}
+
+```
+
+```{python drilldown_analysis_plot_electricity_6010120_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
+
+if current_enabled:
+  cost_component_drilldown = 'Electricity__€/T_'
+  grade_drilldown = "6010120"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, electricity_features())
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_electricity_6010120_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+```{r, echo=FALSE, results="asis"}
+if (py$current_enabled){
+  cat(paste0("### ", tr("Starch cost", "Stärkekosten"), "\n"))
+}
+
+```
+
+```{python drilldown_analysis_plot_starch_6010120_cost_driver}
+from utility import _process_data_clustered, _process_data_clustered_summary, _shapley_contrib_filtered, _working_plot, _cost_driver_plot, build_shapley_text
+
+if current_enabled:
+  cost_component_drilldown = 'Starch__€/T_'
+  grade_drilldown = "6010120"
+
+  process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, starch_features())
+  df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+
+  shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
+  descriptions.append(shapley_md)
+
+  fig = _cost_driver_plot(shapley_contrib)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+else:
+  shapley_md = ""
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+`r py$shapley_md`
+
+```{python drilldown_analysis_plot_starch_6010120_working_condition}
+if current_enabled:
+  fig = _working_plot(shapley_contrib, df1, df2, cost_component_drilldown)
+
+  pio.write_html(fig, file="fig-scatter.html", auto_open=False,include_plotlyjs="cdn", full_html=True)
+``` 
+
+```{r}
+if (visualize_plots && py$current_enabled) {
+  webshot2::webshot("fig-scatter.html", file="fig-scatter.png",vwidth = 2000, vheight = 200, zoom = 2)
+}
+```
+
+
+```{python llm}
+import os
+import sys
+import boto3
+import traceback
+import pathlib
+import logging
+ 
+logfile = pathlib.Path("knit.log")
+logging.basicConfig(
+    level=logging.INFO,
+    handlers=[
+        logging.FileHandler(logfile, mode="a", encoding="utf-8"),
+        logging.StreamHandler(sys.stdout),
+    ],
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    force=True
+)
+log = logging.getLogger("llm")
+ 
+log.info("=== Entering llm chunk ===")
+log.info(f"Python executable: {sys.executable}")
+log.info(f"Working directory: {os.getcwd()}")
+ 
+try:
+    session = boto3.Session(
+        profile_name="DatafactoryDeveloper-781690932061",
+        region_name="eu-west-1"
+    )
+    log.info("boto3 session created")
+ 
+    creds = session.get_credentials()
+    frozen = creds.get_frozen_credentials() if creds else None
+    log.info(f"Credentials available: {frozen is not None}")
+    if frozen is not None:
+        log.info(f"Access key prefix: {frozen.access_key[:6]}***")
+ 
+    import knowledge_retrieval as rag
+    log.info(f"knowledge_retrieval imported from: {getattr(rag, '__file__', 'unknown')}")
+
+    importlib.reload(awsc)
+    importlib.reload(rag)
+
+    rag.set_boto3_session(session)
+    log.info("rag.set_boto3_session(session) completed")
+ 
+except Exception as e:
+    log.exception("Failure in llm chunk")
+    raise
+```
+
+```{python summary}
+import traceback
+import json
+
+log.info("=== Entering summary chunk ===")
+
+try:
+    log.info(f"LANG: {LANG}")
+    log.info(f"descriptions count: {len(descriptions)}")
+
+    non_empty = [str(x) for x in descriptions if x is not None and str(x).strip()]
+    prompt_body = ".".join(non_empty)
+
+    log.info(f"non-empty descriptions count: {len(non_empty)}")
+    log.info(f"prompt_body length: {len(prompt_body)}")
+    log.info(f"prompt preview: {prompt_body[:2000]}")
+
+    if LANG == "en":
+        prompt = (
+            "Provide a summary, diagnosis and action plan from these insights, "
+            "no numbers in headings, but make sure that you know which section "
+            "the variables belong and what is their purpose:" + prompt_body
+        )
+    else:
+        prompt = (
+            "Erstelle eine Zusammenfassung, Diagnose und einen Maßnahmenplan auf Basis dieser Erkenntnisse. "
+            "Keine Nummern in den Uberschriften. "
+            "Stelle dabei sicher, dass klar ist, zu welchem Abschnitt die Variablen gehören "
+            "und welchen Zweck sie erfüllen: " + prompt_body
+        )
+
+    log.info(f"final prompt length: {len(prompt)}")
+    log.info("Calling rag.ask(prompt)")
+
+    rag.set_boto3_session(session)
+    
+    out = rag.ask(prompt)
+
+    log.info(f"rag.ask returned object type: {type(out)}")
+    try:
+        log.info(f"rag.ask returned repr: {repr(out)[:4000]}")
+    except Exception:
+        log.exception("Could not log repr(out)")
+
+    answer = out["answer"]
+    log.info(f"answer length: {len(answer)}")
+    log.info(f"answer preview: {answer[:2000]}")
+
+except Exception as e:
+    log.exception("Failure in summary chunk")
+    raise
+
+```
+
+`r py$answer`
+
+
+
