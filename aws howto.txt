@@ -10,7 +10,7 @@ POD=$(kubectl -n "$NS" get pods -l "$SEL" \
 
 
 NS=costimiser
-POD=$(kubectl -n $NS get pods -l appcost-analysis-dashboard -o jsonpath='{.items[0].metadata.name}')
+POD=$(kubectl -n $NS get pods -l cost-analysis-dashboard -o jsonpath='{.items[0].metadata.name}')
  
 # Tail current logs (top container if only one)
 kubectl -n $NS logs -f $POD
@@ -32,6 +32,7 @@ kubectl -n "$NS" get pods -l "$SEL"
 POD=$(kubectl -n "$NS" get pods -l "$SEL" \
   --field-selector=status.phase=Running \
   -o jsonpath='{.items[0].metadata.name}')
+echo "$POD"
 
 
 kubectl rollout status deploy -n "costimiser" "cost-analysis-dashboard" || handle_error
@@ -80,7 +81,7 @@ aws logs get-log-events \
 
 
 
-
-
-
-
+kubectl get pods | grep costimiser-background
+costimiser-background-29624526-4zjc7            0/1     Error                    0             31s
+costimiser-background-29624526-xph8j            0/1     Error                    0             51s
+kubectl logs costimiser-background-29624526-4zjc7

@@ -1382,7 +1382,216 @@ def shapley_for_pair_mc(
  
     return contrib
 
+
+def shapley_for_pair_mc_batch(
+    row1,
+    row2,
+    cost,
+    features,
+    M=200,
+    random_state=None,
+    cost_variable=None,
+    add_unknown=False,
+    unknown_name="unknown",
+):
+    import numpy as np
+
+    rng = np.random.default_rng(random_state)
+
+    features = list(features)
+    n = len(features)
+
+    x1 = {f: float(row1[f]) for f in features}
+    x2 = {f: float(row2[f]) for f in features}
+
+    contrib = {f: 0.0 for f in features}
+
+    rows = []
+    meta = []
+
+    for _ in range(M):
+        order = rng.permutation(n)
+
+        current = x1.copy()
+        rows.append(current.copy())
+        prev_idx = len(rows) - 1
+
+        for j in order:
+            f = features[j]
+
+            if current[f] == x2[f]:
+                continue
+
+            current[f] = x2[f]
+            rows.append(current.copy())
+
+            new_idx = len(rows) - 1
+            meta.append((f, prev_idx, new_idx))
+            prev_idx = new_idx
+    
+    preds = cost(rows)
+
+    for f, prev_idx, new_idx in meta:
+        contrib[f] += preds[new_idx] - preds[prev_idx]
+
+    invM = 1.0 / M
+    for f in features:
+        contrib[f] *= invM
+
+    if add_unknown and cost_variable is not None:
+        model_delta = cost([x2, x1])
+        model_delta = model_delta[0] - model_delta[1]
+
+        true_delta = float(row2[cost_variable]) - float(row1[cost_variable])
+        contrib[unknown_name] = true_delta - model_delta
+
+    return contrib
+
 def shapley_for_pair_filtered(
+    row1,
+    row2,
+    cost,
+    features,
+    process_data,
+    M=500,
+    random_state=None,
+    cost_variable=None,
+    add_unknown=False,
+    unknown_name="unknown",
+    min_delta_over_std=0.25,
+    min_delta_over_range=0.05,
+    min_abs_delta=None,
+    keep_top_n=None,
+    return_details=False,
+):
+    import numpy as np
+    import pandas as pd
+
+    # ----------------------------
+    # 1. Shapley contributions
+    # ----------------------------
+    
+    contrib_all = shapley_for_pair_mc_batch(
+        row1=row1,
+        row2=row2,
+        cost=cost,
+        features=features,
+        M=M,
+        random_state=random_state,
+        cost_variable=cost_variable,
+        add_unknown=add_unknown,
+        unknown_name=unknown_name,
+    )
+
+    # ----------------------------
+    # 2. Precompute statistics ONCE
+    # ----------------------------
+    stats = {}
+
+    available_cols = [f for f in features if f in process_data.columns]
+
+    if available_cols:
+        df = process_data[available_cols].apply(pd.to_numeric, errors="coerce")
+
+        stds = df.std(ddof=1)
+        p05 = df.quantile(0.05)
+        p95 = df.quantile(0.95)
+
+        for f in available_cols:
+            stats[f] = (
+                float(stds[f]) if not np.isnan(stds[f]) else np.nan,
+                float(p05[f]) if not np.isnan(p05[f]) else np.nan,
+                float(p95[f]) if not np.isnan(p95[f]) else np.nan,
+            )
+
+    # ----------------------------
+    # 3. Filtering (no heavy DF yet)
+    # ----------------------------
+    kept = []
+    diagnostics_rows = [] if return_details else None
+
+    for f in features:
+        x1 = float(row1[f])
+        x2 = float(row2[f])
+        delta = x2 - x1
+        abs_delta = abs(delta)
+
+        std, p05_f, p95_f = stats.get(f, (np.nan, np.nan, np.nan))
+        robust_range = p95_f - p05_f if not np.isnan(p95_f) and not np.isnan(p05_f) else np.nan
+
+        delta_over_std = abs_delta / std if std and std > 0 else np.nan
+        delta_over_range = abs_delta / robust_range if robust_range and robust_range > 0 else np.nan
+
+        keep = True
+
+        # absolute threshold
+        if min_abs_delta is not None:
+            abs_thr = min_abs_delta.get(f) if isinstance(min_abs_delta, dict) else min_abs_delta
+            if abs_thr is not None and abs_delta < abs_thr:
+                keep = False
+
+        # relative thresholds
+        if not np.isnan(delta_over_std) and delta_over_std < min_delta_over_std:
+            keep = False
+
+        if not np.isnan(delta_over_range) and delta_over_range < min_delta_over_range:
+            keep = False
+
+        if keep:
+            kept.append(f)
+
+        if return_details:
+            diagnostics_rows.append(
+                (
+                    f, x1, x2, delta, abs_delta,
+                    std, p05_f, p95_f,
+                    delta_over_std, delta_over_range,
+                    contrib_all.get(f, 0.0),
+                    abs(contrib_all.get(f, 0.0)),
+                    keep,
+                )
+            )
+
+    # ----------------------------
+    # 4. Apply top-N filter
+    # ----------------------------
+    if keep_top_n and kept:
+        kept = sorted(
+            kept,
+            key=lambda f: abs(contrib_all.get(f, 0.0)),
+            reverse=True
+        )[:keep_top_n]
+
+    contrib_filtered = {f: contrib_all[f] for f in kept}
+
+    if add_unknown and unknown_name in contrib_all:
+        contrib_filtered[unknown_name] = contrib_all[unknown_name]
+
+    # ----------------------------
+    # 5. Diagnostics only if needed
+    # ----------------------------
+    if return_details:
+        diagnostics = pd.DataFrame(
+            diagnostics_rows,
+            columns=[
+                "variable", "value_row1", "value_row2", "delta", "abs_delta",
+                "std", "p05", "p95",
+                "delta_over_std", "delta_over_range",
+                "contribution", "abs_contribution", "keep",
+            ],
+        ).sort_values("abs_contribution", ascending=False)
+
+        return {
+            "contrib_all": contrib_all,
+            "contrib_filtered": contrib_filtered,
+            "diagnostics": diagnostics,
+        }
+
+    return contrib_filtered
+
+
+
+def shapley_for_pair_filtered_DEPRECATED(
     row1,
     row2,
     cost,
@@ -1644,6 +1853,270 @@ def make_models_cost(models, feature_fns, agg="sum"):
         return total
 
     return cost
+
+def make_model_cost_batch(model, feature_fn):
+    cols = list(feature_fn())
+
+    def _to_frame(rows):
+        import pandas as pd
+
+        if isinstance(rows, pd.DataFrame):
+            return rows.loc[:, cols]
+
+        if isinstance(rows, pd.Series):
+            return rows.to_frame().T.loc[:, cols]
+
+        if isinstance(rows, dict):
+            return pd.DataFrame([rows], columns=cols)
+
+        if isinstance(rows, list):
+            if len(rows) == 0:
+                raise ValueError("cost_batch received an empty list.")
+            return pd.DataFrame(rows, columns=cols)
+
+        raise TypeError(f"Unsupported input type for cost_batch: {type(rows)}")
+
+    def cost_batch(rows):
+        import numpy as np
+
+        X = _to_frame(rows)
+
+        if len(X) == 0:
+            raise ValueError("cost_batch generated an empty DataFrame.")
+
+        return np.asarray(model.predict(X), dtype=float).ravel()
+
+    def cost_one(row):
+        return float(cost_batch(row)[0])
+
+    return cost_one, cost_batch
+
+def make_models_cost_batch(models, feature_fns, agg="sum", weights=None):
+
+    if not isinstance(models, dict):
+        raise ValueError("models must be a dict.")
+
+    if not isinstance(feature_fns, dict):
+        raise ValueError("feature_fns must be a dict.")
+
+    # default weights
+    if weights is None:
+        weights = {name: 1.0 for name in models}
+
+    # validate weights
+    for name in models:
+        if name not in weights:
+            weights[name] = 1.0
+
+    model_cols = {}
+
+    for name in models:
+        cols = feature_fns[name]
+
+        # support both callable and list
+        if callable(cols):
+            cols = cols()
+
+        model_cols[name] = list(cols)
+
+    def _aggregate_matrix(preds_dict):
+
+        weighted_preds = {
+            name: preds_dict[name] * float(weights.get(name, 1.0))
+            for name in preds_dict
+        }
+
+        mat = np.column_stack(
+            [weighted_preds[name] for name in models]
+        )
+
+        if callable(agg):
+            return np.asarray([
+                agg({
+                    k: weighted_preds[k][i]
+                    for k in weighted_preds
+                })
+                for i in range(len(mat))
+            ])
+
+        if agg == "sum":
+            return mat.sum(axis=1)
+
+        elif agg == "mean":
+            return mat.mean(axis=1)
+
+        else:
+            raise ValueError(f"Unknown agg='{agg}'")
+
+    def _to_frame(rows, cols):
+
+        if isinstance(rows, pd.DataFrame):
+            return rows.loc[:, cols]
+
+        if isinstance(rows, pd.Series):
+            return rows.to_frame().T.loc[:, cols]
+
+        if isinstance(rows, dict):
+            return pd.DataFrame([rows], columns=cols)
+
+        if isinstance(rows, list):
+
+            if len(rows) == 0:
+                raise ValueError("Empty rows list.")
+
+            return pd.DataFrame(rows, columns=cols)
+
+        raise TypeError(f"Unsupported rows type: {type(rows)}")
+
+    def cost_batch(rows, return_components=False):
+
+        preds = {}
+
+        for name, model in models.items():
+
+            cols = model_cols[name]
+
+            X = _to_frame(rows, cols)
+
+            if (callable(model)):
+                preds[name] = model(X)
+            else:    
+                preds[name] = np.asarray(
+                    model.predict(X),
+                    dtype=float
+                ).ravel()
+
+        total = _aggregate_matrix(preds)
+
+        if return_components:
+
+            weighted_components = {
+                k: preds[k] * float(weights.get(k, 1.0))
+                for k in preds
+            }
+
+            return {
+                "components": weighted_components,
+                "raw_components": preds,
+                "total": total,
+            }
+
+        return total
+
+    def cost(row, return_components=False):
+
+        out = cost_batch(
+            row,
+            return_components=return_components
+        )
+
+        if return_components:
+
+            return {
+                "components": {
+                    k: float(v[0])
+                    for k, v in out["components"].items()
+                },
+
+                "raw_components": {
+                    k: float(v[0])
+                    for k, v in out["raw_components"].items()
+                },
+
+                "total": float(out["total"][0]),
+            }
+
+        return float(out[0])
+
+    return cost, cost_batch
+
+def make_models_cost_batch_DEPRECATED(models, feature_fns, agg="sum"):
+    if not isinstance(models, dict):
+        raise ValueError("models must be a dict.")
+    if not isinstance(feature_fns, dict):
+        raise ValueError("feature_fns must be a dict.")
+
+    model_cols = {}
+
+    for name in models:
+        cols = feature_fns[name]
+        
+        # support both callable and list
+        if callable(cols):
+            cols = cols()
+            
+        model_cols[name] = list(cols)
+
+    def _aggregate_matrix(preds_dict):
+        mat = np.column_stack([preds_dict[name] for name in models])
+
+        if callable(agg):
+            return np.asarray([agg({k: preds_dict[k][i] for k in preds_dict}) for i in range(len(mat))])
+
+        if agg == "sum":
+            return mat.sum(axis=1)
+        elif agg == "mean":
+            return mat.mean(axis=1)
+        else:
+            raise ValueError(f"Unknown agg='{agg}'")
+
+    def _to_frame(rows, cols):
+        if isinstance(rows, pd.DataFrame):
+            return rows.loc[:, cols]
+
+        if isinstance(rows, pd.Series):
+            return rows.to_frame().T.loc[:, cols]
+
+        if isinstance(rows, dict):
+            return pd.DataFrame([rows], columns=cols)
+
+        if isinstance(rows, list):
+            if len(rows) == 0:
+                raise ValueError("Empty rows list.")
+            return pd.DataFrame(rows, columns=cols)
+
+        raise TypeError(f"Unsupported rows type: {type(rows)}")
+
+    def cost_batch(rows, return_components=False):
+        preds = {}
+
+        for name, model in models.items():
+            cols = model_cols[name]
+            X = _to_frame(rows, cols)
+
+            preds[name] = np.asarray(
+                model.predict(X),
+                dtype=float
+            ).ravel()
+
+        total = _aggregate_matrix(preds)
+
+        if return_components:
+            return {
+                "components": preds,
+                "total": total,
+            }
+
+        return total
+
+    def cost(row, return_components=False):
+        out = cost_batch(row, return_components=return_components)
+
+        if return_components:
+            return {
+                "components": {
+                    k: float(v[0])
+                    for k, v in out["components"].items()
+                },
+                "total": float(out["total"][0]),
+            }
+
+        return float(out[0])
+
+    return cost, cost_batch
+
+
+
 
 def _prediction_models(models_dir):
   import pickle
@@ -2756,7 +3229,7 @@ def _turnup_data(local, bucket, fs, setpoint_df, steam_null):
 
         turnup=[]
 
-        for time_ref in ["2025-06-01","2025-07-01","2025-08-01","2025-09-01","2025-10-01","2025-11-01","2025-12-01","2026-01-01","2026-02-01","2026-03-01","2026-04-01"]:
+        for time_ref in ["2025-06-01","2025-07-01","2025-08-01","2025-09-01","2025-10-01","2025-11-01","2025-12-01","2026-01-01","2026-02-01","2026-03-01","2026-04-01","2026-05-01"]:
             #print(time_ref)
             turnup.append(pd.read_parquet(f"./data/costimier_turnup_{time_ref}.parquet",engine="fastparquet"))
         turnup=pd.concat(turnup,axis=0).copy()
@@ -5859,6 +6332,10 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
     @classmethod
     def _feature_raw_inputs(cls):
         return {
+            "delta_basis_weight": [
+                "Current_basis_weight",
+                "grammage"
+            ],
             "Fibre__g/m2_": [
                 "Current_basis_weight",
                 "Current_reel_moisture_average(reel)",
@@ -5930,6 +6407,12 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
                 "Total_Dewatering_Press",
                 "Dewatering_First_Press_Roll",
             ],
+            "fibre_short/long": [
+                "Short_fibre_flow",
+                "Short_fibre_B06_consistency",
+                "Long_fibre_flow",
+                "Long_fibre_consistency_B07",
+            ],
         }
 
     def _expand_with_deps(self, requested):
@@ -5957,6 +6440,12 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
         return 1.0 / s
 
     @staticmethod
+    def _add_delta_basis_weight(df):
+        df["delta_basis_weight"] = (
+            df["Current_basis_weight"] - df["grammage"]
+        )
+
+    @staticmethod
     def _add_starch_uptake(df):
         df["Starch_uptake__g/m2_"] = (
             df["Starch_uptake_by_paper_Top_Roll__g/m2_"]
@@ -5977,7 +6466,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             df["Current_basis_weight"]
             * df["Speed_PD1"]
             * df["Current_reel_width"]
-            * (100 - 35 - df["Moisture_out_of_PreDryer"])
+            * (100 - 53 - df["Moisture_out_of_PreDryer"])
             * 60
             / 1e10
         )
@@ -6078,6 +6567,10 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
         ]
         df["dewatering"] = df[cols].sum(axis=1)
 
+    @staticmethod
+    def _add_fibre_short_long_ratio(df):        
+        df["fibre_short/long"] = df['Short_fibre_flow']*df['Short_fibre_B06_consistency']/(df['Long_fibre_flow']*df['Long_fibre_consistency_B07'])
+
     @classmethod
     def _registry(cls):
         return {
@@ -6095,7 +6588,11 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             "square_Rod_Pressure_Bottom_Roll": cls._add_square_rod_pressure_bottom_roll,
             "square_Rod_pressure_Top_Roll": cls._add_square_rod_pressure_top_roll,
             "dewatering": cls._add_dewatering,
+            "fibre_short/long": cls._add_fibre_short_long_ratio,
+            "delta_basis_weight": cls._add_delta_basis_weight,
         }
+    
+
     
 class ColumnSelector(BaseEstimator, TransformerMixin):
     def __init__(self, columns):
@@ -7481,3 +7978,63 @@ class GroupwisePLSTransformer(BaseEstimator, TransformerMixin):
             y_values = y_values.reshape(-1, 1)
         return y_values
 
+
+
+class DivideByFeatureRegressor(BaseEstimator, RegressorMixin):
+    """
+    Wraps an existing regression model and divides its prediction
+    by a feature column.
+
+    Example:
+        starch_consumption =
+            starch_uptake_prediction / Current_basis_weight
+    """
+
+    def __init__(
+        self,
+        base_model,
+        divisor_feature="Current_basis_weight",
+        epsilon=1e-9
+    ):
+        self.base_model = base_model
+        self.divisor_feature = divisor_feature
+        self.epsilon = epsilon
+
+    def fit(self, X, y=None):
+        """
+        No refit of the internal model.
+        Only stores feature names.
+        """
+
+        if isinstance(X, pd.DataFrame):
+            cols = list(X.columns)
+        else:
+            cols = list(self.base_model.feature_names_in_)
+
+        # ensure divisor feature exists in feature_names_in_
+        if self.divisor_feature not in cols:
+            cols.append(self.divisor_feature)
+
+        self.feature_names_in_ = np.array(cols, dtype=object)
+
+        return self
+
+    def predict(self, X):
+
+        if not isinstance(X, pd.DataFrame):
+            X = pd.DataFrame(X, columns=self.feature_names_in_)
+
+        if self.divisor_feature not in X.columns:
+            raise ValueError(
+                f"Missing divisor feature: {self.divisor_feature}"
+            )
+
+        uptake_pred = self.base_model.predict(X)
+
+        divisor = (
+            X[self.divisor_feature]
+            .astype(float)
+            .to_numpy()
+        )
+
+        return uptake_pred / np.clip(divisor, self.epsilon, None)

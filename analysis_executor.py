@@ -62,7 +62,15 @@ def _execute_step(
                 knowledge_result = prev["result"]
 
         if cost_driver_result is None:
-            raise ValueError("Recommendation step requires a prior cost_driver result")
+            cost_driver_result = {
+                "cost_component": args.get("cost_component"),
+                "grade": args.get("grade"),
+                "target_range": args.get("target_range"),
+                "baseline_range": args.get("baseline_range"),
+                "shapley_contrib": None,
+                "extreme_cluster_differences": None,
+                "top_driver_variables": [],
+            }
 
         result = rt.build_recommendations(
             cost_driver_result=cost_driver_result,
@@ -107,7 +115,19 @@ def _execute_step(
                 shap_result=shap_result,
             )
         else:
-            query_text = args.get("query", raw_query)
+            pseudo_cost_driver_result = {
+                "cost_component": args.get("cost_component"),
+                "grade": args.get("grade"),
+                "target_range": args.get("target_range"),
+                "baseline_range": args.get("baseline_range"),
+                "top_driver_variables": [],
+                "extreme_cluster_differences": None,
+            }
+
+            query_text = rt.build_knowledge_query_from_drivers(
+                cost_driver_result=pseudo_cost_driver_result,
+                shap_result=shap_result,
+            )
 
         # print("RAG",query_text)
         result = ar.answer_knowledge(query_text)

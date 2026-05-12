@@ -23,6 +23,20 @@ COMPONENT_ALIASES = {
     "steam": ["steam"],
     "electricity": ["electricity", "power"],
     "starch": ["starch"],
+
+    "total": [
+        "total",
+        "total cost",
+        "combined cost",
+        "overall cost",
+    ],
+
+    "SCT CD": [
+        "sct cd",
+        "sct_cd",
+        "sctcd",
+        "strength",
+    ],
 }
  
  
@@ -98,6 +112,7 @@ def parse_intent(query: str) -> str:
     if any(k in q for k in ["what if", "simulate", "scenario", "if we change", "if i change"]):
         return "simulate_scenario"
     if any(k in q for k in [
+        "describe",
         "diagnosis",
         "diagnose",
         "drilldown",
@@ -263,6 +278,12 @@ def parse_query(query: str) -> Dict[str, Any]:
 
     target_range, baseline_range = parse_date_ranges(query)
     target_kind = None
+
+    if target_range is None:
+        relative_range, relative_kind = parse_relative_period_range(query)
+        if relative_range is not None:
+            target_range = relative_range
+            target_kind = relative_kind
 
     if target_range is None:
         from_to = parse_from_to_range(query)
@@ -494,22 +515,23 @@ def parse_month_range(query: str):
  
  
 def parse_week_range(query: str):
-    """
-    Extract 'week N' and convert to date range.
-    """
     import pandas as pd
     from datetime import datetime
- 
-    m = re.search(r"week\s+(\d{1,2})", query.lower())
+
+    q = query.lower()
+
+    m = re.search(r"\bweek\s+(\d{1,2})\b", q)
     if not m:
         return None
- 
+
     week = int(m.group(1))
-    year = datetime.today().year
- 
+
+    year_match = re.search(r"\b(20\d{2})\b", q)
+    year = int(year_match.group(1)) if year_match else datetime.today().year
+
     start = pd.to_datetime(f"{year}-W{week:02d}-1", format="%G-W%V-%u")
     end_exclusive = start + pd.Timedelta(days=5)
- 
+
     return (start.date(), end_exclusive.date())
  
  
@@ -633,3 +655,42 @@ def resolve_time_range_text(range_text: str):
         return month_range
 
     return None
+
+def parse_relative_period_range(query: str):
+    """
+    Parse:
+    - last week
+    - this week
+    - last month
+    - this month
+    """
+    import pandas as pd
+    from datetime import date
+
+    q = query.lower()
+    today = pd.Timestamp(date.today())
+
+    if "last week" in q:
+        # previous complete Monday-Friday
+        this_monday = today - pd.Timedelta(days=today.weekday())
+        start = this_monday - pd.Timedelta(days=7)
+        end = start + pd.Timedelta(days=5)
+        return (start.date(), end.date()), "week"
+
+    if "this week" in q:
+        start = today - pd.Timedelta(days=today.weekday())
+        end = start + pd.Timedelta(days=5)
+        return (start.date(), end.date()), "week"
+
+    if "last month" in q:
+        start_this_month = pd.Timestamp(year=today.year, month=today.month, day=1)
+        start = start_this_month - pd.offsets.MonthBegin(1)
+        end = start_this_month
+        return (start.date(), end.date()), "month"
+
+    if "this month" in q:
+        start = pd.Timestamp(year=today.year, month=today.month, day=1)
+        end = start + pd.offsets.MonthBegin(1)
+        return (start.date(), end.date()), "month"
+
+    return None, None

@@ -91,14 +91,151 @@ def answer_knowledge(query: str) -> Dict[str, Any]:
     }
  
  
+def answer_process_data(
+    query: str,
+    target_range=None,
+    baseline_range=None,
+    grade=None,
+    variables=None,
+    max_return: int = 5,
+):
+    import process_data_tools as pdt
+    import time_context as tc
+
+    # -------------------------------------------------
+    # Resolve time context
+    # -------------------------------------------------
+    resolved = tc.resolve_single_period_range(target_range=target_range)
+    target_range = resolved["target_range"]
+
+
+    # -------------------------------------------------
+    # Load data
+    # -------------------------------------------------
+    df = pdt.get_feature_snapshot(
+        grade=grade,
+        target_range=target_range,
+    )
+
+    if df is None or df.empty:
+        return {
+            "text": "No data available for the selected filters.",
+            "data": None,
+        }
+
+    df_columns = df.columns.tolist()
+
+    # -------------------------------------------------
+    # Parse plotting preferences (secondary axis)
+    # -------------------------------------------------
+    plot_prefs = pdt.parse_plot_preferences(query)
+
+    # -------------------------------------------------
+    # Build clean query for feature selection
+    # -------------------------------------------------
+    main_query = query
+
+    # Remove secondary axis clause
+    if plot_prefs.get("secondary_axis"):
+        main_query = pdt.remove_secondary_axis_clause(main_query)
+
+    # Remove negative clause
+    main_query = pdt.remove_negative_terms_clause(main_query)
+
+    # -------------------------------------------------
+    # Select main variables
+    # -------------------------------------------------
+    if variables:
+        cols = variables
+    else:
+        cols = pdt.select_features_from_query(
+            query=main_query,
+            df_columns=df_columns,
+            use_llm_fallback=True,
+            max_return=max_return,
+        )
+
+    
+    # -------------------------------------------------
+    # Resolve secondary axis variables
+    # -------------------------------------------------
+    secondary_cols = []
+
+    if plot_prefs.get("secondary_axis"):
+        secondary_phrase = plot_prefs.get("secondary_phrase")
+
+        if secondary_phrase:
+            secondary_cols = pdt.select_features_from_query(
+                query=secondary_phrase,
+                df_columns=df_columns,
+                use_llm_fallback=True,
+                max_return=1,
+            )
+
+        # ensure inclusion
+        for c in secondary_cols:
+            if c in df_columns and c not in cols:
+                cols.append(c)
+
+    cols = pdt.filter_negative_columns(cols, query)
+    secondary_cols = pdt.filter_negative_columns(secondary_cols, query)
+
+    # -------------------------------------------------
+    # Build plot
+    # -------------------------------------------------
+    fig = pdt.build_process_plot(
+        df=df,
+        columns=cols,
+        time_col="Wedge_Time",
+        secondary_axis=plot_prefs.get("secondary_axis", False),
+        secondary_columns=secondary_cols,
+    )
+
+    # -------------------------------------------------
+    # Text response
+    # -------------------------------------------------
+    text = f"Showing {', '.join(cols)}"
+
+    if grade:
+        text += f" for grade {grade}"
+
+    if target_range:
+        text += f" in {target_range}"
+
+    if secondary_cols:
+        text += f" (secondary axis: {', '.join(secondary_cols)})"
+
+    display_cols = []
+    if "Wedge_Time" in df.columns:
+        display_cols.append("Wedge_Time")
+
+    for c in cols:
+        if c in df.columns and c not in display_cols:
+            display_cols.append(c)
+
+    # -------------------------------------------------
+    # Return
+    # -------------------------------------------------
+    return {
+        "text": text,
+        "figure": fig,
+        "data_frame": df[display_cols].head(),
+        "data": {
+            "columns": cols,
+            "secondary_columns": secondary_cols,
+            "target_range": target_range,
+        },
+    }
+ 
 # -------------------------------------------------
 # Process data workflow
 # -------------------------------------------------
-def answer_process_data(
+def answer_process_data_DEPRECATED(
     target_range=None,
     grade=None,
     variables=None,
     query: str = None,
+    max_return: int = 5,
 ):
     import time_context as tc
     import process_data_tools as pdt
@@ -141,25 +278,53 @@ def answer_process_data(
         cols = variables
         plot_prefs = {"secondary_axis": False}
     else:
-        feature_query = pdt.extract_feature_request_phrase(query or "")
-        plot_prefs = pdt.parse_plot_preferences(query or "")
-        negative_terms = pdt.extract_negative_terms(query or "")
+        plot_prefs = pdt.parse_plot_preferences(query)
+
+        main_query = query
+
+        if plot_prefs.get("secondary_axis"):
+            main_query = pdt.remove_secondary_axis_clause(main_query)
+
+        main_query = pdt.remove_negative_terms_clause(main_query)
 
         cols = pdt.select_features_from_query(
-            query=feature_query,
+            query=main_query,
             df_columns=df.columns.tolist(),
             use_llm_fallback=True,
+            max_return=max_return,
         )
 
-        cols = pdt.filter_columns_by_negative_terms(
-            cols,
-            negative_terms,
-        )
+        negative_terms = pdt.extract_negative_terms(query)
+
+        if negative_terms:
+            cols = [
+                c for c in cols
+                if not any(
+                    term in pdt._normalize_text(c)
+                    for term in negative_terms
+                )
+            ]
+
 
     cols = [c for c in cols if c in df.columns]
 
-    if plot_prefs.get("secondary_axis", False) and len(cols) > 2:
-        cols = cols[:2]
+    secondary_cols = []
+
+    if plot_prefs.get("secondary_axis", False):
+        secondary_phrase = plot_prefs.get("secondary_phrase")
+
+        if secondary_phrase:
+            secondary_cols = pdt.select_features_from_query(
+                query=secondary_phrase,
+                df_columns=df.columns.tolist(),
+                use_llm_fallback=True,
+                max_return=1,
+            )
+
+        # Make sure secondary columns are included
+        for c in secondary_cols:
+            if c in df.columns and c not in cols:
+                cols.append(c)
 
     # ------------------------
     # Plot

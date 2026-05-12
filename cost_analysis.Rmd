@@ -69,7 +69,7 @@ enableRAG = r.enableRAG
 ```{python data, echo=FALSE}
 
 import pandas as pd
-from utility import _process_data, _turnup_data, setpoint_df, _summary_cost_plot, make_model_cost, make_models_cost
+from utility import _process_data, _turnup_data, setpoint_df, _summary_cost_plot, make_model_cost, make_models_cost, make_model_cost_batch, make_models_cost_batch
 from datetime import date, timedelta
 import plotly.io as pio
 from pathlib import Path
@@ -137,9 +137,9 @@ try:
   def starch_features():
       return list(set(list(model_starch_top.best_estimator_.feature_names_in_) + list(model_starch_bottom.best_estimator_.feature_names_in_)))
 
-  steam_cost = make_model_cost(steam_model, steam_features)
-  electricity_cost = make_model_cost(electricity_model, electricity_features)
-  starch_cost = make_models_cost(
+  _, steam_cost = make_model_cost_batch(steam_model, steam_features)
+  _, electricity_cost = make_model_cost_batch(electricity_model, electricity_features)
+  _, starch_cost = make_models_cost_batch(
       models={
           "bottom": model_starch_bottom,
           "top": model_starch_top,

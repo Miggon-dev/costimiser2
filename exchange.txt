@@ -1,82 +1,278 @@
-I am using the models to compute shapley values, this way. I need it to be fast and memmory efficient
+I will provide some information regarding a description of costs between two periods of time and some cost driver analysis. According the importance and signs of the cost variation of the different cost components and grades, diagnose what were the main reasons of these variations. Try to make sense of the cost driver analysis comparing it to your papermaking knowledge.
+
+Baseline 5/1/2026 - 9/1/2026
+Current 13/4/2026 - 17/4/2026 
+
+Total cost 		289.0	279.7
+Fibre cost 		127.5	127.1
+Steam cost 		94.4	86.5
+Electricity cost	37.7	35.4
+Starch cost 		23.7	24.7
+
+		6010120		6010100		3200115		6010085
+Total cost	295.5	289.0	287.0	280.7	285.0	276.6	284.4	275.8
+Fibre cost	128.6	127.4	127.0	127.2	127.0	126.1	127.9	127.6
+Steam cost	92.3	85.1	93.7	87.3	93.6	84.6	96.4	90.5	-> DECREASING
+Elect. cost	34.4	32.9	37.2	36.1	34.2	33.1	42.6	41.7	-> DECREASING
+Starch cost	20.3	23.9	26.3	26.9	22.0	24.3	25.4	25.7	-> INCREASING (MOSTLY 6010120 & 3200115)
 
 
-def make_model_cost(model, feature_fn):
-    cols = feature_fn()
-    df = pd.DataFrame([[0.0] * len(cols)], columns=cols)  # allocate ONCE
- 
-    def cost(row):
-        # overwrite values in-place (no allocation)
-        df.iloc[0] = [row[c] for c in cols]
-        return float(model.predict(df)[0])
- 
-    return cost
+SCT CD		2.2	2.2	1.8	1.9	2.1	2.1	1.6	1.5	-> EQUAL (6010100 <, 6010085 >)
+SCT MD		3.6	4.1	3.6	3.7	3.4	3.8	2.7	2.9	-> INCREASING
+BURST		276.5	293.5	260.9	259.3	265.8	279.5	203.7	204.7	-> INCREASING (6010120 & 3200115), EQUAL (6010085 & 6010100)
 
-def shapley_for_pair_mc(
-    row1, row2, cost, features,
-    M=200, random_state=None,
-    cost_variable=None,
-    add_unknown=False,
-    unknown_name="unknown"
-):
-    import random
-    from tqdm.auto import tqdm
 
-    rnd = random.Random(random_state) if random_state is not None else random
- 
-    n = len(features)
- 
-    # Extract numeric values once
-    x1_vals = {f: float(row1[f]) for f in features}
-    x2_vals = {f: float(row2[f]) for f in features}
- 
-    contrib = {f: 0.0 for f in features}
- 
-    idxs = list(range(n))        # allocate once
-    row = dict(x1_vals)          # allocate once
- 
-    for _ in tqdm(range(M)):
-        rnd.shuffle(idxs)
-        changed = []
- 
-        prev_cost = cost(row)
- 
-        for j in idxs:
-            f = features[j]
-            v2 = x2_vals[f]
- 
-            if row[f] == v2:
-                continue
- 
-            changed.append(f)
-            row[f] = v2
- 
-            new_cost = cost(row)
-            contrib[f] += (new_cost - prev_cost)
-            prev_cost = new_cost
- 
-        # restore row back to x1
-        for f in changed:
-            row[f] = x1_vals[f]
- 
-    invM = 1.0 / M
-    for f in features:
-        contrib[f] *= invM
- 
-    if add_unknown and cost_variable is not None:
-        model_delta = cost(x2_vals) - cost(x1_vals)
-        true_delta = float(row2[cost_variable]) - float(row1[cost_variable])
-        contrib[unknown_name] = true_delta - model_delta
- 
-    return contrib
 
-with open(MODELS_DIR / "model_steam.pkl", "rb") as f:
-    steam_model = pickle.load(f)
+Summary: Steam and electricity cost reduction, starch cost increasing (mostly 6010120 & 3200115). SCT CD equal but strong increase of SCT MD and of Burst for heavy grades.
 
-def steam_features():
-    return list(steam_model.best_estimator_.feature_names_in_)
 
-steam_cost = make_model_cost(steam_model, steam_features)
+1.- Overall cost
 
-contrib = shapley_for_pair_mc(row1, row2, steam_cost, steam_feats,cost_variable=cost_component, M=100)
+For all considered grades, TOTAL cost saw a decrease of 9.32 €/t, resulting in 279.69 €/t.
+
+Breaking down the overall cost change, -1.50 €/t was driven by a cheaper mix of grades, and -7.83 €/t was due to an improvement in the process.
+
+2.- Cost by grade
+
+For grade 3200115, TOTAL cost saw a decrease of 8.38 €/t, resulting in 276.63 €/t.
+
+For grade 6010085, TOTAL cost saw a decrease of 6.52 €/t, resulting in 288.96 €/t.
+
+For grade 6010100, TOTAL cost saw a decrease of 6.30 €/t, resulting in 280.68 €/t.
+
+For grade 6010120, TOTAL cost saw a decrease of 8.64 €/t, resulting in 275.81 €/t.
+
+Looking across individual grades, the strongest cost decrease was observed for grade 6010120 (-8.64 €/t). 
+
+
+3.- Cost by component and grade
+
+Average change by component:
+
+- **Steam__€/T_** decreased on average (-7.13 €/t).
+
+- **Starch__€/T_** increased on average (+1.66 €/t).
+
+- **Electricity__€/T_** decreased on average (-1.15 €/t).
+
+- **Fibre_cost__€/T_** decreased on average (-0.53 €/t).
+
+- **Chemicals__€/T_** decreased on average (-0.32 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Starch__€/T_** (+1.66 €/t on average), with the highest increase in grade 6010120 (+3.60 €/t) and the largest average decrease comes from **Steam__€/T_** (-7.13 €/t on average), with the biggest drop in grade 3200115 (-8.94 €/t). 
+
+4.- Average change by component. 
+4.1.- Steam
+
+Average change by component:
+
+- **steam** decreased on average (-7.13 €/t).
+
+- **Steam_Predryers** decreased on average (-5.41 €/t).
+
+- **Steam_Afterdryers** decreased on average (-1.82 €/t).
+
+- **Steam_Whitewater** increased on average (+0.20 €/t).
+
+- **Steam_Starchkitchen** decreased on average (-0.12 €/t).
+
+- **Steam_Heatexchangers** increased on average (+0.02 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Steam_Whitewater** (+0.20 €/t on average), with the highest increase in grade 6010085 (+1.06 €/t) and the largest average decrease comes from **steam** (-7.13 €/t on average), with the biggest drop in grade 3200115 (-8.94 €/t). .
+
+Comment: The increase of starch consumption seems to be penalising the afterdriers cost reduction for grades 6010120 & 3200115. Significan increase of whitewater steam consumption for grade 6010085
+
+4.2. Electricity
+
+Average change by component:
+
+- **electricity** decreased on average (-1.15 €/t).
+
+- **Electricity_Wiresection** decreased on average (-0.63 €/t).
+
+- **Electricity_Specific** decreased on average (-0.24 €/t).
+
+- **Electricity_Other** decreased on average (-0.10 €/t).
+
+- **Electricity_Freqconverters** decreased on average (-0.10 €/t).
+
+- **Electricity_Afterdryer** decreased on average (-0.08 €/t).
+
+- **Electricity_Press_and_Steambox** increased on average (+0.01 €/t).
+
+- **Electricity_Predryer** decreased on average (-0.00 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Electricity_Press_and_Steambox** (+0.01 €/t on average), with the highest increase in grade 3200115 (+0.04 €/t) and the largest average decrease comes from **electricity** (-1.15 €/t on average), with the biggest drop in grade 6010120 (-1.49 €/t). These components stand out and may require further investigation.
+
+
+4.3.- Chemicals
+
+Average change by component:
+
+- **Fixative_2__€/T_** decreased on average (-0.42 €/t).
+
+- **chemicals** decreased on average (-0.32 €/t).
+
+- **Defoamer__€/T_** increased on average (+0.20 €/t).
+
+- **Bentonite_2__€/T_** increased on average (+0.14 €/t).
+
+- **Sizing_Agent__€/T_** decreased on average (-0.09 €/t).
+
+- **Dry_Strength_Agent__€/T_** decreased on average (-0.09 €/t).
+
+- **Retention_Aid__€/T_** decreased on average (-0.08 €/t).
+
+- **Deaerator__€/T_** increased on average (+0.03 €/t).
+
+- **Bentonite_1__€/T_** decreased on average (-0.02 €/t).
+
+- **Natriumhydroxide__€/T_** decreased on average (-0.01 €/t).
+
+A more detailed breakdown by component shows that the largest average increase comes from **Defoamer__€/T_** (+0.20 €/t on average), with the highest increase in grade 6010085 (+0.29 €/t) and the largest average decrease comes from **Fixative_2__€/T_** (-0.42 €/t on average), with the biggest drop in grade 6010120 (-1.76 €/t). 
+
+Comment: strong decrease of chemicals cost for 6010120 due to reduction of dry strength agent.
+
+5.- Cost drivers
+5.1.- Steam
+5.1.1.- 6010120
+Cost drivers. Grade 6010120, component Steam__€/T_
+
+For grade 6010120, the cost change is mainly explained by the following factors (top 20% by contribution):
+Cost-reducing drivers:
+- Dissolved gas after stock deculator measurement 1 increased (+0.58)
+- Act Deaerator mass flow g/T increased (+36.16)
+- Speed PD1 increased (+82.77)
+- DG3 temperature Inlet Air decreased (-5.66)
+Cost-increasing drivers:
+- Fixative 2 mass flow g/T decreased (-492.46)
+- Starch uptake by paper Bottom Roll g/m2 increased (+1.08)
+- Free gas after stock deculator~^0 increased (+0.07)
+- Linepressure 1st press FS bar decreased (-0.06)
+
+5.1.2.- 6010100
+Cost drivers. Grade 6010100, component Steam__€/T_
+
+For grade 6010100, the cost change is mainly explained by the following factors (top 20% by contribution):
+Cost-reducing drivers:
+- Act Deaerator mass flow g/T increased (+30.78)
+- DG4 Temperature Inlet Air decreased (-20.74)
+- Retention increased (+0.04)
+- Free gas after stock deculator~^0 decreased (-0.07)
+- PickUp Tension increased (+0.12)
+- DG3 temperature Inlet Air decreased (-4.60)
+- Top wire tenstion increased (+0.05)
+
+5.1.3.- 3200115
+Cost drivers. Grade 3200115, component Steam__€/T_
+
+For grade 3200115, the cost change is mainly explained by the following factors (top 20% by contribution):
+Cost-reducing drivers:
+- Dissolved gas after stock deculator measurement 1 increased (+0.72)
+- Speed PD1 increased (+116.75)
+- Top wire tenstion increased (+0.11)
+- DG4 Temperature Inlet Air decreased (-11.30)
+- DG3 temperature Inlet Air decreased (-5.24)
+- Dewatering Suction Press Roll increased (+559.15)
+Cost-increasing drivers:
+- Free gas after stock deculator~^0 increased (+0.09)
+
+5.1.4.- 6010085
+Cost drivers. Grade 6010085, component Steam__€/T_
+
+For grade 6010085, the cost change is mainly explained by the following factors (top 20% by contribution):
+Cost-reducing drivers:
+- Dissolved gas after stock deculator measurement 1 increased (+0.20)
+- DG4 Temperature Inlet Air decreased (-10.12)
+- PH-Messung Verdünnungswasser 2..12 pH decreased (-0.27)
+- Dewatering Suction Press Roll increased (+603.79)
+- Vacuum suction box 11 decreased (-0.02)
+- Steam temperature for PM increased (+6.66)
+
+5.2.- Electricity
+5.2.1.- 6010120
+Cost drivers. Grade 6010120, component Electricity__€/T_
+
+For grade 6010120, the cost change is mainly explained by the following factors (top 20% by contribution):
+Cost-reducing drivers:
+- Vacuum wire suction box 1 decreased (-0.08)
+- Vacuum uhle-box Pick-Up decreased (-0.04)
+- Vacuum presszone of suction-press roll increased (+0.01)
+- Draw PD5-SS increased (+0.06)
+Cost-increasing drivers:
+- Vacuum wire suction box 2 decreased (-0.20)
+- Retention decreased (-0.03)
+
+5.2.2.- 6010100
+Cost drivers. Grade 6010120, component Electricity__€/T_
+
+For grade 6010120, the cost change is mainly explained by the following factors (top 20% by contribution):
+Cost-reducing drivers:
+- Vacuum wire suction box 1 decreased (-0.08)
+- Vacuum uhle-box Pick-Up decreased (-0.04)
+- Vacuum presszone of suction-press roll increased (+0.01)
+- Draw PD5-SS increased (+0.06)
+Cost-increasing drivers:
+- Vacuum wire suction box 2 decreased (-0.20)
+- Retention decreased (-0.03)
+
+5.2.3.- 3200115
+Cost drivers. Grade 3200115, component Electricity__€/T_
+
+For grade 3200115, the cost change is mainly explained by the following factors (top 20% by contribution):
+Cost-reducing drivers:
+- Vacuum wire suction box 1 decreased (-0.06)
+- Vacuum presszone of suction-press roll increased (+0.02)
+- Vacuum uhle-box Pick-Up decreased (-0.06)
+Cost-increasing drivers:
+- Vacuum wire suction box 2 decreased (-0.19)
+- Retention decreased (-0.02)
+- Vacuum uhle-box bottom felt decreased (-0.04)
+
+
+5.2.4.- 6010085
+Cost drivers. Grade 6010085, component Electricity__€/T_
+
+For grade 6010085, the cost change is mainly explained by the following factors (top 20% by contribution):
+Cost-reducing drivers:
+- Vacuum wire suction box 1 decreased (-0.05)
+- Vacuum uhle-box Pick-Up decreased (-0.05)
+- Draw PD5-SS increased (+0.08)
+Cost-increasing drivers:
+- Vacuum wire suction box 2 decreased (-0.12)
+- Vacuum presszone of suction-press roll decreased (-0.01)
+
+5.3.- Starch
+5.3.1.- 6010120
+Cost drivers. Grade 6010120, component Starch__€/T_
+
+For grade 6010120, the cost change is mainly explained by the following factors (top 20% by contribution):
+Cost-increasing drivers:
+- Concentration starch working tank 1 increased (+0.06)
+- Moisture after SpeedSizer increased (+1.14)
+
+5.3.2.- 6010100
+Cost drivers. Grade 6010100, component Starch__€/T_
+
+For grade 6010100, the cost change is mainly explained by the following factors (top 20% by contribution):
+Cost-reducing drivers:
+- Temperature starch working tank 2 decreased (-2.67)
+
+5.3.3.- 3200115
+
+Cost drivers. Grade 3200115, component Starch__€/T_
+
+For grade 3200115, the cost change is mainly explained by the following factors (top 20% by contribution):
+Cost-increasing drivers:
+- Concentration starch working tank 1 increased (+0.16)
+- Concentration starch working tank 2 increased (+0.15)
+
+5.3.4.- 6010085
+
+Cost drivers. Grade 3200115, component Starch__€/T_
+
+For grade 3200115, the cost change is mainly explained by the following factors (top 20% by contribution):
+Cost-increasing drivers:
+- Concentration starch working tank 1 increased (+0.16)
+- Concentration starch working tank 2 increased (+0.15)
 

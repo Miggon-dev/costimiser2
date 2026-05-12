@@ -241,7 +241,365 @@ Rules:
 
 
 
+def _best_feature_match_from_list(query_phrase: str, candidates: list[str]) -> list[str]:
+    """
+    Match a natural-language phrase against a restricted feature list.
+    Returns the best matching candidate, or [].
+    """
+    q_tokens = set(_tokenize(query_phrase))
+
+    scored = []
+    for c in candidates:
+        c_tokens = set(_tokenize(c))
+
+        if not c_tokens:
+            continue
+
+        overlap = len(q_tokens & c_tokens)
+        if overlap == 0:
+            continue
+
+        score = overlap / max(len(q_tokens), 1)
+
+        # bonus if all query tokens appear in candidate tokens
+        if q_tokens.issubset(c_tokens):
+            score += 1.0
+
+        scored.append((score, c))
+
+    if not scored:
+        return []
+
+    scored.sort(reverse=True)
+    return [scored[0][1]]
+
+
 def select_features_from_query(
+    query: str,
+    df_columns: list[str],
+    use_llm_fallback: bool = False,
+    max_candidates_for_llm: int = 12,
+    max_return: int = 5,
+) -> list[str]:
+    """
+    Select process/cost/consumption/quality features from a natural-language query.
+
+    Rules:
+    - "cost" alone -> all cost variables
+    - "total cost" / "combined cost" -> Combined_cost__€/T_
+    - "steam cost" / "electricity cost" / etc. -> best match inside _cost_features()
+    - "consumption" alone -> all consumption/component variables
+    - "steam consumption" / "sizing agent consumption" / etc. -> best match inside _component_features()
+    - otherwise use existing strict/broad matching logic + optional LLM fallback
+    """
+
+    query = query or ""
+    q_norm = _normalize_text(query).strip()
+
+    # -------------------------------------------------
+    # Helpers
+    # -------------------------------------------------
+    def _ordered_existing(features: list[str]) -> list[str]:
+        return [c for c in features if c in df_columns]
+
+    def _remove_words(text: str, words: list[str]) -> str:
+        tokens = _tokenize(text)
+        remove = set(words)
+        return " ".join(t for t in tokens if t not in remove).strip()
+
+    def _is_broad_request(text: str, keyword: str) -> bool:
+        tokens = _tokenize(text)
+        return tokens == [keyword] or tokens == ["show", keyword] or tokens == ["plot", keyword]
+
+    def _best_feature_match_from_list(
+        query_phrase: str,
+        candidates: list[str],
+    ) -> list[str]:
+        """
+        Match a natural-language phrase against a restricted feature list.
+        Returns the single best matching candidate, or [].
+        """
+        query_phrase = _normalize_text(query_phrase).strip()
+        q_tokens = [t for t in _tokenize(query_phrase) if t not in {"show", "plot", "display"}]
+        q_set = set(q_tokens)
+
+        if not q_set:
+            return []
+
+        scored = []
+
+        for c in candidates:
+            c_norm = _normalize_text(c)
+            c_tokens = _tokenize(c_norm)
+            c_set = set(c_tokens)
+
+            if not c_set:
+                continue
+
+            overlap = q_set & c_set
+            if not overlap:
+                continue
+
+            # Base score: token overlap
+            score = len(overlap) / max(len(q_set), 1)
+
+            # Bonus if all requested tokens are found
+            if q_set.issubset(c_set):
+                score += 2.0
+
+            # Bonus for contiguous phrase match in normalized column
+            if query_phrase and query_phrase in c_norm:
+                score += 1.0
+
+            # Prefer shorter feature names when score is otherwise similar
+            score -= 0.001 * len(c_tokens)
+
+            scored.append((score, c))
+
+        if not scored:
+            return []
+
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [scored[0][1]]
+
+    # -------------------------------------------------
+    # Feature groups
+    # -------------------------------------------------
+    cost_cols = _ordered_existing(_cost_features())
+    consumption_cols = _ordered_existing(_component_features())
+    quality_cols = _ordered_existing(_quality_features())
+
+    # -------------------------------------------------
+    # Cost requests
+    # -------------------------------------------------
+    if "cost" in q_norm:
+        # Combined / total cost is a single feature
+        if any(
+            phrase in q_norm
+            for phrase in [
+                "combined cost",
+                "total cost",
+                "cost total",
+                "overall cost",
+            ]
+        ):
+            if "Combined_cost__€/T_" in df_columns:
+                return ["Combined_cost__€/T_"]
+
+        # Broad cost request => all cost variables
+        if _is_broad_request(q_norm, "cost"):
+            return cost_cols[:max_return] if max_return else cost_cols
+
+        # Specific cost request => search only inside cost variables
+        phrase = _remove_words(q_norm, ["cost", "costs"])
+        match = _best_feature_match_from_list(phrase, cost_cols)
+        if match:
+            return match
+
+        # fallback for any cost query
+        if cost_cols:
+            return cost_cols[:max_return] if max_return else cost_cols
+
+    # -------------------------------------------------
+    # Consumption requests
+    # -------------------------------------------------
+    if "consumption" in q_norm:
+        # Broad consumption request => all consumption/component variables
+        if _is_broad_request(q_norm, "consumption"):
+            return consumption_cols[:max_return] if max_return else consumption_cols
+
+        # Specific consumption request => search only inside consumption variables
+        phrase = _remove_words(q_norm, ["consumption", "consume", "consumed"])
+        match = _best_feature_match_from_list(phrase, consumption_cols)
+        if match:
+            return match
+
+        # fallback for any consumption query
+        if consumption_cols:
+            return consumption_cols[:max_return] if max_return else consumption_cols
+
+    # -------------------------------------------------
+    # Broad quality / strength request
+    # -------------------------------------------------
+    if any(k in q_norm for k in ["quality", "strength"]):
+        if not any(k in q_norm for k in ["sct", "burst", "cmt"]):
+            if quality_cols:
+                return quality_cols[:max_return] if max_return else quality_cols
+
+    # -------------------------------------------------
+    # Existing generic matching logic
+    # -------------------------------------------------
+    column_index = build_column_index(df_columns)
+    phrases = _split_requested_phrases(query)
+
+    selected: list[str] = []
+    llm_candidate_pool: list[str] = []
+
+    for phrase in phrases:
+        tokens = _tokenize(phrase)
+
+        strict_matches = _strict_match_phrase(phrase, column_index)
+        if strict_matches:
+            selected.extend(strict_matches)
+            continue
+
+        # Only use broad matching for single-word phrases
+        if len(tokens) == 1:
+            broad_matches = _broad_match_phrase(phrase, column_index)
+            llm_candidate_pool.extend(broad_matches[:max_candidates_for_llm])
+
+    # Deduplicate strict matches first
+    out: list[str] = []
+    seen = set()
+    for c in selected:
+        if c not in seen:
+            out.append(c)
+            seen.add(c)
+
+    if out:
+        return out[:max_return] if max_return else out
+
+    # LLM reranks only a shortlist
+    pool: list[str] = []
+    seen_pool = set()
+    for c in llm_candidate_pool:
+        if c not in seen_pool:
+            pool.append(c)
+            seen_pool.add(c)
+
+    if use_llm_fallback and pool:
+        llm_cols = _llm_rerank_candidates(
+            query=query,
+            candidate_columns=pool[:max_candidates_for_llm],
+            max_return=max_return,
+        )
+        if llm_cols:
+            return llm_cols
+
+    if pool:
+        return pool[:max_return] if max_return else pool
+    
+    generic_match = _best_generic_token_match(query, df_columns)
+    if generic_match:
+        return generic_match
+
+    # Conservative fallback
+    if "cost" in q_norm and cost_cols:
+        return cost_cols[:max_return] if max_return else cost_cols
+
+    return []
+
+
+def _best_generic_token_match(
+    query_phrase: str,
+    candidates: list[str],
+    max_return: int = 5,
+) -> list[str]:
+    """
+    Generic matcher for phrases like:
+        - "starch uptake"
+        - "steam pressure"
+        - "headbox consistency"
+
+    Returns:
+        - all variables matching ALL tokens (preferred)
+        - otherwise best-scoring matches
+
+    Designed to be robust to:
+        - extra words (grade, time, etc.)
+        - noisy queries
+    """
+
+    STOPWORDS = {
+        "show", "plot", "display", "for", "grade", "data",
+        "week", "month", "last", "this", "in", "on", "from", "to",
+        "january", "february", "march", "april", "may", "june",
+        "july", "august", "september", "october", "november", "december",
+    }
+
+    IGNORED_COLUMN_TOKENS = {
+        "mbs"
+    }
+
+    # ----------------------------
+    # Clean query tokens
+    # ----------------------------
+    q_tokens = [
+        t for t in _tokenize(_normalize_text(query_phrase))
+        if t not in STOPWORDS and not t.isdigit()
+    ]
+
+    q_set = set(q_tokens)
+
+    if not q_set:
+        return []
+
+    scored = []
+
+    # ----------------------------
+    # Score candidates
+    # ----------------------------
+    for c in candidates:
+        c_norm = _normalize_text(c)
+        c_tokens = [t for t in _tokenize(c_norm) if t not in IGNORED_COLUMN_TOKENS]
+        c_set = set(c_tokens)
+
+        if not c_set:
+            continue
+
+        overlap = q_set & c_set
+
+        if not overlap:
+            continue
+
+        # Score based on coverage
+        score = len(overlap) / len(q_set)
+
+        # Bonus if all tokens are present
+        if q_set.issubset(c_set):
+            score += 2.0
+
+        # Bonus for phrase match
+        if " ".join(q_tokens) in c_norm:
+            score += 1.0
+
+        # Prefer shorter / simpler names slightly
+        score -= 0.001 * len(c_tokens)
+
+        scored.append((score, c))
+
+    if not scored:
+        return []
+
+    # ----------------------------
+    # Sort candidates
+    # ----------------------------
+    scored.sort(key=lambda x: x[0], reverse=True)
+
+    # ----------------------------
+    # Prefer FULL token matches
+    # ----------------------------
+    full_matches = [
+        c for _, c in scored
+        if q_set.issubset(set(_tokenize(_normalize_text(c))))
+    ]
+
+    if full_matches:
+        return full_matches[:max_return]
+
+    # ----------------------------
+    # Otherwise return best score group
+    # ----------------------------
+    best_score = scored[0][0]
+
+    best_matches = [
+        c for score, c in scored
+        if abs(score - best_score) < 1e-9
+    ]
+
+    return best_matches[:max_return]
+
+def select_features_from_query_DEPRECATED(
     query: str,
     df_columns: List[str],
     use_llm_fallback: bool = False,
@@ -334,7 +692,13 @@ def load_turnup_data(force_reload: bool = False) -> pd.DataFrame:
         if not isinstance(df, pd.DataFrame):
             raise TypeError("_turnup_data(...) did not return a pandas DataFrame")
  
+        df["MBS_SCT_MD_L1"] = df.MBS_SCT_MD.shift(1)
+        df["MBS_SCT_CD_L1"] = df.MBS_SCT_CD.shift(1)
+        df["MBS_Burst_L1"] = df.MBS_Burst.shift(1)
+        df = df[1:]
+        
         df = df.copy()
+        
  
         if DEFAULT_TIME_COL in df.columns:
             df[DEFAULT_TIME_COL] = pd.to_datetime(df[DEFAULT_TIME_COL], errors="coerce")
@@ -463,101 +827,177 @@ def get_feature_snapshot(
 
 
 def build_process_plot(
-    df: pd.DataFrame,
-    columns: List[str],
-    time_col: str,
+    df,
+    columns,
+    time_col,
     secondary_axis: bool = False,
+    secondary_columns: list[str] | None = None,
 ):
     import plotly.graph_objects as go
     from plotly.subplots import make_subplots
+    import pandas as pd
 
-    if df.empty or not columns:
-        return None
+    secondary_columns = secondary_columns or []
 
-    df_plot = df[[time_col] + columns].copy().sort_values(time_col)
+    # ----------------------------
+    # Safety checks
+    # ----------------------------
+    if df is None or df.empty:
+        raise ValueError("Empty dataframe")
 
-    if not secondary_axis or len(columns) < 2:
+    if time_col not in df.columns:
+        raise ValueError(f"Time column '{time_col}' not found")
+
+    # keep only valid columns
+    columns = [c for c in columns if c in df.columns]
+    secondary_columns = [c for c in secondary_columns if c in columns]
+
+    if not columns:
+        raise ValueError("No valid columns to plot")
+
+    # ----------------------------
+    # Sort by time
+    # ----------------------------
+    df_plot = df.sort_values(time_col).copy()
+
+    # ----------------------------
+    # Label cleaner
+    # ----------------------------
+    def clean_label(col: str) -> str:
+        return (
+            col
+            .replace("__€/T_", " €/t")
+            .replace("__g/T_", " g/t")
+            .replace("__kg/T_", " kg/t")
+            .replace("__kWh/T_", " kWh/t")
+            .replace("_", " ")
+        )
+
+    # ----------------------------
+    # Case 1: No secondary axis
+    # ----------------------------
+    if not secondary_axis or not secondary_columns:
         fig = go.Figure()
+
         for col in columns:
             fig.add_trace(
                 go.Scatter(
                     x=df_plot[time_col],
                     y=df_plot[col],
                     mode="markers",
-                    name=col,
+                    name=clean_label(col),
+                    showlegend=True,
                 )
             )
-        fig.update_layout(title="Process Data Overview")
+
+        fig.update_layout(
+            title="Process Data",
+            xaxis_title="Time",
+            yaxis_title="Value",
+            showlegend=True,
+            template="plotly_white",
+        )
+
         return fig
 
-    # first column primary, second column secondary
+    # ----------------------------
+    # Case 2: With secondary axis
+    # ----------------------------
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-    fig.add_trace(
-        go.Scatter(
-            x=df_plot[time_col],
-            y=df_plot[columns[0]],
-            mode="markers",
-            name=columns[0],
-        ),
-        secondary_y=False,
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=df_plot[time_col],
-            y=df_plot[columns[1]],
-            mode="markers",
-            name=columns[1],
-        ),
-        secondary_y=True,
-    )
 
-    # any additional columns go to primary by default
-    for col in columns[2:]:
+    for col in columns:
+        is_secondary = col in secondary_columns
+
         fig.add_trace(
             go.Scatter(
                 x=df_plot[time_col],
                 y=df_plot[col],
                 mode="markers",
-                name=col,
+                name=clean_label(col),
+                showlegend=True,
             ),
-            secondary_y=False,
+            secondary_y=is_secondary,
         )
 
-    fig.update_layout(title="Process Data Overview")
+    # ----------------------------
+    # Axis labels (optional improvement)
+    # ----------------------------
+    primary_cols = [c for c in columns if c not in secondary_columns]
+
+    primary_label = ", ".join([clean_label(c) for c in primary_cols[:2]])
+    secondary_label = ", ".join([clean_label(c) for c in secondary_columns[:2]])
+
+    fig.update_layout(
+        title="Process Data",
+        xaxis_title="Time",
+        yaxis_title=primary_label if primary_label else "Value",
+        yaxis2_title=secondary_label if secondary_label else "Secondary",
+        showlegend=True,
+        template="plotly_white",
+    )
+
     return fig
 
 def parse_plot_preferences(query: str) -> dict:
-    q = query.lower()
-
-    return {
-        "secondary_axis": "secondary axis" in q or "second axis" in q,
-    }
-
-def extract_negative_terms(query: str) -> List[str]:
     import re
 
     q = query.lower()
 
+    secondary_axis = (
+        "secondary axis" in q
+        or "second axis" in q
+        or "secondary y" in q
+        or "second y" in q
+    )
+
+    secondary_phrase = None
+
     patterns = [
-        r"without ([a-z0-9_ ]+)",
-        r"excluding ([a-z0-9_ ]+)",
-        r"exclude ([a-z0-9_ ]+)",
-        r"not ([a-z0-9_ ]+)",
+        r"with\s+(.+?)\s+on\s+(?:the\s+)?secondary\s+axis",
+        r"with\s+(.+?)\s+on\s+(?:the\s+)?second\s+axis",
+        r"(.+?)\s+on\s+(?:the\s+)?secondary\s+axis",
+        r"secondary\s+axis\s+(.+)$",
+        r"secondary\s+y\s+(.+)$",
+    ]
+
+    for pat in patterns:
+        m = re.search(pat, q)
+        if m:
+            secondary_phrase = m.group(1).strip()
+            secondary_phrase = re.sub(r"^(show|plot|display)\s+", "", secondary_phrase).strip()
+            break
+
+    return {
+        "secondary_axis": secondary_axis,
+        "secondary_phrase": secondary_phrase,
+    }
+
+def extract_negative_terms(query: str) -> list[str]:
+    import re
+
+    q = _normalize_text(query or "")
+
+    patterns = [
+        r"\bnot\s+(.+?)(?:\s+for\s+grade|\s+in\s+|\s+on\s+|\s+with\s+|$)",
+        r"\bwithout\s+(.+?)(?:\s+for\s+grade|\s+in\s+|\s+on\s+|\s+with\s+|$)",
+        r"\bexcluding\s+(.+?)(?:\s+for\s+grade|\s+in\s+|\s+on\s+|\s+with\s+|$)",
+        r"\bexclude\s+(.+?)(?:\s+for\s+grade|\s+in\s+|\s+on\s+|\s+with\s+|$)",
     ]
 
     terms = []
 
-    for pattern in patterns:
-        matches = re.findall(pattern, q)
-        for m in matches:
-            # split by "and" or comma inside the phrase
-            parts = re.split(r",|\band\b", m)
-            for p in parts:
-                p = p.strip()
-                if p:
-                    terms.append(p)
+    for pat in patterns:
+        m = re.search(pat, q)
+        if not m:
+            continue
 
-    return terms
+        raw = m.group(1).strip()
+
+        for t in _tokenize(raw):
+            if t not in {"and", "or", "the"}:
+                terms.append(t)
+
+    return list(dict.fromkeys(terms))
 
 def filter_columns_by_negative_terms(
     columns: List[str],
@@ -578,5 +1018,53 @@ def filter_columns_by_negative_terms(
             continue
 
         out.append(col)
+
+    return out
+
+def remove_secondary_axis_clause(query: str) -> str:
+    import re
+
+    q = query
+
+    patterns = [
+        r"\s+with\s+.+?\s+on\s+(?:the\s+)?secondary\s+axis",
+        r"\s+with\s+.+?\s+on\s+(?:the\s+)?second\s+axis",
+        r"\s+with\s+.+?\s+on\s+secondary\s+y",
+        r"\s+with\s+.+?\s+on\s+second\s+y",
+    ]
+
+    for pat in patterns:
+        q = re.sub(pat, "", q, flags=re.IGNORECASE)
+
+    return q.strip()
+
+def remove_negative_terms_clause(query: str) -> str:
+    import re
+
+    q = query or ""
+
+    patterns = [
+        r"\s+not\s+.+$",
+        r"\s+without\s+.+$",
+        r"\s+excluding\s+.+$",
+        r"\s+exclude\s+.+$",
+    ]
+
+    for pat in patterns:
+        q = re.sub(pat, "", q, flags=re.IGNORECASE)
+
+    return q.strip()
+def filter_negative_columns(cols: list[str], query: str) -> list[str]:
+    negative_terms = extract_negative_terms(query)
+
+    if not negative_terms:
+        return cols
+
+    out = []
+    for c in cols:
+        cn = _normalize_text(c)
+        if any(term in cn for term in negative_terms):
+            continue
+        out.append(c)
 
     return out

@@ -14,6 +14,144 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 import pandas as pd
 
+try:
+    import recommendation_config as rc
+except Exception:
+    rc = None
+
+
+def _cfg(name: str, default):
+    if rc is None:
+        return default
+    return getattr(rc, name, default)
+
+
+def _recommendation_feature_source() -> str:
+    return str(
+        _cfg("RECOMMENDATION_FEATURE_SOURCE", "drivers")
+    ).strip().lower()
+
+
+def _action_limit_count(n: int) -> int:
+    limit = _cfg("RECOMMENDATION_ACTION_LIMIT", 3)
+
+    if n <= 0:
+        return 0
+
+    if limit is None:
+        return n
+
+    if isinstance(limit, str) and limit.strip().lower() == "all":
+        return n
+
+    try:
+        limit = int(limit)
+    except Exception:
+        limit = 3
+
+    return max(1, min(limit, n))
+
+def _top_frac_count(n: int, frac) -> int:
+    if n <= 0:
+        return 0
+
+    try:
+        frac = float(frac)
+    except Exception:
+        frac = 1.0
+
+    frac = max(0.0, min(1.0, frac))
+
+    if frac >= 1.0:
+        return n
+
+    return max(1, int(round(n * frac)))
+
+
+def _rag_limit_count(n: int) -> int:
+    limit = _cfg("RECOMMENDATION_RAG_VARIABLE_LIMIT", "all")
+
+    if limit is None:
+        return n
+
+    if isinstance(limit, str) and limit.strip().lower() == "all":
+        return n
+
+    try:
+        limit = int(limit)
+    except Exception:
+        return n
+
+    return max(1, min(limit, n))
+
+
+def _cfg(name: str, default):
+    if rc is None:
+        return default
+    return getattr(rc, name, default)
+
+
+def _recommendation_feature_source() -> str:
+    return str(
+        _cfg("RECOMMENDATION_FEATURE_SOURCE", "drivers")
+    ).strip().lower()
+
+
+def _top_frac_count(n: int, frac) -> int:
+    if n <= 0:
+        return 0
+
+    try:
+        frac = float(frac)
+    except Exception:
+        frac = 1.0
+
+    frac = max(0.0, min(1.0, frac))
+
+    if frac >= 1.0:
+        return n
+
+    return max(1, int(round(n * frac)))
+
+
+def _rag_limit_count(n: int) -> int:
+    limit = _cfg("RECOMMENDATION_RAG_VARIABLE_LIMIT", "all")
+
+    if limit is None:
+        return n
+
+    if isinstance(limit, str) and limit.strip().lower() == "all":
+        return n
+
+    try:
+        limit = int(limit)
+    except Exception:
+        return n
+
+    return max(1, min(limit, n))
+
+
+ALLOWED_RECOMMENDATION_FEATURE_SOURCES = {"drivers", "model", "auto"}
+
+
+def _get_recommendation_feature_source() -> str:
+    try:
+        import recommendation_config as rc
+        source = getattr(rc, "RECOMMENDATION_FEATURE_SOURCE", "drivers")
+    except Exception:
+        source = "drivers"
+
+    source = str(source or "drivers").strip().lower()
+
+    if source not in ALLOWED_RECOMMENDATION_FEATURE_SOURCES:
+        raise ValueError(
+            "RECOMMENDATION_FEATURE_SOURCE must be one of "
+            f"{sorted(ALLOWED_RECOMMENDATION_FEATURE_SOURCES)}, got {source!r}"
+        )
+
+    return source
+
+
 def _pick_lang(lang: Optional[str]) -> str:
     return "de" if lang == "de" else "en"
 
@@ -27,8 +165,11 @@ def _normalize_component(cost_component: Optional[str]) -> str:
 
 def _extract_focus(
     diagnosis_result: Optional[Dict[str, Any]],
-    cost_driver_result: Dict[str, Any],
+    cost_driver_result: Optional[Dict[str, Any]],
 ) -> Dict[str, Any]:
+
+    cost_driver_result = cost_driver_result or {}
+
     return {
         "grade": cost_driver_result.get("grade"),
         "cost_component": cost_driver_result.get("cost_component"),
@@ -38,15 +179,190 @@ def _extract_focus(
 
 def _extract_top_driver_records(
     shapley_contrib: pd.DataFrame,
-    top_n: int = 3,
+    top_n: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
+
     if shapley_contrib is None or shapley_contrib.empty:
         return []
+
     df = shapley_contrib.copy()
+
     if "variable" not in df.columns or "contribution" not in df.columns:
         return []
-    df = df.sort_values("contribution", ascending=False).head(top_n)
-    return df.to_dict(orient="records")
+
+    df = df.sort_values("contribution", ascending=False)
+
+    frac = _cfg("RECOMMENDATION_COST_DRIVER_TOP_FRAC", 1.0)
+    n_keep = _top_frac_count(len(df), frac)
+
+    df = df.head(n_keep)
+
+    if top_n is not None:
+        df = df.head(top_n)
+
+    records = df.to_dict(orient="records")
+
+    for r in records:
+        r["candidate_source"] = "drivers"
+
+    return records
+
+def _extract_top_model_feature_records(
+    shap_result: Optional[Dict[str, Any]],
+    top_n: Optional[int] = None,
+) -> List[Dict[str, Any]]:
+
+    if shap_result is None or not isinstance(shap_result, dict):
+        return []
+
+    shap_df = shap_result.get("data_frame", pd.DataFrame())
+
+    if shap_df is None or shap_df.empty:
+        return []
+
+    if not {"feature", "shap_value"}.issubset(shap_df.columns):
+        return []
+
+    summary = (
+        shap_df.copy()
+        .assign(
+            shap_value=lambda x: pd.to_numeric(x["shap_value"], errors="coerce"),
+        )
+        .dropna(subset=["feature", "shap_value"])
+        .assign(abs_shap=lambda x: x["shap_value"].abs())
+        .groupby("feature", as_index=False)
+        .agg(
+            mean_abs_shap=("abs_shap", "mean"),
+            mean_signed_shap=("shap_value", "mean"),
+        )
+        .sort_values("mean_abs_shap", ascending=False)
+    )
+
+    frac = _cfg("RECOMMENDATION_SHAP_TOP_FRAC", 1.0)
+    n_keep = _top_frac_count(len(summary), frac)
+
+    summary = summary.head(n_keep)
+
+    if top_n is not None:
+        summary = summary.head(top_n)
+
+    records = []
+
+    for _, row in summary.iterrows():
+        records.append(
+            {
+                "variable": row["feature"],
+                "contribution": float(row["mean_signed_shap"]),
+                "mean_abs_shap": float(row["mean_abs_shap"]),
+                "mean_signed_shap": float(row["mean_signed_shap"]),
+                "candidate_source": "model",
+            }
+        )
+
+    return records
+
+def _extract_shap_summary(shap_result: Optional[Dict[str, Any]]) -> pd.DataFrame:
+    """
+    Return one row per model feature with:
+    - feature
+    - mean_abs_shap
+    - mean_signed_shap
+    """
+    if shap_result is None or not isinstance(shap_result, dict):
+        return pd.DataFrame(columns=["feature", "mean_abs_shap", "mean_signed_shap"])
+
+    shap_df = shap_result.get("data_frame", pd.DataFrame())
+
+    if shap_df is None or shap_df.empty:
+        raw = shap_result.get("raw")
+        if isinstance(raw, dict):
+            shap_df = raw.get("data_frame", pd.DataFrame())
+
+    if shap_df is None or shap_df.empty:
+        return pd.DataFrame(columns=["feature", "mean_abs_shap", "mean_signed_shap"])
+
+    df = shap_df.copy()
+
+    if {"feature", "shap_value"}.issubset(df.columns):
+        df["shap_value"] = pd.to_numeric(df["shap_value"], errors="coerce")
+
+        out = (
+            df.dropna(subset=["feature", "shap_value"])
+            .assign(abs_shap=lambda x: x["shap_value"].abs())
+            .groupby("feature", as_index=False)
+            .agg(
+                mean_abs_shap=("abs_shap", "mean"),
+                mean_signed_shap=("shap_value", "mean"),
+            )
+            .sort_values("mean_abs_shap", ascending=False)
+            .reset_index(drop=True)
+        )
+
+        return out
+
+    return pd.DataFrame(columns=["feature", "mean_abs_shap", "mean_signed_shap"])
+
+
+def _extract_top_model_feature_records(
+    shap_result: Optional[Dict[str, Any]],
+    top_n: int = 7,
+) -> List[Dict[str, Any]]:
+    summary = _extract_shap_summary(shap_result)
+
+    if summary.empty:
+        return []
+
+    records = []
+
+    for _, row in summary.head(top_n).iterrows():
+        records.append(
+            {
+                "variable": row["feature"],
+                "contribution": float(row["mean_signed_shap"]),
+                "mean_abs_shap": float(row["mean_abs_shap"]),
+                "mean_signed_shap": float(row["mean_signed_shap"]),
+                "candidate_source": "model",
+            }
+        )
+
+    return records
+
+
+def _select_candidate_records(
+    cost_driver_result: Dict[str, Any],
+    shap_result: Optional[Dict[str, Any]],
+    top_n: int,
+) -> tuple[List[Dict[str, Any]], str]:
+    cost_driver_result = cost_driver_result or {}
+    shap_result = shap_result or {}
+
+    source = _get_recommendation_feature_source()
+    pool_n = _candidate_pool_size(top_n)
+
+    driver_records = _extract_top_driver_records(
+        shapley_contrib=cost_driver_result.get("shapley_contrib", pd.DataFrame()),
+        top_n=pool_n,
+    )
+
+    for r in driver_records:
+        r.setdefault("candidate_source", "drivers")
+
+    model_records = _extract_top_model_feature_records(
+        shap_result=shap_result,
+        top_n=pool_n,
+    )
+
+    if source == "drivers":
+        return driver_records, "drivers"
+
+    if source == "model":
+        return model_records, "model"
+
+    # auto
+    if driver_records:
+        return driver_records, "drivers"
+
+    return model_records, "model"
 
 def _differences_by_variable(
     extreme_cluster_differences: pd.DataFrame,
@@ -292,6 +608,57 @@ def _build_recommendation_lines_de(
 
     return lines
 
+def _records_from_cost_driver_variables(
+    cost_driver_result: Dict[str, Any],
+    shapley_contrib: Optional[pd.DataFrame] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Build recommendation candidate records from the same variables used by
+    the cost-driver/knowledge step.
+
+    This keeps RAG variables and final action variables aligned.
+    """
+    cost_driver_result = cost_driver_result or {}
+
+    variables = cost_driver_result.get("top_driver_variables", []) or []
+
+    if not variables:
+        return _extract_top_driver_records(
+            shapley_contrib=shapley_contrib,
+            top_n=None,
+        )
+
+    contrib_map = {}
+
+    if shapley_contrib is not None and not shapley_contrib.empty:
+        df = shapley_contrib.copy()
+
+        if {"variable", "contribution"}.issubset(df.columns):
+            df["abs_contribution"] = pd.to_numeric(
+                df["contribution"],
+                errors="coerce",
+            ).abs()
+
+            df = df.sort_values("abs_contribution", ascending=False)
+
+            for _, row in df.iterrows():
+                v = row["variable"]
+                if v not in contrib_map:
+                    contrib_map[v] = row.get("contribution")
+
+    records = []
+
+    for v in variables:
+        records.append(
+            {
+                "variable": v,
+                "contribution": contrib_map.get(v),
+                "candidate_source": "drivers",
+            }
+        )
+
+    return records
+
 def build_recommendations(
     cost_driver_result: Dict[str, Any],
     diagnosis_result: Optional[Dict[str, Any]] = None,
@@ -306,6 +673,9 @@ def build_recommendations(
     """
     lang = _pick_lang(lang)
 
+    cost_driver_result = cost_driver_result or {}
+    shap_result = shap_result or {}
+
     shapley_contrib = cost_driver_result.get("shapley_contrib", pd.DataFrame())
     extreme_cluster_differences = cost_driver_result.get("extreme_cluster_differences", pd.DataFrame())
     knowledge_text = _extract_knowledge_text(knowledge_result)
@@ -315,10 +685,41 @@ def build_recommendations(
         cost_driver_result=cost_driver_result,
     )
 
-    top_driver_records = _extract_top_driver_records(
-        shapley_contrib=shapley_contrib,
-        top_n=max(top_n, 7), # broader pool before RAG filtering
-    )
+    source = _recommendation_feature_source()
+
+    effective_feature_source = source
+
+    if source == "model":
+        top_driver_records = _extract_top_model_feature_records(
+            shap_result=shap_result,
+            top_n=None,
+        )
+
+    elif source == "drivers":
+        top_driver_records = _records_from_cost_driver_variables(
+            cost_driver_result=cost_driver_result,
+            shapley_contrib=shapley_contrib,
+        )
+
+    else:
+        # auto
+        top_driver_records = _records_from_cost_driver_variables(
+            cost_driver_result=cost_driver_result,
+            shapley_contrib=shapley_contrib,
+        )
+
+        effective_feature_source = "drivers"
+
+        if not top_driver_records:
+            top_driver_records = _extract_top_model_feature_records(
+                shap_result=shap_result,
+                top_n=None,
+            )
+
+            effective_feature_source = "model"
+
+    rag_n = _rag_limit_count(len(top_driver_records))
+    top_driver_records = top_driver_records[:rag_n]
 
     #print("top_driver_records",top_driver_records)
 
@@ -353,6 +754,24 @@ def build_recommendations(
         actionability_map = _extract_actionability_map(knowledge_text) # fallback
 
     # print("actionability_map",actionability_map)
+    # TOREMOVE
+    # print("\n--- CLASSIFICATION MAP DEBUG ---")
+    # print("knowledge_text preview:")
+    # print(str(knowledge_text)[:1500])
+
+    # print("\nactionability_map type:", type(actionability_map))
+    # print("actionability_map length:", len(actionability_map))
+    # print("actionability_map keys:")
+    # for k in actionability_map.keys():
+    #     print(repr(k))
+
+    # print("\naction variables:")
+    # for r in top_driver_records:
+    #     v = str(r.get("variable"))
+    #     print(repr(v), "direct_match:", v in actionability_map)
+
+    # print("--- END CLASSIFICATION MAP DEBUG ---\n")
+
 
     def _normalize_direction_from_knowledge(direction_text: Optional[str]) -> Optional[str]:
         if not direction_text:
@@ -495,18 +914,28 @@ def build_recommendations(
             diff_info=diff_map.get(variable),
         )
 
-        # SHAP enrichment
-        shap_mean_abs = shap_abs_map.get(variable, 0.0)
-        shap_mean_signed = shap_signed_map.get(variable, 0.0)
+        action["shap_mean_abs"] = rec.get(
+            "mean_abs_shap",
+            shap_abs_map.get(variable, 0.0),
+        )
 
-        action["shap_mean_abs"] = shap_mean_abs
-        action["shap_mean_signed"] = shap_mean_signed
+        action["shap_mean_signed"] = rec.get(
+            "mean_signed_shap",
+            shap_signed_map.get(variable, 0.0),
+        )
+
+        # SHAP enrichment
+        shap_mean_abs = action["shap_mean_abs"]
+        shap_mean_signed = action["shap_mean_signed"]
 
         contrib_abs = abs(contribution) if contribution is not None else 0.0
         analytics_priority = contrib_abs * shap_mean_abs
 
         # Knowledge enrichment
-        ka = actionability_map.get(variable, {})
+        ka = _get_actionability_for_variable(
+            variable,
+            actionability_map,
+        )
         action["classification"] = ka.get("classification")
         action["engineering_reason"] = ka.get("engineering_reason")
         action["recommended_direction_from_knowledge"] = ka.get("recommended_direction")
@@ -571,6 +1000,23 @@ def build_recommendations(
 
         actions.append(action)
 
+    #TOREMOVE
+    # print("\n" + "=" * 100)
+    # print("RECOMMENDATION DEBUG: ACTIONS CREATED BEFORE FILTERING")
+    # print("=" * 100)
+
+    # for a in actions:
+    #     print(
+    #         a.get("variable"),
+    #         "| classification:", a.get("classification"),
+    #         "| confidence:", a.get("confidence"),
+    #         "| recommendable:", _is_recommendable(a.get("classification")),
+    #         "| priority_score_final:", a.get("priority_score_final"),
+    #         "| suggested_intervention:", a.get("suggested_intervention") is not None,
+    #     )
+
+    # print("=" * 100 + "\n")
+
     # ----------------------------
     # Filter / rerank using knowledge
     # ----------------------------
@@ -589,7 +1035,8 @@ def build_recommendations(
         reverse=True,
     )
 
-    actions = actions[:top_n]
+    action_limit = _action_limit_count(len(actions))
+    actions = actions[:action_limit]
 
     suggested_interventions = [
         a["suggested_intervention"]
@@ -649,7 +1096,9 @@ def build_recommendations(
         "diagnosis_result": diagnosis_result,
         "shap_result": shap_result,
         "cost_driver_result": cost_driver_result,
+        "recommendation_feature_source": source,
     }
+
 
 def build_knowledge_query_from_drivers(
     cost_driver_result: Dict[str, Any],
@@ -658,39 +1107,129 @@ def build_knowledge_query_from_drivers(
     import pandas as pd
     import json
 
+    cost_driver_result = cost_driver_result or {}
+    shap_result = shap_result or {}
+
     component = cost_driver_result.get("cost_component")
     grade = cost_driver_result.get("grade")
+
+    source = _get_recommendation_feature_source()
+
     variables = cost_driver_result.get("top_driver_variables", [])
-    diff_df = cost_driver_result.get("extreme_cluster_differences", pd.DataFrame())
+    diff_df = cost_driver_result.get(
+        "extreme_cluster_differences",
+        pd.DataFrame(),
+    )
 
     candidate_rows = []
-    if diff_df is not None and not diff_df.empty:
-        diff_df = diff_df.copy()
 
-        if variables:
-            diff_df = diff_df[diff_df["variable"].isin(variables)].copy()
+    # ------------------------------------------------------------
+    # Candidate variables from model SHAP
+    # ------------------------------------------------------------
+    if source == "model":
+        model_records = _extract_top_model_feature_records(
+            shap_result=shap_result,
+            top_n=None,
+        )
 
-        for _, row in diff_df.iterrows():
+        for rec in model_records:
             candidate_rows.append(
                 {
-                    "variable": row["variable"],
-                    "baseline_mean": None if pd.isna(row["baseline_mean"]) else float(row["baseline_mean"]),
-                    "target_mean": None if pd.isna(row["target_mean"]) else float(row["target_mean"]),
-                    "delta": None if pd.isna(row["delta"]) else float(row["delta"]),
+                    "variable": rec["variable"],
+                    "mean_abs_shap": rec.get("mean_abs_shap"),
+                    "mean_signed_shap": rec.get("mean_signed_shap"),
+                    "candidate_source": "model",
                 }
             )
 
-    if not candidate_rows and variables:
-        candidate_rows = [{"variable": v} for v in variables]
+    # ------------------------------------------------------------
+    # Candidate variables from cost drivers
+    # ------------------------------------------------------------
+    else:
+        if diff_df is not None and not diff_df.empty:
+            diff_df = diff_df.copy()
 
+            if variables:
+                diff_df = diff_df[
+                    diff_df["variable"].isin(variables)
+                ].copy()
+
+            for _, row in diff_df.iterrows():
+                candidate_rows.append(
+                    {
+                        "variable": row["variable"],
+                        "baseline_mean": (
+                            None
+                            if pd.isna(row.get("baseline_mean"))
+                            else float(row.get("baseline_mean"))
+                        ),
+                        "target_mean": (
+                            None
+                            if pd.isna(row.get("target_mean"))
+                            else float(row.get("target_mean"))
+                        ),
+                        "delta": (
+                            None
+                            if pd.isna(row.get("delta"))
+                            else float(row.get("delta"))
+                        ),
+                        "candidate_source": "drivers",
+                    }
+                )
+
+        if not candidate_rows and variables:
+            candidate_rows = [
+                {
+                    "variable": v,
+                    "candidate_source": "drivers",
+                }
+                for v in variables
+            ]
+
+        # auto fallback to model SHAP if no driver candidates exist
+        if source == "auto" and not candidate_rows:
+            model_records = _extract_top_model_feature_records(
+                shap_result=shap_result,
+                top_n=None,
+            )
+
+            for rec in model_records:
+                candidate_rows.append(
+                    {
+                        "variable": rec["variable"],
+                        "mean_abs_shap": rec.get("mean_abs_shap"),
+                        "mean_signed_shap": rec.get("mean_signed_shap"),
+                        "candidate_source": "model",
+                    }
+                )
+
+    # ------------------------------------------------------------
+    # Enrich candidates with SHAP values when available
+    # ------------------------------------------------------------
     shap_map = {}
 
-    if shap_result is not None and isinstance(shap_result, dict):
+    shap_df = None
+    if isinstance(shap_result, dict):
         shap_df = shap_result.get("data_frame", pd.DataFrame())
 
-        if shap_df is not None and not shap_df.empty:
+        if (
+            shap_df is None
+            or shap_df.empty
+        ) and isinstance(shap_result.get("raw"), dict):
+            shap_df = shap_result["raw"].get("data_frame", pd.DataFrame())
+
+    if shap_df is not None and not shap_df.empty:
+        if {"feature", "shap_value"}.issubset(shap_df.columns):
             shap_summary = (
-                shap_df.assign(abs_shap=lambda x: x["shap_value"].abs())
+                shap_df.copy()
+                .assign(
+                    shap_value=lambda x: pd.to_numeric(
+                        x["shap_value"],
+                        errors="coerce",
+                    )
+                )
+                .dropna(subset=["feature", "shap_value"])
+                .assign(abs_shap=lambda x: x["shap_value"].abs())
                 .groupby("feature", as_index=False)
                 .agg(
                     mean_signed_shap=("shap_value", "mean"),
@@ -705,15 +1244,24 @@ def build_knowledge_query_from_drivers(
                 }
 
     enriched_candidates = []
+
     for row in candidate_rows:
         variable = row["variable"]
-        shap_info = shap_map.get(variable, None)
+        shap_info = shap_map.get(variable)
 
         out_row = dict(row)
+
         if shap_info is not None:
             out_row["mean_abs_shap"] = shap_info["mean_abs_shap"]
             out_row["mean_signed_shap"] = shap_info["mean_signed_shap"]
+
         enriched_candidates.append(out_row)
+
+    # ------------------------------------------------------------
+    # Final hard limit before sending variables to RAG
+    # ------------------------------------------------------------
+    rag_n = _rag_limit_count(len(enriched_candidates))
+    enriched_candidates = enriched_candidates[:rag_n]
 
     candidates_json = json.dumps(enriched_candidates, indent=2)
 
@@ -757,6 +1305,7 @@ Candidate variables:
 """.strip()
 
     return query
+
 
 def _extract_knowledge_text(knowledge_result: Optional[Dict[str, Any]]) -> str:
     if knowledge_result is None:
@@ -954,7 +1503,95 @@ def _strip_json_code_fence(text: str) -> str:
 
     return s
 
-def _extract_actionability_map_from_json(knowledge_text: str):
+def _extract_actionability_map_from_json(text: str):
+    import re
+    import json
+
+    #print("knowledge_text length:", len(str(text)))
+    #print(str(text)[:3000])
+
+    if not text:
+        return {}
+
+    s = str(text)
+
+    # Remove markdown fences but keep content
+    s = re.sub(r"```json", "", s, flags=re.IGNORECASE)
+    s = re.sub(r"```", "", s)
+    s = s.strip()
+
+    # ------------------------------------------------------------
+    # 1) Try strict JSON first
+    # ------------------------------------------------------------
+    try:
+        first = s.find("{")
+        last = s.rfind("}")
+
+        if first >= 0 and last > first:
+            payload = json.loads(s[first:last + 1])
+            variables = payload.get("variables", [])
+
+            out = {}
+            for item in variables:
+                if not isinstance(item, dict):
+                    continue
+
+                variable = item.get("variable")
+                if not variable:
+                    continue
+
+                out[str(variable)] = {
+                    "classification": item.get("classification"),
+                    "recommended_direction": item.get("recommended_direction"),
+                    "confidence": item.get("confidence"),
+                    "engineering_reason": item.get("engineering_reason"),
+                }
+
+            if out:
+                return out
+
+    except Exception as e:
+        print("Strict JSON parsing failed:", e)
+
+    # ------------------------------------------------------------
+    # 2) Very tolerant fallback:
+    # parse every object-like block containing "variable"
+    # ------------------------------------------------------------
+    out = {}
+
+    object_blocks = re.findall(
+        r"\{[^{}]*?\"variable\"[^{}]*?\}",
+        s,
+        flags=re.DOTALL,
+    )
+
+    print("Fallback object blocks found:", len(object_blocks))
+
+    def _field(block: str, name: str):
+        m = re.search(
+            rf'"{re.escape(name)}"\s*:\s*"([^"]*)"',
+            block,
+            flags=re.DOTALL,
+        )
+        return m.group(1).strip() if m else None
+
+    for block in object_blocks:
+        variable = _field(block, "variable")
+        if not variable:
+            continue
+
+        out[str(variable)] = {
+            "classification": _field(block, "classification"),
+            "recommended_direction": _field(block, "recommended_direction"),
+            "confidence": _field(block, "confidence"),
+            "engineering_reason": _field(block, "engineering_reason"),
+        }
+
+    print("Fallback parsed variables:", list(out.keys()))
+
+    return out
+
+def _extract_actionability_map_from_jsonDEPRECATED(knowledge_text: str):
     import json
 
     if not knowledge_text:
@@ -983,3 +1620,29 @@ def _extract_actionability_map_from_json(knowledge_text: str):
         }
 
     return out
+
+def _norm_var_name(v: str) -> str:
+    return (
+        str(v)
+        .strip()
+        .lower()
+        .replace(" ", "")
+        .replace("_", "")
+        .replace("-", "")
+    )
+
+
+def _get_actionability_for_variable(
+    variable: str,
+    actionability_map: Dict[str, Any],
+) -> Dict[str, Any]:
+    if variable in actionability_map:
+        return actionability_map[variable]
+
+    nv = _norm_var_name(variable)
+
+    for k, value in actionability_map.items():
+        if _norm_var_name(k) == nv:
+            return value
+
+    return {}
