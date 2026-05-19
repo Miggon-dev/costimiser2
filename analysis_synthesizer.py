@@ -17,7 +17,67 @@ from __future__ import annotations
  
 from typing import Any, Dict, List
  
- 
+
+
+def _extract_quality_constraint_summary(execution_out: Dict[str, Any]) -> str:
+    """
+    Build a short text summary of optimizer quality/strength constraints.
+    """
+
+    optimization_result = None
+
+    for step in execution_out.get("step_results", []):
+        result = step.get("result", {})
+        if isinstance(result, dict) and result.get("optimization_result") is not None:
+            optimization_result = result.get("optimization_result")
+            break
+
+    if not isinstance(optimization_result, dict):
+        return ""
+
+    constraints = optimization_result.get("quality_constraints") or []
+    current_eval = optimization_result.get("current_quality_evaluations") or []
+    optimized_eval = optimization_result.get("optimized_quality_evaluations") or []
+
+    if not constraints and not current_eval and not optimized_eval:
+        return ""
+
+    lines = ["Strength / quality constraints"]
+
+    if optimized_eval:
+        for e in optimized_eval:
+            metric = e.get("metric")
+            operator = e.get("operator")
+            threshold = e.get("threshold")
+            predicted = e.get("predicted_value")
+            satisfied = e.get("satisfied")
+
+            if predicted is None:
+                lines.append(
+                    f"- {metric} {operator} {threshold}: could not be evaluated."
+                )
+            else:
+                status = "satisfied" if satisfied else "NOT satisfied"
+                lines.append(
+                    f"- {metric} {operator} {threshold}: optimized prediction = {predicted:.4f} ({status})."
+                )
+
+    if current_eval:
+        lines.append("Current reference quality:")
+        for e in current_eval:
+            metric = e.get("metric")
+            predicted = e.get("predicted_value")
+            if predicted is not None:
+                lines.append(f"- {metric}: current prediction = {predicted:.4f}")
+
+    if optimization_result.get("quality_constraints_satisfied") is not None:
+        if optimization_result.get("quality_constraints_satisfied"):
+            lines.append("All requested strength / quality constraints were satisfied.")
+        else:
+            lines.append("At least one requested strength / quality constraint was not satisfied.")
+
+    return "\n".join(lines)
+
 def _extract_text(step_result: Dict[str, Any]) -> str:
     """
     Extract human-readable text from one executed step.
@@ -424,6 +484,11 @@ def synthesize_execution(execution_out: Dict[str, Any]) -> Dict[str, Any]:
  
     blocks = _collect_blocks_from_steps(step_results)
 
+    quality_text = _extract_quality_constraint_summary(execution_out)
+
+    if quality_text:
+        text = text + "\n\n---\n\n" + quality_text
+        
     return {
         "type": "orchestrated",
         "text": text,

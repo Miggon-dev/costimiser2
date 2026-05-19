@@ -1,0 +1,251 @@
+<mxfile host="app.diagrams.net" modified="2026-05-15T11:00:00.000Z" agent="ChatGPT" version="24.7.17">
+  <diagram id="papermaking-ai-arch" name="Architecture">
+    <mxGraphModel dx="1800" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1080" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- DATA SOURCES -->
+        <mxCell id="title1" value="Data Sources" style="swimlane;fontStyle=1;horizontal=1;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="20" y="40" width="260" height="180" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="phd" value="PHD&#xa;Process Time Series" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="title1">
+          <mxGeometry x="20" y="50" width="200" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="optivision" value="Optivision&#xa;Lab Values" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="title1">
+          <mxGeometry x="20" y="110" width="200" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- INGESTION -->
+        <mxCell id="title2" value="Data Ingestion &amp; Processing" style="swimlane;fontStyle=1;horizontal=1;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="340" y="40" width="320" height="260" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="cron_collect" value="Cronjobs&#xa;Collect Data" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="title2">
+          <mxGeometry x="20" y="40" width="120" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="clean" value="Cleaning" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="title2">
+          <mxGeometry x="170" y="40" width="100" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="merge" value="Merge" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="title2">
+          <mxGeometry x="20" y="120" width="120" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="aggregate" value="Aggregation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" vertex="1" parent="title2">
+          <mxGeometry x="170" y="120" width="100" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="agg_storage" value="Aggregated Files / Datasets" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="title2">
+          <mxGeometry x="70" y="200" width="180" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- TRAINING -->
+        <mxCell id="title3" value="Training &amp; Model Management" style="swimlane;fontStyle=1;horizontal=1;startSize=30;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="720" y="40" width="360" height="260" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="sagemaker" value="AWS SageMaker&#xa;Training Jobs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="title3">
+          <mxGeometry x="20" y="50" width="140" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="strength_models" value="Strength Models" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="title3">
+          <mxGeometry x="190" y="40" width="130" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="cost_models" value="Cost / Consumption Models" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="title3">
+          <mxGeometry x="190" y="90" width="130" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="mlflow" value="MLflow&#xa;Tracking &amp; Registry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="title3">
+          <mxGeometry x="20" y="160" width="140" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="s3models" value="S3 Model Repository&#xa;(Production Models)" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="title3">
+          <mxGeometry x="190" y="170" width="140" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ONLINE INFERENCE -->
+        <mxCell id="title4" value="Online Inference &amp; Monitoring" style="swimlane;fontStyle=1;horizontal=1;startSize=30;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="20" y="360" width="520" height="320" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="predict_cron" value="5-min Prediction Cronjob" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="title4">
+          <mxGeometry x="20" y="50" width="180" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="state_update" value="Daily State Update &amp; Retraining&#xa;(Unobserved Components)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="title4">
+          <mxGeometry x="250" y="50" width="220" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="predictions" value="Online Predictions" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="title4">
+          <mxGeometry x="40" y="150" width="160" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="metrics_cron" value="Metrics / Performance&#xa;Cronjobs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="title4">
+          <mxGeometry x="280" y="150" width="170" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="prometheus" value="Prometheus" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="title4">
+          <mxGeometry x="60" y="250" width="130" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="grafana" value="Grafana&#xa;Dashboards &amp; Alerts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9673a6;" vertex="1" parent="title4">
+          <mxGeometry x="300" y="250" width="170" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- AI ANALYTICS -->
+        <mxCell id="title5" value="AI Analytics Engine" style="swimlane;fontStyle=1;horizontal=1;startSize=30;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="620" y="360" width="460" height="320" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="engine" value="Cost Analytics Engine" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="title5">
+          <mxGeometry x="20" y="40" width="180" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="diagnosis" value="Diagnosis / Cost Drivers / Recommendations / Simulations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="title5">
+          <mxGeometry x="230" y="40" width="200" height="80" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="rag" value="RAG System" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="title5">
+          <mxGeometry x="20" y="160" width="140" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="vectordb" value="Vector DB&#xa;Current: S3&#xa;Future: OpenSearch" style="shape=cylinder;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="title5">
+          <mxGeometry x="240" y="150" width="170" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="api" value="Future Web Services / APIs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" vertex="1" parent="title5">
+          <mxGeometry x="120" y="250" width="200" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- SHINY DASHBOARDS -->
+        <mxCell id="title6" value="Shiny Dashboards" style="swimlane;fontStyle=1;horizontal=1;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="120" width="360" height="560" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="cost_dash" value="Cost Analytics Dashboard&#xa;- Cost Visualisation&#xa;- Diagnosis&#xa;- Papermaking Chat" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="title6">
+          <mxGeometry x="40" y="60" width="260" height="110" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="strength_dash" value="Strength Dashboard&#xa;- Online Predictions&#xa;- Explainability&#xa;- What-if Scenarios" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#666666;" vertex="1" parent="title6">
+          <mxGeometry x="40" y="240" width="260" height="110" as="geometry"/>
+        </mxCell>
+
+        <!-- FUTURE AUTO RETRAINING -->
+        <mxCell id="title7" value="Planned Automated Retraining" style="swimlane;fontStyle=1;horizontal=1;startSize=30;fillColor=#fff2cc;strokeColor=#d6b656;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="720" y="720" width="360" height="180" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="evalcron" value="Metrics Evaluation Cronjob" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="title7">
+          <mxGeometry x="20" y="50" width="140" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="lambda" value="AWS Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="title7">
+          <mxGeometry x="200" y="50" width="120" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- CONNECTIONS -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="phd" target="cron_collect">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="optivision" target="cron_collect">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="cron_collect" target="clean">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="clean" target="merge">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="merge" target="aggregate">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="aggregate" target="agg_storage">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="agg_storage" target="predict_cron">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="sagemaker" target="mlflow">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="mlflow" target="s3models">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="s3models" target="predict_cron">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="predict_cron" target="predictions">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e12" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="predictions" target="metrics_cron">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e13" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="metrics_cron" target="prometheus">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="prometheus" target="grafana">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e15" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="agg_storage" target="engine">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e16" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="engine" target="diagnosis">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e17" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="rag" target="vectordb">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e18" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="engine" target="cost_dash">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e19" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="predictions" target="strength_dash">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e20" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="s3models" target="strength_dash">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e21" style="edgeStyle=orthogonalEdgeStyle;dashed=1;html=1;endArrow=block;" edge="1" parent="1" source="prometheus" target="evalcron">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e22" style="edgeStyle=orthogonalEdgeStyle;dashed=1;html=1;endArrow=block;" edge="1" parent="1" source="evalcron" target="lambda">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e23" style="edgeStyle=orthogonalEdgeStyle;dashed=1;html=1;endArrow=block;" edge="1" parent="1" source="lambda" target="sagemaker">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e24" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;" edge="1" parent="1" source="state_update" target="s3models">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

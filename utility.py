@@ -6592,7 +6592,18 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             "delta_basis_weight": cls._add_delta_basis_weight,
         }
     
+class SKColumnSelector(BaseEstimator, TransformerMixin):
+    def __init__(self, columns):
+        self.columns = columns
 
+    def fit(self, X, y=None):
+        self.feature_names_in_ = list(X.columns)
+        self.n_features_in_ = X.shape[1]
+        self.columns_ = list(self.columns) # fitted attribute
+        return self
+
+    def transform(self, X):
+        return X[self.columns_]
     
 class ColumnSelector(BaseEstimator, TransformerMixin):
     def __init__(self, columns):
@@ -7056,13 +7067,13 @@ def calculate_manual_shap(model, X_sample, grade_id=None, X_reference=None, grad
             # fallback: use all training (if df) or current grade slice (if dict missing)
             bg = X_reference if _is_df(X_reference) else Xg
  
-        Xb = bg[feature_names].apply(pd.to_numeric, errors="coerce").fillna(0.0)
-        Xe = Xg[feature_names].apply(pd.to_numeric, errors="coerce").fillna(0.0)
- 
-        if len(Xb) > background_size:
-            Xb = Xb.sample(background_size, random_state=42)
-        if len(Xe) > explain_size:
-            Xe = Xe.sample(explain_size, random_state=42)
+        Xb = bg[feature_names].copy()
+        Xe = Xg[feature_names].copy()
+
+        for c in feature_names:
+            if pd.api.types.is_numeric_dtype(Xb[c]):
+                Xb[c] = pd.to_numeric(Xb[c], errors="coerce").fillna(0.0)
+                Xe[c] = pd.to_numeric(Xe[c], errors="coerce").fillna(0.0)
  
         explainer = shap.Explainer(model.predict, Xb)
         sv = explainer(Xe)

@@ -227,140 +227,7 @@ def answer_process_data(
         },
     }
  
-# -------------------------------------------------
-# Process data workflow
-# -------------------------------------------------
-def answer_process_data_DEPRECATED(
-    target_range=None,
-    grade=None,
-    variables=None,
-    query: str = None,
-    max_return: int = 5,
-):
-    import time_context as tc
-    import process_data_tools as pdt
-    from assistant_router import make_standard_response
 
-    # ------------------------
-    # Resolve SINGLE range
-    # ------------------------
-    resolved = tc.resolve_single_period_range(target_range=target_range)
-    target_range = resolved["target_range"]
-    used_default = resolved["used_default"]
-
-    # ------------------------
-    # Get data
-    # ------------------------
-    df = get_feature_snapshot(
-        target_range=target_range,
-        grade=grade,
-    )
-
-    if df.empty:
-        return make_standard_response(
-            type_="process_data",
-            text="No data available for the selected filters.",
-            figure=None,
-            data_frame=df,
-            blocks=[],
-            raw=None,
-            columns=[],
-            n_rows=0,
-            target_range=target_range,
-            used_default_range=used_default,
-            plot_preferences={"secondary_axis": False},
-        )
-
-    # ------------------------
-    # Feature selection
-    # ------------------------
-    if variables:
-        cols = variables
-        plot_prefs = {"secondary_axis": False}
-    else:
-        plot_prefs = pdt.parse_plot_preferences(query)
-
-        main_query = query
-
-        if plot_prefs.get("secondary_axis"):
-            main_query = pdt.remove_secondary_axis_clause(main_query)
-
-        main_query = pdt.remove_negative_terms_clause(main_query)
-
-        cols = pdt.select_features_from_query(
-            query=main_query,
-            df_columns=df.columns.tolist(),
-            use_llm_fallback=True,
-            max_return=max_return,
-        )
-
-        negative_terms = pdt.extract_negative_terms(query)
-
-        if negative_terms:
-            cols = [
-                c for c in cols
-                if not any(
-                    term in pdt._normalize_text(c)
-                    for term in negative_terms
-                )
-            ]
-
-
-    cols = [c for c in cols if c in df.columns]
-
-    secondary_cols = []
-
-    if plot_prefs.get("secondary_axis", False):
-        secondary_phrase = plot_prefs.get("secondary_phrase")
-
-        if secondary_phrase:
-            secondary_cols = pdt.select_features_from_query(
-                query=secondary_phrase,
-                df_columns=df.columns.tolist(),
-                use_llm_fallback=True,
-                max_return=1,
-            )
-
-        # Make sure secondary columns are included
-        for c in secondary_cols:
-            if c in df.columns and c not in cols:
-                cols.append(c)
-
-    # ------------------------
-    # Plot
-    # ------------------------
-    fig = pdt.build_process_plot(
-        df=df,
-        columns=cols,
-        time_col=DEFAULT_TIME_COL,
-        secondary_axis=plot_prefs.get("secondary_axis", False),
-    )
-
-    # ------------------------
-    # Optional default message
-    # ------------------------
-    default_msg = tc.build_single_period_message(
-        target_range=target_range,
-        used_default=used_default,
-        lang="en",
-    )
-    text = default_msg if default_msg else None
-
-    return make_standard_response(
-        type_="process_data",
-        text=text,
-        figure=fig,
-        data_frame=df,
-        blocks=[],
-        raw=None,
-        columns=cols,
-        n_rows=len(df),
-        target_range=target_range,
-        used_default_range=used_default,
-        plot_preferences=plot_prefs,
-    )
-
- 
 # -------------------------------------------------
 # SHAP workflow
 # -------------------------------------------------
@@ -762,68 +629,28 @@ def answer_orchestrated(query: str) -> Dict[str, Any]:
 
     # keep parsed as extra metadata, but preserve standardized structure
     final_out["parsed"] = parsed
+
     return final_out
 
-def _maybe_append_scenario_step_TOREMOVE(plan_bundle, execution_out, parsed):
-    """
-    Second-pass orchestration:
-    if the query asks for estimate/savings and recommendations produced a
-    suggested intervention, append a scenario step.
-    """
-    wants_estimate = any(
-        k in parsed.get("raw_query", "").lower()
-        for k in ["expected savings", "savings", "expected impact", "impact", "how much", "estimate"]
-    )
-    if not wants_estimate:
-        return plan_bundle, execution_out
-    plan = execution_out["plan"]
-    step_results = execution_out["step_results"]
-    # avoid duplicating scenario
-    if any(step["tool"] == "scenario" for step in plan.get("steps", [])):
-        return plan_bundle, execution_out
-    recommend_result = None
-    for step in step_results:
-        if step["tool"] == "recommend":
-            recommend_result = step["result"]
-            break
-    if not isinstance(recommend_result, dict):
-        return plan_bundle, execution_out
-    suggested_interventions = recommend_result.get("suggested_interventions", [])
-    if not suggested_interventions:
-        return plan_bundle, execution_out
-    focus = recommend_result.get("focus", {})
-    cost_component = focus.get("cost_component") or parsed.get("cost_component")
-    grade = focus.get("grade") or parsed.get("grade")
-    scenario_step = {
-        "tool": "scenario",
-        "purpose": "Estimate the expected effect of the top recommended intervention.",
-        "args": {
-            "cost_component": cost_component,
-            "grade": grade,
-            "reel_id": parsed.get("reel_id"),
-            "timestamp": parsed.get("timestamp"),
-            "interventions": [suggested_interventions[0]],
-        },
-    }
-    new_plan = dict(plan)
-    new_plan["steps"] = list(plan["steps"]) + [scenario_step]
-    final_template = plan.get("final_template")
-    if final_template == "diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations":
-        new_plan["final_template"] = "diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations_plus_scenario"
-    elif final_template == "diagnosis_plus_cost_driver_plus_recommendations":
-        new_plan["final_template"] = "diagnosis_plus_cost_driver_plus_recommendations_plus_scenario"
-    new_bundle = {
-        "planning_context": plan_bundle["planning_context"],
-        "plan": new_plan,
-    }
-    import analysis_executor as ae
-    new_execution_out = ae.execute_plan(new_bundle)
-    return new_bundle, new_execution_out
 
 def _maybe_append_scenario_step(plan_bundle, execution_out, parsed):
     wants_estimate = any(
         k in parsed.get("raw_query", "").lower()
-        for k in ["expected savings", "savings", "expected impact", "impact", "how much", "estimate"]
+        for k in [
+            "expected savings",
+            "savings",
+            "expected impact",
+            "impact",
+            "how much",
+            "estimate",
+            "what is the result",
+            "what are the results",
+            "expected result",
+            "expected results",
+            "maximize",
+            "maximise",
+        ]
+
     )
     if not wants_estimate:
         return plan_bundle, execution_out
@@ -837,23 +664,73 @@ def _maybe_append_scenario_step(plan_bundle, execution_out, parsed):
             break
     if not isinstance(recommend_result, dict):
         return plan_bundle, execution_out
+    
     suggested_interventions = recommend_result.get("suggested_interventions", [])
-    if not suggested_interventions:
+
+    try:
+        import recommendation_config as rc
+        use_optimizer = bool(getattr(rc, "RECOMMENDATION_USE_OPTIMIZER", False))
+        manual_mode = bool(getattr(rc, "RECOMMENDATION_USE_MANUAL_ACTIONABLE_INPUTS", False))
+    except Exception:
+        rc = None
+        use_optimizer = False
+        manual_mode = False
+
+    if not suggested_interventions and not (use_optimizer and manual_mode):
         return plan_bundle, execution_out
+    
     focus = recommend_result.get("focus", {})
     cost_component = focus.get("cost_component") or parsed.get("cost_component")
     grade = focus.get("grade") or parsed.get("grade")
-    # Keep only actionable interventions (exclude "review")
-    usable_interventions = [
-        itv for itv in suggested_interventions
-        if itv.get("mode") in {"relative", "absolute", "delta"}
-    ]
+    
+    optimization_result = None
 
-    if not usable_interventions:
+    if use_optimizer:
+        print("use_optimizer")
+        from recommendation_tools import build_optimized_interventions_from_recommendation
+
+        top_interventions, optimization_result = build_optimized_interventions_from_recommendation(
+            recommend_result=recommend_result,
+            cost_component=cost_component,
+            grade=grade,
+            reel_id=parsed.get("reel_id"),
+            timestamp=parsed.get("timestamp"),
+            target_range=parsed.get("target_range"),
+            baseline_range=parsed.get("baseline_range"),
+            quality_constraints=parsed.get("quality_constraints"),
+            objective_mode=parsed.get("objective_mode"),
+        )
+
+        recommend_result["optimized_interventions"] = top_interventions
+        recommend_result["optimization_result"] = optimization_result
+
+    else:
+        # Keep only actionable interventions (exclude "review")
+        usable_interventions = [
+            itv for itv in suggested_interventions
+            if itv.get("mode") in {"relative", "absolute", "delta"}
+        ]
+
+        if not usable_interventions:
+            return plan_bundle, execution_out
+
+        try:
+            import recommendation_config as rc
+            scenario_limit = getattr(rc, "RECOMMENDATION_ACTION_LIMIT", 3)
+        except Exception:
+            scenario_limit = 3
+
+        if scenario_limit is None:
+            scenario_limit = len(usable_interventions)
+        elif isinstance(scenario_limit, str) and scenario_limit.lower() == "all":
+            scenario_limit = len(usable_interventions)
+        else:
+            scenario_limit = int(scenario_limit)
+
+        top_interventions = usable_interventions[:scenario_limit]
+
+    if not top_interventions:
         return plan_bundle, execution_out
-
-    # Take top-N (start with 3)
-    top_interventions = usable_interventions[:3]
 
     scenario_step = {
         "tool": "scenario",
@@ -865,6 +742,8 @@ def _maybe_append_scenario_step(plan_bundle, execution_out, parsed):
             "timestamp": parsed.get("timestamp"),
             "target_range": parsed.get("target_range"),
             "interventions": top_interventions,
+            "quality_constraints":parsed.get("quality_constraints"),
+            "objective_mode":parsed.get("objective_mode"),
         },
     }
     new_plan = dict(plan)
@@ -876,8 +755,10 @@ def _maybe_append_scenario_step(plan_bundle, execution_out, parsed):
         new_plan["final_template"] = "diagnosis_plus_cost_driver_plus_recommendations_plus_scenario"
     elif final_template == "diagnosis_plus_cost_driver_plus_shap_plus_knowledge_plus_recommendations":
         new_plan["final_template"] = "diagnosis_plus_cost_driver_plus_shap_plus_knowledge_plus_recommendations_plus_scenario"
-    
-    
+    elif final_template == "diagnosis_plus_recommendations":
+        new_plan["final_template"] = "diagnosis_plus_recommendations_plus_scenario"
+    elif final_template == "diagnosis_plus_shap_plus_knowledge_plus_recommendations":
+        new_plan["final_template"] = "diagnosis_plus_shap_plus_knowledge_plus_recommendations_plus_scenario"
 
     new_bundle = {
         "planning_context": plan_bundle["planning_context"],
@@ -885,6 +766,17 @@ def _maybe_append_scenario_step(plan_bundle, execution_out, parsed):
     }
     import analysis_executor as ae
     new_execution_out = ae.execute_plan(new_bundle)
+
+    if optimization_result is not None:
+        for step in new_execution_out.get("step_results", []):
+            if step.get("tool") == "recommend" and isinstance(step.get("result"), dict):
+                step["result"]["optimization_result"] = optimization_result
+                step["result"]["optimized_interventions"] = top_interventions
+
+            if step.get("tool") == "scenario" and isinstance(step.get("result"), dict):
+                step["result"]["optimization_result"] = optimization_result
+                step["result"]["optimized_interventions"] = top_interventions
+
     return new_bundle, new_execution_out
 
 

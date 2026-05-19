@@ -17,13 +17,25 @@ from __future__ import annotations
  
 from typing import Any, Dict, List, Optional
  
-try:
-    from recommendation_config import RECOMMENDATION_FEATURE_SOURCE
-except Exception:
-    RECOMMENDATION_FEATURE_SOURCE = "drivers" 
-
 def _recommendation_feature_source() -> str:
-    return str(RECOMMENDATION_FEATURE_SOURCE or "drivers").strip().lower()
+    try:
+        import recommendation_config as rc
+        return str(
+            getattr(rc, "RECOMMENDATION_FEATURE_SOURCE", "drivers")
+        ).strip().lower()
+    except Exception:
+        return "drivers"
+
+
+def _manual_actionable_mode() -> bool:
+    try:
+        import recommendation_config as rc
+        return bool(
+            getattr(rc, "RECOMMENDATION_USE_MANUAL_ACTIONABLE_INPUTS", False)
+        )
+    except Exception:
+        return False
+    
  
 TOOL_SPECS: Dict[str, Dict[str, Any]] = {
     "process_data": {
@@ -90,6 +102,8 @@ ALLOWED_FINAL_TEMPLATES = {
     "diagnosis_plus_cost_driver_plus_shap_plus_knowledge_plus_recommendations_plus_scenario",
     "diagnosis_plus_shap_plus_knowledge_plus_recommendations",
     "diagnosis_plus_shap_plus_knowledge_plus_recommendations_plus_scenario",
+    "diagnosis_plus_recommendations",
+    "diagnosis_plus_recommendations_plus_scenario",
 }
  
  
@@ -135,11 +149,15 @@ def _eligible_tools_from_parsed(parsed: Dict[str, Any]) -> List[str]:
         eligible = ["process_data"]
     elif intent == "diagnosis":
         eligible = ["diagnosis"]
+
         if _has_required_fields(parsed, ["target_range", "baseline_range"]):
-            eligible.append("cost_driver")
-            eligible.append("shap")
-            eligible.append("knowledge")
-            eligible.append("recommend")
+            if _manual_actionable_mode():
+                eligible.append("recommend")
+            else:
+                eligible.append("cost_driver")
+                eligible.append("shap")
+                eligible.append("knowledge")
+                eligible.append("recommend")
     elif intent == "cost_driver":
         eligible = ["cost_driver"]
         if _has_required_fields(parsed, ["target_range"]):
@@ -296,6 +314,8 @@ def plan_analysis(planning_context: Dict[str, Any]) -> Dict[str, Any]:
     intent = parsed.get("intent")
     common = _common_args(parsed, defaults)
     user_query = planning_context["user_query"].lower()
+    manual_mode = _manual_actionable_mode()
+
     # ----------------------------
     # Direct single-step intents
     # ----------------------------
@@ -375,15 +395,22 @@ def plan_analysis(planning_context: Dict[str, Any]) -> Dict[str, Any]:
         steps.append(diagnosis_step)
         # Explanation layer
         # Use cost_driver for 'why' / understanding / drivers / recommendations
+        manual_mode = _manual_actionable_mode()
+
         use_model_recommendations = (
             signals["wants_recommendations"]
             and _recommendation_feature_source() == "model"
         )
 
+        skip_cost_driver_for_recommendation = (
+            signals["wants_recommendations"]
+            and (use_model_recommendations or manual_mode)
+        )
+
         if (
             signals["wants_explanation"]
             or signals["wants_estimate"]
-            or (signals["wants_recommendations"] and not use_model_recommendations)
+            or (signals["wants_recommendations"] and not skip_cost_driver_for_recommendation)
         ) and "cost_driver" in allowed_tools:
             cost_driver_args = _pick_present_args(
                 common,
@@ -402,10 +429,13 @@ def plan_analysis(planning_context: Dict[str, Any]) -> Dict[str, Any]:
         # Recommendation layer
         if signals["wants_recommendations"]:
 
+            manual_mode = _manual_actionable_mode()
+
             # ----------------------------
-            # SHAP layer (NEW)
+            # SHAP layer
+            # skip in manual-actionable mode
             # ----------------------------
-            if "shap" in allowed_tools:
+            if (not manual_mode) and "shap" in allowed_tools:
                 shap_args = _pick_present_args(
                     common,
                     ["target_range", "baseline_range", "grade", "cost_component"],
@@ -423,35 +453,44 @@ def plan_analysis(planning_context: Dict[str, Any]) -> Dict[str, Any]:
                 )
 
             # ----------------------------
-            # Knowledge layer (existing)
+            # Knowledge / RAG layer
+            # skip in manual-actionable mode
             # ----------------------------
-            knowledge_args = _pick_present_args(
-                common,
-                ["target_range", "baseline_range", "grade", "cost_component"],
-            )
-            if knowledge_args.get("grade") is None and defaults.get("primary_grade") is not None:
-                knowledge_args["grade"] = defaults["primary_grade"]
-
-            knowledge_args["query"] = planning_context["user_query"]
-
-            steps.append(
-                _step(
-                    tool="knowledge",
-                    purpose="Retrieve domain knowledge relevant to the selected candidate variables.",
-                    args=knowledge_args,
+            if not manual_mode:
+                knowledge_args = _pick_present_args(
+                    common,
+                    ["target_range", "baseline_range", "grade", "cost_component"],
                 )
-            )
 
+                if knowledge_args.get("grade") is None and defaults.get("primary_grade") is not None:
+                    knowledge_args["grade"] = defaults["primary_grade"]
+
+                knowledge_args["query"] = planning_context["user_query"]
+
+                steps.append(
+                    _step(
+                        tool="knowledge",
+                        purpose="Retrieve domain knowledge relevant to the selected candidate variables.",
+                        args=knowledge_args,
+                    )
+                )
+
+            # ----------------------------
+            # Recommendation layer
+            # keep this also in manual mode
+            # ----------------------------
             recommend_args = _pick_present_args(
                 common,
                 ["target_range", "baseline_range", "grade", "cost_component", "lang"],
             )
+
             if recommend_args.get("grade") is None and defaults.get("primary_grade") is not None:
                 recommend_args["grade"] = defaults["primary_grade"]
+
             steps.append(
                 _step(
                     tool="recommend",
-                    purpose="Generate actionable recommendations based on diagnosis, drivers, and knowledge context.",
+                    purpose="Generate actionable recommendations based on selected actionable inputs.",
                     args=recommend_args,
                 )
             )
@@ -506,6 +545,14 @@ def plan_analysis(planning_context: Dict[str, Any]) -> Dict[str, Any]:
 
         elif tool_sequence == ["diagnosis", "shap", "knowledge", "recommend", "scenario"]:
             final_template = "diagnosis_plus_shap_plus_knowledge_plus_recommendations_plus_scenario"
+            goal = "recommend"
+
+        elif tool_sequence == ["diagnosis", "recommend"]:
+            final_template = "diagnosis_plus_recommendations"
+            goal = "recommend"
+
+        elif tool_sequence == ["diagnosis", "recommend", "scenario"]:
+            final_template = "diagnosis_plus_recommendations_plus_scenario"
             goal = "recommend"
     
         else:

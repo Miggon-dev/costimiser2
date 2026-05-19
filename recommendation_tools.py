@@ -19,6 +19,119 @@ try:
 except Exception:
     rc = None
 
+def _model_features_for_target(target) -> set:
+    try:
+        from prediction_tools import PREDICTORS
+
+        spec = PREDICTORS.get(target)
+
+        if spec is None:
+            # normalized fallback
+            norm_target = _normalize_manual_target_name(target)
+            spec = PREDICTORS.get(norm_target)
+
+        if spec is None:
+            return set()
+
+        features_fn = spec.get("features_fn")
+        if features_fn is None:
+            return set()
+
+        features = features_fn() if callable(features_fn) else features_fn
+
+        return {str(f) for f in features}
+
+    except Exception:
+        return set()
+
+
+def _records_from_manual_actionable_inputs(target=None) -> List[Dict[str, Any]]:
+    manual_inputs = _manual_actionable_inputs(target)
+    model_features = _model_features_for_target(target)
+
+    if model_features:
+        manual_inputs = {
+            v for v in manual_inputs
+            if v in model_features
+        }
+
+    records = []
+
+    for v in manual_inputs:
+        records.append(
+            {
+                "variable": v,
+                "contribution": None,
+                "candidate_source": "manual",
+            }
+        )
+
+    return records
+
+def _use_manual_actionable_inputs() -> bool:
+    return bool(_cfg("RECOMMENDATION_USE_MANUAL_ACTIONABLE_INPUTS", False))
+
+
+def _normalize_manual_target_name(x) -> str:
+    s = str(x or "").strip().lower()
+    s = s.replace("_cost", "")
+    s = s.replace(" cost", "")
+    s = s.replace("_", " ")
+    s = " ".join(s.split())
+
+    aliases = {
+        "fiber": "fibre",
+        "fibre": "fibre",
+        "steam": "steam",
+        "electricity": "electricity",
+        "power": "electricity",
+        "starch": "starch",
+        "total": "total",
+        "combined": "total",
+        "combined cost": "total",
+        "overall": "total",
+        "sct cd": "SCT CD",
+        "sctcd": "SCT CD",
+        "sct md": "SCT MD",
+        "sctmd": "SCT MD",
+        "burst": "Burst",
+        "cmt30": "CMT30",
+        "cmt 30": "CMT30",
+        "cmt": "CMT30",
+    }
+
+    return aliases.get(s, s)
+
+
+def _manual_actionable_inputs(target=None) -> set:
+    by_target = _cfg("RECOMMENDATION_MANUAL_ACTIONABLE_INPUTS_BY_TARGET", None)
+
+    if isinstance(by_target, dict):
+        normalized_lookup = {
+            _normalize_manual_target_name(k): v
+            for k, v in by_target.items()
+        }
+
+        norm_target = _normalize_manual_target_name(target)
+
+        values = normalized_lookup.get(
+            norm_target,
+            _cfg("RECOMMENDATION_MANUAL_ACTIONABLE_INPUTS_DEFAULT", []),
+        )
+
+        return {str(v) for v in (values or [])}
+
+    # backward compatibility with your current single-list setting
+    values = _cfg("RECOMMENDATION_MANUAL_ACTIONABLE_INPUTS", [])
+
+    if values is None:
+        return set()
+
+    return {str(v) for v in values}
+
+
+def _optimizer_enabled() -> bool:
+    return bool(_cfg("RECOMMENDATION_USE_OPTIMIZER", False))
 
 def _cfg(name: str, default):
     if rc is None:
@@ -327,42 +440,6 @@ def _extract_top_model_feature_records(
 
     return records
 
-
-def _select_candidate_records(
-    cost_driver_result: Dict[str, Any],
-    shap_result: Optional[Dict[str, Any]],
-    top_n: int,
-) -> tuple[List[Dict[str, Any]], str]:
-    cost_driver_result = cost_driver_result or {}
-    shap_result = shap_result or {}
-
-    source = _get_recommendation_feature_source()
-    pool_n = _candidate_pool_size(top_n)
-
-    driver_records = _extract_top_driver_records(
-        shapley_contrib=cost_driver_result.get("shapley_contrib", pd.DataFrame()),
-        top_n=pool_n,
-    )
-
-    for r in driver_records:
-        r.setdefault("candidate_source", "drivers")
-
-    model_records = _extract_top_model_feature_records(
-        shap_result=shap_result,
-        top_n=pool_n,
-    )
-
-    if source == "drivers":
-        return driver_records, "drivers"
-
-    if source == "model":
-        return model_records, "model"
-
-    # auto
-    if driver_records:
-        return driver_records, "drivers"
-
-    return model_records, "model"
 
 def _differences_by_variable(
     extreme_cluster_differences: pd.DataFrame,
@@ -689,7 +766,12 @@ def build_recommendations(
 
     effective_feature_source = source
 
-    if source == "model":
+    if _use_manual_actionable_inputs():
+        target = focus.get("cost_component")
+        top_driver_records = _records_from_manual_actionable_inputs(target)
+        effective_feature_source = "manual"
+
+    elif source == "model":
         top_driver_records = _extract_top_model_feature_records(
             shap_result=shap_result,
             top_n=None,
@@ -752,6 +834,30 @@ def build_recommendations(
     actionability_map = _extract_actionability_map_from_json(knowledge_text)
     if not actionability_map:
         actionability_map = _extract_actionability_map(knowledge_text) # fallback
+
+    if _use_manual_actionable_inputs():
+        target = focus.get("cost_component")
+        manual_inputs = _manual_actionable_inputs(target)
+        model_features = _model_features_for_target(target)
+
+        if model_features:
+            manual_inputs = {
+                v for v in manual_inputs
+                if v in model_features
+            }
+
+        actionability_map = {
+            v: {
+                "classification": "actionable",
+                "recommended_direction": "unknown",
+                "confidence": "manual",
+                "engineering_reason": (
+                    "Variable included in manual actionable input list "
+                    "and used by the selected prediction model."
+                ),
+            }
+            for v in manual_inputs
+        }
 
     # print("actionability_map",actionability_map)
     # TOREMOVE
@@ -1096,7 +1202,7 @@ def build_recommendations(
         "diagnosis_result": diagnosis_result,
         "shap_result": shap_result,
         "cost_driver_result": cost_driver_result,
-        "recommendation_feature_source": source,
+        "recommendation_feature_source": source,        
     }
 
 
@@ -1114,6 +1220,9 @@ def build_knowledge_query_from_drivers(
     grade = cost_driver_result.get("grade")
 
     source = _get_recommendation_feature_source()
+
+    if _use_manual_actionable_inputs():
+        return ""
 
     variables = cost_driver_result.get("top_driver_variables", [])
     diff_df = cost_driver_result.get(
@@ -1646,3 +1755,98 @@ def _get_actionability_for_variable(
             return value
 
     return {}
+
+def build_optimized_interventions_from_recommendation(
+    recommend_result,
+    cost_component,
+    grade=None,
+    reel_id=None,
+    timestamp=None,
+    target_range=None,
+    baseline_range=None,
+    quality_constraints=None,
+    objective_mode=None,
+):
+    import pandas as pd
+    import scenario_tools as st
+    import recommendation_config as rc
+    from recommendation_optimizer import optimize_cost_over_actionable_variables
+
+    actions = recommend_result.get("actions", [])
+
+    actionable_variables = [
+        a.get("variable")
+        for a in actions
+        if a.get("classification") in {
+            "actionable",
+            "indirectly actionable",
+        }
+    ]
+
+    actionable_variables = [
+        v for v in actionable_variables
+        if v is not None
+    ]
+
+    if not actionable_variables:
+        return [], {
+            "success": False,
+            "message": "No actionable variables available for optimization.",
+        }
+
+    cost_function, _, _ = st._resolve_cost_component(cost_component)
+
+    ref = st.get_reference_turnup(
+        reel_id=reel_id,
+        timestamp=timestamp,
+        grade=grade,
+        target_range=target_range,
+    )
+
+    reference_row = ref["row"]
+
+    historical_df = st.load_turnup_data_for_scenario(
+        target_range=baseline_range,
+    )
+
+    if grade is not None and "AB_Grade_ID" in historical_df.columns:
+        historical_df = historical_df[
+            historical_df["AB_Grade_ID"].astype(str) == str(grade)
+        ].copy()
+
+    opt = optimize_cost_over_actionable_variables(
+        reference_row=reference_row,
+        historical_df=historical_df,
+        actionable_variables=actionable_variables,
+        cost_function=cost_function,
+        lower_q=getattr(rc, "RECOMMENDATION_OPTIMIZER_LOWER_Q", 0.05),
+        upper_q=getattr(rc, "RECOMMENDATION_OPTIMIZER_UPPER_Q", 0.95),
+        joint_quantile=getattr(rc, "RECOMMENDATION_OPTIMIZER_JOINT_QUANTILE", 0.95),
+        quality_constraints=quality_constraints,
+        objective_mode=objective_mode or "minimize",
+        invariants=getattr(rc,"RECOMMENDATION_INVARIANTS",None),
+    )
+
+    opt["reference"] = ref.get("reference")
+    opt["reference_warnings"] = ref.get("warnings", [])
+
+    if not opt.get("success") and not opt.get("changes"):
+        return [], opt
+
+    interventions = []
+
+    for c in opt.get("changes", []):
+        interventions.append(
+            {
+                "variable": c["variable"],
+                "mode": "absolute",
+                "value": c["optimized_value"],
+                "current_value": c["current_value"],
+                "delta": c["delta"],
+                "lower_bound": c["lower_bound"],
+                "upper_bound": c["upper_bound"],
+                "note": "Optimized intervention from cost-function minimization constrained by historical feasibility.",
+            }
+        )
+
+    return interventions, opt

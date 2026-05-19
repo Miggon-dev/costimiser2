@@ -57,6 +57,15 @@ def _normalise_component(component: str) -> str:
 
     if cl in {"sct cd", "sct_cd", "sctcd", "strength"}:
         return "SCT CD"
+    
+    if cl in {"sct md", "sct_md", "sctmd"}:
+        return "SCT MD"
+
+    if cl in {"burst"}:
+        return "Burst"
+    
+    if cl in {"cmt", "cmt_30", "cmt 30", "cmt30"}:
+        return "CMT30"
 
     return c
 

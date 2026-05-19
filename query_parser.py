@@ -30,15 +30,70 @@ COMPONENT_ALIASES = {
         "combined cost",
         "overall cost",
     ],
-
     "SCT CD": [
         "sct cd",
         "sct_cd",
         "sctcd",
         "strength",
     ],
+    "SCT MD": [
+        "sct md",
+        "sct_md",
+        "sctmd",
+    ],
+    "Burst": [
+        "burst"
+    ],
+    "CMT30": [
+        "cmt 30",
+        "cmt30",
+        "cmt"
+    ],
 }
  
+def parse_objective_mode(query: str) -> str:
+    q = query.lower()
+
+    if any(k in q for k in ["maximize", "maximise", "maximizing", "maximising"]):
+        return "maximize"
+
+    if any(k in q for k in ["minimize", "minimise", "reduce", "decrease", "lower"]):
+        return "minimize"
+
+    return "minimize"
+
+def parse_quality_constraints(query: str):
+    q = query.lower()
+
+    metric_aliases = {
+        "SCT CD": ["sct cd", "sct_cd", "sctcd"],
+        "SCT MD": ["sct md", "sct_md", "sctmd"],
+        "Burst": ["burst"],
+        "CMT30": ["cmt30", "cmt 30", "cmt_30"],
+    }
+
+    constraints = []
+
+    for canonical, aliases in metric_aliases.items():
+        for alias in aliases:
+            patterns = [
+                rf"{alias}\s*(?:>=|over|above|higher than|greater than|at least|minimum(?: of)?)\s*(\d+(?:\.\d+)?)",
+                rf"(?:keep|keeping|maintain|maintaining)\s+{alias}\s*(?:>=|over|above|higher than|greater than|at least|minimum(?: of)?)\s*(\d+(?:\.\d+)?)",
+            ]
+
+            for pat in patterns:
+                m = re.search(pat, q)
+                if m:
+                    constraints.append(
+                        {
+                            "metric": canonical,
+                            "operator": ">=",
+                            "threshold": float(m.group(1)),
+                        }
+                    )
+                    break
+
+    return constraints
  
 def parse_cost_component(query: str) -> Optional[str]:
     q = query.lower()
@@ -333,6 +388,9 @@ def parse_query(query: str) -> Dict[str, Any]:
         "raw_query": query,
         "levels": parse_levels(query) if intent == "diagnosis" else None,
         "objects": parse_diagnosis_objects(query) if intent == "diagnosis" else None,
+        "quality_constraints": parse_quality_constraints(query),
+        "objective_mode": parse_objective_mode(query),
+        "quality_constraints": parse_quality_constraints(query),
     }
 
     # ----------------------------
@@ -694,3 +752,60 @@ def parse_relative_period_range(query: str):
         return (start.date(), end.date()), "month"
 
     return None, None
+
+def parse_quality_constraints(query: str):
+    """
+    Parse quality/strength constraints such as:
+    - keeping SCT CD over 2.1
+    - keep SCT CD above 2.1
+    - with SCT CD >= 2.1
+    - keeping SCT MD over 3.0
+    - keeping Burst over 1.8
+    - keeping CMT30 over 120
+    """
+
+    q = query.lower()
+
+    metric_aliases = {
+        "SCT CD": [
+            "sct cd",
+            "sct_cd",
+            "sctcd",
+        ],
+        "SCT MD": [
+            "sct md",
+            "sct_md",
+            "sctmd",
+        ],
+        "Burst": [
+            "burst",
+        ],
+        "CMT30": [
+            "cmt30",
+            "cmt 30",
+            "cmt_30",
+        ],
+    }
+
+    constraints = []
+
+    for canonical, aliases in metric_aliases.items():
+        for alias in aliases:
+            patterns = [
+                rf"{alias}\s*(?:>=|over|above|higher than|greater than|at least|min(?:imum)?(?: of)?)\s*(\d+(?:\.\d+)?)",
+                rf"(?:keep|keeping|maintain|maintaining)\s+{alias}\s*(?:>=|over|above|higher than|greater than|at least|min(?:imum)?(?: of)?)\s*(\d+(?:\.\d+)?)",
+            ]
+
+            for pat in patterns:
+                m = re.search(pat, q)
+                if m:
+                    constraints.append(
+                        {
+                            "metric": canonical,
+                            "operator": ">=",
+                            "threshold": float(m.group(1)),
+                        }
+                    )
+                    break
+
+    return constraints

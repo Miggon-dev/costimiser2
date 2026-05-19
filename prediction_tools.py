@@ -62,6 +62,15 @@ with open(MODELS_DIR / "model_starch_bottom.pkl", "rb") as f:
 with open(MODELS_DIR / "model_SCTCD.pkl", "rb") as f:
     model_SCTCD = pickle.load(f)
 
+with open(MODELS_DIR / "model_SCTMD.pkl", "rb") as f:
+    model_SCTMD = pickle.load(f)
+
+with open(MODELS_DIR / "model_Burst.pkl", "rb") as f:
+    model_Burst = pickle.load(f)
+
+with open(MODELS_DIR / "model_CMT30.pkl", "rb") as f:
+    model_CMT30 = pickle.load(f)
+
 with open(MODELS_DIR / "model_cost_starch_bottom.pkl", "rb") as f:
     model_cost_starch_bottom = pickle.load(f)
 
@@ -101,6 +110,15 @@ def total_features():
 
 def SCTCD_features():
     return list(model_SCTCD.best_estimator_.feature_names_in_)
+
+def SCTMD_features():
+    return list(model_SCTMD.best_estimator_.feature_names_in_)
+
+def Burst_features():
+    return list(model_Burst.best_estimator_.feature_names_in_)
+
+def CMT30_features():
+    return list(model_CMT30.best_estimator_.feature_names_in_)
  
  
 # -------------------------------------------------
@@ -115,7 +133,7 @@ def fibre_cost_from_row(row) -> float:
     starch_uptake = row["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] + row["Starch_uptake_by_paper_Top_Roll__g/m2_"]
     moisture = row["Current_reel_moisture_average(reel)"]
 
-    return 146.46 * (basis_weight * (1 - moisture / 100) - starch_uptake) / basis_weight
+    return (basis_weight * (1 - moisture / 100) - starch_uptake) / basis_weight
 
 
 def fibre_cost(X):
@@ -136,7 +154,7 @@ def fibre_cost(X):
         starch_uptake = X["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] + X["Starch_uptake_by_paper_Top_Roll__g/m2_"]
         moisture = X["Current_reel_moisture_average(reel)"]
 
-        return 146.46 * (basis_weight * (1 - moisture / 100) - starch_uptake) / basis_weight    
+        return (basis_weight * (1 - moisture / 100) - starch_uptake) / basis_weight    
     return float(fibre_cost_from_row(X))
  
  
@@ -184,6 +202,9 @@ _, total_cost = make_models_cost_batch(
 )
 
 _, sctcd_strength = make_model_cost_batch(model_SCTCD, SCTCD_features)
+_, sctmd_strength = make_model_cost_batch(model_SCTMD, SCTMD_features)
+_, burst_strength = make_model_cost_batch(model_Burst, Burst_features)
+_, cmt30_strength = make_model_cost_batch(model_CMT30, CMT30_features)
  
 # -------------------------------------------------
 # Registry
@@ -224,6 +245,24 @@ PREDICTORS: Dict[str, Dict[str, Any]] = {
         "kind": "model",
         "features_fn": SCTCD_features,
         "predict_fn": sctcd_strength,
+        "unit": "",
+    },
+    "SCT MD": {
+        "kind": "model",
+        "features_fn": SCTMD_features,
+        "predict_fn": sctmd_strength,
+        "unit": "",
+    },
+    "Burst": {
+        "kind": "model",
+        "features_fn": Burst_features,
+        "predict_fn": burst_strength,
+        "unit": "",
+    },
+    "CMT30": {
+        "kind": "model",
+        "features_fn": CMT30_features,
+        "predict_fn": cmt30_strength,
         "unit": "",
     },
 }

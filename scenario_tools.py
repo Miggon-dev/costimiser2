@@ -23,10 +23,19 @@ from prediction_tools import (
     steam_cost,
     electricity_cost,
     starch_cost,
+    sctcd_strength,
+    sctmd_strength,
+    burst_strength,
+    cmt30_strength,
     fibre_features,
     steam_features,
     electricity_features,
     starch_features,
+    SCTCD_features,
+    SCTMD_features,
+    Burst_features,
+    CMT30_features,
+
 )
  
  
@@ -46,6 +55,24 @@ SCENARIO_COMPONENTS: Dict[str, Dict[str, Any]] = {
     "electricity_cost": {"cost_fn": electricity_cost, "feature_fn": electricity_features},
     "starch": {"cost_fn": starch_cost, "feature_fn": starch_features},
     "starch_cost": {"cost_fn": starch_cost, "feature_fn": starch_features},
+    "sct cd": {"cost_fn": sctcd_strength, "feature_fn": SCTCD_features},
+    "sct_cd": {"cost_fn": sctcd_strength, "feature_fn": SCTCD_features},
+    "sctcd": {"cost_fn": sctcd_strength, "feature_fn": SCTCD_features},
+    "SCT CD": {"cost_fn": sctcd_strength, "feature_fn": SCTCD_features},
+
+    "sct md": {"cost_fn": sctmd_strength, "feature_fn": SCTMD_features},
+    "sct_md": {"cost_fn": sctmd_strength, "feature_fn": SCTMD_features},
+    "sctmd": {"cost_fn": sctmd_strength, "feature_fn": SCTMD_features},
+    "SCT MD": {"cost_fn": sctmd_strength, "feature_fn": SCTMD_features},
+
+    "burst": {"cost_fn": burst_strength, "feature_fn": Burst_features},    
+    "Burst": {"cost_fn": burst_strength, "feature_fn": Burst_features},    
+
+    "cmt 30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
+    "cmt_30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
+    "cmt30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
+    "CMT 30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
+    "CMT30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
 }
  
  
