@@ -1770,7 +1770,8 @@ def build_optimized_interventions_from_recommendation(
     import pandas as pd
     import scenario_tools as st
     import recommendation_config as rc
-    from recommendation_optimizer import optimize_cost_over_actionable_variables
+    #from recommendation_optimizer import optimize_cost_over_actionable_variables
+    from recommendation_optimizer import optimize_cost_with_intervention_limit
 
     actions = recommend_result.get("actions", [])
 
@@ -1814,7 +1815,20 @@ def build_optimized_interventions_from_recommendation(
             historical_df["AB_Grade_ID"].astype(str) == str(grade)
         ].copy()
 
-    opt = optimize_cost_over_actionable_variables(
+    # opt = optimize_cost_over_actionable_variables(
+    #     reference_row=reference_row,
+    #     historical_df=historical_df,
+    #     actionable_variables=actionable_variables,
+    #     cost_function=cost_function,
+    #     lower_q=getattr(rc, "RECOMMENDATION_OPTIMIZER_LOWER_Q", 0.05),
+    #     upper_q=getattr(rc, "RECOMMENDATION_OPTIMIZER_UPPER_Q", 0.95),
+    #     joint_quantile=getattr(rc, "RECOMMENDATION_OPTIMIZER_JOINT_QUANTILE", 0.95),
+    #     quality_constraints=quality_constraints,
+    #     objective_mode=objective_mode or "minimize",
+    #     invariants=getattr(rc,"RECOMMENDATION_INVARIANTS",None),
+    # )
+
+    opt = optimize_cost_with_intervention_limit(
         reference_row=reference_row,
         historical_df=historical_df,
         actionable_variables=actionable_variables,
@@ -1825,6 +1839,11 @@ def build_optimized_interventions_from_recommendation(
         quality_constraints=quality_constraints,
         objective_mode=objective_mode or "minimize",
         invariants=getattr(rc,"RECOMMENDATION_INVARIANTS",None),
+        max_interventions=getattr(
+            rc,
+            "RECOMMENDATION_OPTIMIZER_MAX_INTERVENTIONS",
+            getattr(rc, "RECOMMENDATION_ACTION_LIMIT", 5),
+        ),
     )
 
     opt["reference"] = ref.get("reference")

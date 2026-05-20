@@ -107,12 +107,23 @@ def parse_cost_component(query: str) -> Optional[str]:
  
  
 def parse_grade(query: str) -> Optional[str]:
-    """
-    Extract grade-like numeric codes such as 6010120.
-    """
-    m = re.search(r"\b\d{6,10}\b", query)
-    if m:
-        return m.group(0)
+    q = query.lower()
+
+    # Prefer explicit grade patterns
+    patterns = [
+        r"\bgrade\s+(\d{6,10})\b",
+        r"\bab_grade_id\s+(\d{6,10})\b",
+    ]
+
+    for pat in patterns:
+        m = re.search(pat, q)
+        if m:
+            return m.group(1)
+
+    # Do not treat reel id as grade
+    if re.search(r"\breel\s+id\s+\d{6,10}\b", q):
+        return None
+
     return None
  
  
@@ -398,7 +409,10 @@ def parse_query(query: str) -> Dict[str, Any]:
     # ----------------------------
     needs_llm = (
         parsed["intent"] in [None, "unknown"]
-        or parsed["grade"] is None
+        or (
+            parsed["grade"] is None
+            and parsed.get("reel_id") is None
+        )
         or parsed["cost_component"] is None
         or (parsed["levels"] is None and "diagnos" in query.lower())
         or (parsed["objects"] is None and "cost" in query.lower())

@@ -70,6 +70,8 @@ def _execute_step(
                 "shapley_contrib": None,
                 "extreme_cluster_differences": None,
                 "top_driver_variables": [],
+                "reel_id": args.get("reel_id"),
+                "timestamp": args.get("timestamp"),
             }
 
         result = rt.build_recommendations(

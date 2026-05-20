@@ -59,9 +59,17 @@ TOOL_SPECS: Dict[str, Dict[str, Any]] = {
         "description": "Feature-level explanation of modelled cost component differences.",
     },
     "recommend": {
-        "requires": ["target_range", "baseline_range"],
-        "optional": ["grade", "cost_component", "lang"],
-        "description": "Generate actionable recommendations based on diagnosis and drivers.",
+        "requires": [],
+        "optional": [
+            "target_range",
+            "baseline_range",
+            "grade",
+            "reel_id",
+            "timestamp",
+            "cost_component",
+            "lang",
+        ],
+        "description": "Generate actionable recommendations based on diagnosis, drivers, model, or manual actionable inputs.",
     },
     "scenario": {
         "requires": ["cost_component", "interventions"],
@@ -104,6 +112,8 @@ ALLOWED_FINAL_TEMPLATES = {
     "diagnosis_plus_shap_plus_knowledge_plus_recommendations_plus_scenario",
     "diagnosis_plus_recommendations",
     "diagnosis_plus_recommendations_plus_scenario",
+    "recommendations_only",
+    "recommendations_plus_scenario",
 }
  
  
@@ -150,7 +160,15 @@ def _eligible_tools_from_parsed(parsed: Dict[str, Any]) -> List[str]:
     elif intent == "diagnosis":
         eligible = ["diagnosis"]
 
-        if _has_required_fields(parsed, ["target_range", "baseline_range"]):
+        # Known-state recommendation, e.g.
+        # "recommendations to maximize SCT CD for reel id ..."
+        if (
+            parsed.get("reel_id") is not None
+            and _manual_actionable_mode()
+        ):
+            eligible = ["recommend"]
+
+        elif _has_required_fields(parsed, ["target_range", "baseline_range"]):
             if _manual_actionable_mode():
                 eligible.append("recommend")
             else:
@@ -299,6 +317,346 @@ def _pick_present_args(args: Dict[str, Any], allowed_keys: List[str]) -> Dict[st
  
  
 def plan_analysis(planning_context: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Compositional planner:
+    - diagnosis
+    - cost_driver
+    - recommend
+    - scenario
+
+    Complex behaviors are expressed as step sequences.
+    """
+    parsed = planning_context["parsed"]
+    allowed_tools = planning_context["allowed_tools"]
+    defaults = planning_context["resolved_defaults"]
+    signals = planning_context["context_signals"]
+    intent = parsed.get("intent")
+    common = _common_args(parsed, defaults)
+    manual_mode = _manual_actionable_mode()
+
+    # ----------------------------
+    # Direct single-step intents
+    # ----------------------------
+    if intent == "process_data" and "process_data" in allowed_tools:
+        return {
+            "goal": "factual_lookup",
+            "steps": [
+                _step(
+                    tool="process_data",
+                    purpose="Summarize the requested observed process data.",
+                    args=_pick_present_args(
+                        common,
+                        ["target_range", "baseline_range", "grade", "cost_component"],
+                    ),
+                )
+            ],
+            "final_template": "process_data_only",
+        }
+
+    if intent == "simulate_scenario" and "scenario" in allowed_tools:
+        return {
+            "goal": "what_if",
+            "steps": [
+                _step(
+                    tool="scenario",
+                    purpose="Estimate the effect of the requested intervention.",
+                    args=_pick_present_args(
+                        common,
+                        ["cost_component", "grade", "reel_id", "timestamp", "interventions"],
+                    ),
+                )
+            ],
+            "final_template": "scenario_only",
+        }
+
+    if intent == "cost_driver" and "cost_driver" in allowed_tools:
+        return {
+            "goal": "explain_change",
+            "steps": [
+                _step(
+                    tool="cost_driver",
+                    purpose="Identify the variables contributing to the change between periods.",
+                    args=_pick_present_args(
+                        common,
+                        ["target_range", "baseline_range", "grade", "cost_component"],
+                    ),
+                )
+            ],
+            "final_template": "cost_driver_only",
+        }
+
+    if intent == "shap" and "shap" in allowed_tools:
+        return {
+            "goal": "explain_change",
+            "steps": [
+                _step(
+                    tool="shap",
+                    purpose="Explain the modelled difference between target and baseline.",
+                    args=_pick_present_args(
+                        common,
+                        ["target_range", "baseline_range", "grade", "cost_component"],
+                    ),
+                )
+            ],
+            "final_template": "shap_only",
+        }
+
+    # ------------------------------------------------------------
+    # Recommendation directly from a known reel/state
+    # Manual actionable mode does not need diagnosis/cost_driver/SHAP/RAG.
+    # Example:
+    # "what are the recommendations to maximize SCT CD for reel id ..."
+    # ------------------------------------------------------------
+    if (
+        signals["wants_recommendations"]
+        and manual_mode
+        and parsed.get("reel_id") is not None
+        and "recommend" in allowed_tools
+    ):
+        recommend_args = _pick_present_args(
+            common,
+            [
+                "grade",
+                "reel_id",
+                "timestamp",
+                "cost_component",
+                "lang",
+            ],
+        )
+
+        if recommend_args.get("grade") is None and defaults.get("primary_grade") is not None:
+            recommend_args["grade"] = defaults["primary_grade"]
+
+        return {
+            "goal": "recommend",
+            "steps": [
+                _step(
+                    tool="recommend",
+                    purpose="Generate actionable recommendations from manual actionable inputs.",
+                    args=recommend_args,
+                )
+            ],
+            "final_template": "recommendations_only",
+        }
+
+    
+    # ----------------------------
+    # Comparative orchestration path
+    # ----------------------------
+    if intent == "diagnosis" and "diagnosis" in allowed_tools:
+        steps = []
+
+        diagnosis_step = _step(
+            tool="diagnosis",
+            purpose="Diagnose the issue across the requested drilldown levels and objects.",
+            args=_pick_present_args(
+                common,
+                ["target_range", "baseline_range", "grades", "levels", "objects", "lang"],
+            ),
+        )
+        steps.append(diagnosis_step)
+
+        use_model_recommendations = (
+            signals["wants_recommendations"]
+            and _recommendation_feature_source() == "model"
+        )
+
+        skip_cost_driver_for_recommendation = (
+            signals["wants_recommendations"]
+            and (use_model_recommendations or manual_mode)
+        )
+
+        if (
+            signals["wants_explanation"]
+            or signals["wants_estimate"]
+            or (
+                signals["wants_recommendations"]
+                and not skip_cost_driver_for_recommendation
+            )
+        ) and "cost_driver" in allowed_tools:
+            cost_driver_args = _pick_present_args(
+                common,
+                ["target_range", "baseline_range", "grade", "cost_component"],
+            )
+
+            if cost_driver_args.get("grade") is None and defaults.get("primary_grade") is not None:
+                cost_driver_args["grade"] = defaults["primary_grade"]
+
+            steps.append(
+                _step(
+                    tool="cost_driver",
+                    purpose="Identify the variables contributing to the change between periods.",
+                    args=cost_driver_args,
+                )
+            )
+
+        # ----------------------------
+        # Recommendation layer
+        # ----------------------------
+        if signals["wants_recommendations"]:
+
+            # SHAP layer: skip in manual actionable mode
+            if (not manual_mode) and "shap" in allowed_tools:
+                shap_args = _pick_present_args(
+                    common,
+                    ["target_range", "baseline_range", "grade", "cost_component"],
+                )
+
+                if shap_args.get("grade") is None and defaults.get("primary_grade") is not None:
+                    shap_args["grade"] = defaults["primary_grade"]
+
+                steps.append(
+                    _step(
+                        tool="shap",
+                        purpose="Estimate model sensitivity for the selected cost component.",
+                        args=shap_args,
+                    )
+                )
+
+            # Knowledge / RAG layer: skip in manual actionable mode
+            if not manual_mode:
+                knowledge_args = _pick_present_args(
+                    common,
+                    ["target_range", "baseline_range", "grade", "cost_component"],
+                )
+
+                if knowledge_args.get("grade") is None and defaults.get("primary_grade") is not None:
+                    knowledge_args["grade"] = defaults["primary_grade"]
+
+                knowledge_args["query"] = planning_context["user_query"]
+
+                steps.append(
+                    _step(
+                        tool="knowledge",
+                        purpose="Retrieve domain knowledge relevant to the selected candidate variables.",
+                        args=knowledge_args,
+                    )
+                )
+
+            recommend_args = _pick_present_args(
+                common,
+                ["target_range", "baseline_range", "grade", "cost_component", "lang"],
+            )
+
+            if recommend_args.get("grade") is None and defaults.get("primary_grade") is not None:
+                recommend_args["grade"] = defaults["primary_grade"]
+
+            steps.append(
+                _step(
+                    tool="recommend",
+                    purpose="Generate actionable recommendations based on selected actionable inputs.",
+                    args=recommend_args,
+                )
+            )
+
+        # Scenario with explicit interventions only.
+        # The automatic recommendation+scenario append is handled later in assistant_router.
+        if signals["wants_estimate"] and parsed.get("interventions"):
+            scenario_args = _pick_present_args(
+                common,
+                ["cost_component", "grade", "reel_id", "timestamp", "interventions"],
+            )
+
+            if scenario_args.get("grade") is None and defaults.get("primary_grade") is not None:
+                scenario_args["grade"] = defaults["primary_grade"]
+
+            steps.append(
+                _step(
+                    tool="scenario",
+                    purpose="Estimate the expected effect of the recommended or requested intervention.",
+                    args=scenario_args,
+                )
+            )
+
+        tool_sequence = [s["tool"] for s in steps]
+
+        if tool_sequence == ["diagnosis"]:
+            final_template = "diagnosis_only"
+            goal = "diagnose"
+
+        elif tool_sequence == ["diagnosis", "cost_driver"]:
+            final_template = "diagnosis_plus_cost_driver"
+            goal = "explain_change"
+
+        elif tool_sequence == ["diagnosis", "cost_driver", "knowledge", "recommend"]:
+            final_template = "diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations"
+            goal = "recommend"
+
+        elif tool_sequence == ["diagnosis", "cost_driver", "knowledge", "recommend", "scenario"]:
+            final_template = "diagnosis_plus_cost_driver_plus_knowledge_plus_recommendations_plus_scenario"
+            goal = "recommend"
+
+        elif tool_sequence == ["diagnosis", "cost_driver", "recommend"]:
+            final_template = "diagnosis_plus_cost_driver_plus_recommendations"
+            goal = "recommend"
+
+        elif tool_sequence == ["diagnosis", "cost_driver", "recommend", "scenario"]:
+            final_template = "diagnosis_plus_cost_driver_plus_recommendations_plus_scenario"
+            goal = "recommend"
+
+        elif tool_sequence == ["diagnosis", "cost_driver", "shap", "knowledge", "recommend"]:
+            final_template = "diagnosis_plus_cost_driver_plus_shap_plus_knowledge_plus_recommendations"
+            goal = "recommend"
+
+        elif tool_sequence == ["diagnosis", "cost_driver", "shap", "knowledge", "recommend", "scenario"]:
+            final_template = "diagnosis_plus_cost_driver_plus_shap_plus_knowledge_plus_recommendations_plus_scenario"
+            goal = "recommend"
+
+        elif tool_sequence == ["diagnosis", "shap", "knowledge", "recommend"]:
+            final_template = "diagnosis_plus_shap_plus_knowledge_plus_recommendations"
+            goal = "recommend"
+
+        elif tool_sequence == ["diagnosis", "shap", "knowledge", "recommend", "scenario"]:
+            final_template = "diagnosis_plus_shap_plus_knowledge_plus_recommendations_plus_scenario"
+            goal = "recommend"
+
+        elif tool_sequence == ["diagnosis", "recommend"]:
+            final_template = "diagnosis_plus_recommendations"
+            goal = "recommend"
+
+        elif tool_sequence == ["diagnosis", "recommend", "scenario"]:
+            final_template = "diagnosis_plus_recommendations_plus_scenario"
+            goal = "recommend"
+
+        else:
+            final_template = "diagnosis_only"
+            goal = "diagnose"
+
+        return {
+            "goal": goal,
+            "steps": steps,
+            "final_template": final_template,
+        }
+
+    # ----------------------------
+    # Knowledge-only / fallback
+    # ----------------------------
+    if "knowledge" in allowed_tools:
+        return {
+            "goal": "knowledge_assisted_analysis",
+            "steps": [
+                _step(
+                    tool="knowledge",
+                    purpose="Retrieve relevant knowledge context.",
+                    args={"query": planning_context["user_query"]},
+                )
+            ],
+            "final_template": "knowledge_plus_analysis",
+        }
+
+    return {
+        "goal": "knowledge_assisted_analysis",
+        "steps": [
+            _step(
+                tool="knowledge",
+                purpose="Retrieve relevant knowledge context.",
+                args={"query": planning_context["user_query"]},
+            )
+        ],
+        "final_template": "knowledge_plus_analysis",
+    }
+
+def plan_analysis_TOREMOVE(planning_context: Dict[str, Any]) -> Dict[str, Any]:
     """
     Compositional planner:
     - diagnosis

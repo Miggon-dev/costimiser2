@@ -673,3 +673,131 @@ def optimize_cost_over_actionable_variables(
         ),
     }
 
+def optimize_cost_with_intervention_limit(
+    reference_row,
+    historical_df,
+    actionable_variables,
+    cost_function,
+    max_interventions=5,
+    objective_mode="minimize",
+    invariants=None,
+    quality_constraints=None,
+    **optimizer_kwargs,
+):
+    """
+    Select up to max_interventions variables and optimize them.
+
+    Greedy forward selection:
+    - start with no variables
+    - at each step, try adding one candidate variable/group
+    - keep the candidate that gives the best objective improvement
+    - final result uses only selected variables
+    """
+
+    if max_interventions is None:
+        return optimize_cost_over_actionable_variables(
+            reference_row=reference_row,
+            historical_df=historical_df,
+            actionable_variables=actionable_variables,
+            cost_function=cost_function,
+            objective_mode=objective_mode,
+            invariants=invariants,
+            quality_constraints=quality_constraints,
+            **optimizer_kwargs,
+        )
+
+    if isinstance(max_interventions, str) and max_interventions.lower() == "all":
+        return optimize_cost_over_actionable_variables(
+            reference_row=reference_row,
+            historical_df=historical_df,
+            actionable_variables=actionable_variables,
+            cost_function=cost_function,
+            objective_mode=objective_mode,
+            invariants=invariants,
+            quality_constraints=quality_constraints,
+            **optimizer_kwargs,
+        )
+
+    max_interventions = int(max_interventions)
+
+    actionable_variables = list(dict.fromkeys(actionable_variables))
+
+    if max_interventions >= len(actionable_variables):
+        return optimize_cost_over_actionable_variables(
+            reference_row=reference_row,
+            historical_df=historical_df,
+            actionable_variables=actionable_variables,
+            cost_function=cost_function,
+            objective_mode=objective_mode,
+            invariants=invariants,
+            quality_constraints=quality_constraints,
+            **optimizer_kwargs,
+        )
+
+    selected = []
+    remaining = actionable_variables.copy()
+    best_result = None
+
+    def score(opt):
+        value = opt.get("optimized_objective_value", opt.get("optimized_cost"))
+
+        if value is None:
+            return -np.inf
+
+        value = float(value)
+
+        if objective_mode == "maximize":
+            return value
+
+        return -value
+
+    for _ in range(max_interventions):
+        best_candidate = None
+        best_candidate_result = None
+        best_candidate_score = -np.inf
+
+        for var in remaining:
+            trial_vars = selected + [var]
+
+            opt = optimize_cost_over_actionable_variables(
+                reference_row=reference_row,
+                historical_df=historical_df,
+                actionable_variables=trial_vars,
+                cost_function=cost_function,
+                objective_mode=objective_mode,
+                invariants=invariants,
+                quality_constraints=quality_constraints,
+                **optimizer_kwargs,
+            )
+
+            if not opt.get("changes"):
+                continue
+
+            s = score(opt)
+
+            if s > best_candidate_score:
+                best_candidate = var
+                best_candidate_result = opt
+                best_candidate_score = s
+
+        if best_candidate is None:
+            break
+
+        selected.append(best_candidate)
+        remaining.remove(best_candidate)
+        best_result = best_candidate_result
+
+    if best_result is None:
+        return {
+            "success": False,
+            "message": "No intervention subset improved the objective.",
+            "actionable_variables": actionable_variables,
+            "selected_variables": [],
+            "changes": [],
+        }
+
+    best_result["selected_variables"] = selected
+    best_result["max_interventions"] = max_interventions
+    best_result["selection_mode"] = "greedy"
+
+    return best_result

@@ -324,14 +324,14 @@ def answer(query: str) -> Dict[str, Any]:
     # Orchestrated path
     # -----------------------------------
     if intent == "diagnosis":
-        return answer_orchestrated(query)
+        return answer_orchestrated(query,parsed=parsed)
     if intent == "knowledge" and (
         parsed.get("target_range") is not None
         or parsed.get("baseline_range") is not None
         or parsed.get("grade") is not None
         or parsed.get("cost_component") is not None
     ):
-        return answer_orchestrated(query)
+        return answer_orchestrated(query,parsed=parsed)
     # -----------------------------------
     # Direct paths
     # -----------------------------------
@@ -610,12 +610,13 @@ def answer_diagnosis(
         "raw": out,
     }
 
-def answer_orchestrated(query: str) -> Dict[str, Any]:
+def answer_orchestrated(query: str, parsed: dict = None) -> Dict[str, Any]:
     import analysis_planner as ap
     import analysis_executor as ae
     import analysis_synthesizer as syn
 
-    parsed = qp.parse_query(query)
+    if parsed is None:
+        parsed = qp.parse_query(query)
     plan_bundle = ap.make_plan(parsed, raw_query=query)
     execution_out = ae.execute_plan(plan_bundle)
 
@@ -759,7 +760,8 @@ def _maybe_append_scenario_step(plan_bundle, execution_out, parsed):
         new_plan["final_template"] = "diagnosis_plus_recommendations_plus_scenario"
     elif final_template == "diagnosis_plus_shap_plus_knowledge_plus_recommendations":
         new_plan["final_template"] = "diagnosis_plus_shap_plus_knowledge_plus_recommendations_plus_scenario"
-
+    elif final_template == "recommendations_only":
+        new_plan["final_template"] = "recommendations_plus_scenario"
     new_bundle = {
         "planning_context": plan_bundle["planning_context"],
         "plan": new_plan,
