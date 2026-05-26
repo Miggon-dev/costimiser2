@@ -1795,7 +1795,7 @@ def build_optimized_interventions_from_recommendation(
             "message": "No actionable variables available for optimization.",
         }
 
-    cost_function, _, _ = st._resolve_cost_component(cost_component)
+    cost_function, feature_fn, _ = st._resolve_cost_component(cost_component)
 
     ref = st.get_reference_turnup(
         reel_id=reel_id,
@@ -1826,6 +1826,7 @@ def build_optimized_interventions_from_recommendation(
     #     quality_constraints=quality_constraints,
     #     objective_mode=objective_mode or "minimize",
     #     invariants=getattr(rc,"RECOMMENDATION_INVARIANTS",None),
+    #     hard_dependencies=getattr(rc,"RECOMMENDATION_HARD_DEPENDENCIES",None,),
     # )
 
     opt = optimize_cost_with_intervention_limit(
@@ -1833,8 +1834,8 @@ def build_optimized_interventions_from_recommendation(
         historical_df=historical_df,
         actionable_variables=actionable_variables,
         cost_function=cost_function,
-        lower_q=getattr(rc, "RECOMMENDATION_OPTIMIZER_LOWER_Q", 0.05),
-        upper_q=getattr(rc, "RECOMMENDATION_OPTIMIZER_UPPER_Q", 0.95),
+        lower_q=getattr(rc, "RECOMMENDATION_JOINT_LOWER_Q", 0.05),
+        upper_q=getattr(rc, "RECOMMENDATION_JOINT_UPPER_Q", 0.95),
         joint_quantile=getattr(rc, "RECOMMENDATION_OPTIMIZER_JOINT_QUANTILE", 0.95),
         quality_constraints=quality_constraints,
         objective_mode=objective_mode or "minimize",
@@ -1844,6 +1845,9 @@ def build_optimized_interventions_from_recommendation(
             "RECOMMENDATION_OPTIMIZER_MAX_INTERVENTIONS",
             getattr(rc, "RECOMMENDATION_ACTION_LIMIT", 5),
         ),
+        hard_dependencies=getattr(rc,"RECOMMENDATION_HARD_DEPENDENCIES",None,),
+        feature_fn=feature_fn,
+        max_joint_vars=getattr(rc, "RECOMMENDATION_JOINT_MAX_VARS", 10),
     )
 
     opt["reference"] = ref.get("reference")

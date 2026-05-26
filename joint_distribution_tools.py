@@ -448,6 +448,7 @@ def calibrate_intervention_to_joint_bounds(
         "feasible_lower": lo,
         "feasible_upper": hi,
         "was_clipped": was_clipped,
+        "conditional_bounds":bounds
     }
 
 

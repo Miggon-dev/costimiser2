@@ -33,9 +33,12 @@ RECOMMENDATION_OPTIMIZER_LOWER_Q = 0.05
 RECOMMENDATION_OPTIMIZER_UPPER_Q = 0.95
 RECOMMENDATION_OPTIMIZER_JOINT_QUANTILE = 0.95
 
+RECOMMENDATION_JOINT_LOWER_Q = 0.05
+RECOMMENDATION_JOINT_UPPER_Q = 0.95
+
 RECOMMENDATION_USE_MANUAL_ACTIONABLE_INPUTS = True
 
-RECOMMENDATION_OPTIMIZER_MAX_INTERVENTIONS = 1
+RECOMMENDATION_OPTIMIZER_MAX_INTERVENTIONS = 5
 RECOMMENDATION_OPTIMIZER_SELECTION_MODE = "greedy"
 
 RECOMMENDATION_MANUAL_ACTIONABLE_INPUTS_BY_TARGET = {
@@ -169,30 +172,83 @@ RECOMMENDATION_MANUAL_ACTIONABLE_INPUTS = [
     ]
 
 
-RECOMMENDATION_INVARIANTS = [
+# RECOMMENDATION_INVARIANTS = [
+#     {
+#         "name": "keep_total_fibre_flow_constant",
+
+#         "variables": [
+#             "Short_fibre_flow",
+#             "Long_fibre_flow",
+#         ],
+
+#         "fn": lambda row, ref: (
+#             (
+#                 row["Short_fibre_flow"]
+#                 + row["Long_fibre_flow"]
+#             )
+#             -
+#             (
+#                 ref["Short_fibre_flow"]
+#                 + ref["Long_fibre_flow"]
+#             )
+#         ),
+
+#         "tolerance": 1e-6,
+
+#         # strong penalty
+#         "weight": 1e8,
+#     },
+# ]
+
+RECOMMENDATION_INVARIANTS = [ ]
+
+RECOMMENDATION_HARD_DEPENDENCIES = [
     {
         "name": "keep_total_fibre_flow_constant",
-
-        "variables": [
-            "Short_fibre_flow",
-            "Long_fibre_flow",
-        ],
-
-        "fn": lambda row, ref: (
-            (
-                row["Short_fibre_flow"]
-                + row["Long_fibre_flow"]
-            )
-            -
-            (
-                ref["Short_fibre_flow"]
-                + ref["Long_fibre_flow"]
+        "free_variables": ["Short_fibre_flow"],
+        "dependent_variables": ["Long_fibre_flow"],
+        "apply_fn": lambda candidate, ref: candidate.assign(
+            Long_fibre_flow=(
+                ref["Short_fibre_flow"].iloc[0]
+                + ref["Long_fibre_flow"].iloc[0]
+                - candidate["Short_fibre_flow"]
             )
         ),
-
-        "tolerance": 1e-6,
-
-        # strong penalty
-        "weight": 1e8,
     },
+    {
+        "name": "lip_settings_from_mass_balance",
+
+        "free_variables": [
+            "Current_basis_weight",
+            "Current_reel_moisture_average(reel)",
+            "Headbox_consistency",
+            "Jet/wire_ratio",
+            "Speed",
+        ],
+
+        "dependent_variables": [
+            "Lip_settings",
+        ],
+
+        "apply_fn": lambda candidate, ref: candidate.assign(
+            Lip_settings=(
+                candidate["Current_basis_weight"]
+                * (
+                    1
+                    - candidate["Current_reel_moisture_average(reel)"] / 100
+                )
+                /
+                (
+                    0.717878
+                    * candidate["Headbox_consistency"]
+                    * 10
+                    * (
+                        1
+                        + candidate["Jet/wire_ratio"]
+                        / candidate["Speed"]
+                    )
+                )
+            )
+        ),
+    }
 ]

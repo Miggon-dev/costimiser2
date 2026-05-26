@@ -461,6 +461,7 @@ def simulate_turnup_scenario(
     # Joint distribution calibration (feasibility layer)
     # ------------------------------------------------------------------
     import joint_distribution_tools as jdt
+    import recommendation_config as rc
 
     joint_calibration_results = None
 
@@ -493,6 +494,8 @@ def simulate_turnup_scenario(
                 row=baseline_row.iloc[0],
                 interventions=resolved_interventions,
                 joint_bundle=joint_bundle,
+                q_low = getattr(rc, "RECOMMENDATION_JOINT_LOWER_Q", 0.05),
+                q_high = getattr(rc, "RECOMMENDATION_JOINT_UPPER_Q", 0.95),
             )
 
             # Replace interventions with calibrated ones

@@ -3,6 +3,89 @@ import pandas as pd
 from scipy.optimize import differential_evolution
 
 
+def _dependent_variables_from_hard_dependencies(hard_dependencies):
+    if not hard_dependencies:
+        return set()
+
+    out = set()
+
+    for dep in hard_dependencies:
+        for v in dep.get("dependent_variables", []):
+            out.add(str(v))
+
+    return out
+
+
+def _apply_hard_dependencies(candidate_df, reference_df, hard_dependencies):
+    if not hard_dependencies:
+        return candidate_df
+
+    out = candidate_df.copy()
+
+    for dep in hard_dependencies:
+        fn = dep.get("apply_fn")
+        if fn is None:
+            continue
+
+        out = fn(out, reference_df)
+
+    return out
+
+
+def _evaluate_hard_dependencies(candidate_df, reference_df, hard_dependencies):
+    if not hard_dependencies:
+        return []
+
+    evaluations = []
+
+    for dep in hard_dependencies:
+        name = dep.get("name", "unnamed_hard_dependency")
+        dep_vars = dep.get("dependent_variables", [])
+
+        before = {
+            v: _safe_float(candidate_df.iloc[0][v])
+            for v in dep_vars
+            if v in candidate_df.columns
+        }
+
+        try:
+            after_df = _apply_hard_dependencies(
+                candidate_df,
+                reference_df,
+                [dep],
+            )
+
+            after = {
+                v: _safe_float(after_df.iloc[0][v])
+                for v in dep_vars
+                if v in after_df.columns
+            }
+
+            evaluations.append(
+                {
+                    "name": name,
+                    "dependent_variables": dep_vars,
+                    "before": before,
+                    "after": after,
+                    "applied": True,
+                }
+            )
+
+        except Exception as e:
+            evaluations.append(
+                {
+                    "name": name,
+                    "dependent_variables": dep_vars,
+                    "before": before,
+                    "after": None,
+                    "applied": False,
+                    "error": str(e),
+                }
+            )
+
+    return evaluations
+
+
 def _invariant_penalty(candidate_df, reference_df, invariants):
     """
     Soft penalty for invariant violations.
@@ -188,8 +271,129 @@ def _safe_float(x):
     except Exception:
         return np.nan
 
-
 def _get_variable_bounds(
+    historical_df,
+    variables,
+    lower_q=0.05,
+    upper_q=0.95,
+    reference_row=None,
+    use_joint_conditional_bounds=True,
+    feature_fn=None,
+    max_joint_vars=10,
+
+):
+    """
+    Bounds for optimization variables.
+
+    Preferred:
+        conditional bounds from grade-specific joint distribution
+        P(variable | current reference state)
+
+    Fallback:
+        marginal historical quantiles
+    """
+    bounds = {}
+    bound_details = {}
+
+    joint_bundle = None
+
+    if use_joint_conditional_bounds and reference_row is not None:
+        try:
+            import joint_distribution_tools as jdt
+
+            ref_df = _as_dataframe_row(reference_row)
+            ref_row = ref_df.iloc[0]
+
+            grade = None
+            if "AB_Grade_ID" in ref_df.columns:
+                grade = str(ref_df["AB_Grade_ID"].iloc[0])
+
+            interventions_like = [
+                {"variable": v, "mode": "absolute", "value": ref_row[v]}
+                for v in variables
+                if v in ref_df.columns
+            ]
+
+            joint_vars = jdt.build_joint_variable_set(
+                interventions=interventions_like,
+                baseline_row=ref_df,
+                feature_fn=feature_fn,
+                top_driver_variables=None,
+                shap_result=None,
+                max_vars=max_joint_vars,
+            )
+
+            if grade is not None and joint_vars:
+                joint_bundle = jdt.fit_joint_model_for_grade_from_tools(
+                    grade=grade,
+                    variables=joint_vars,
+                )
+
+        except Exception as e:
+            joint_bundle = None
+            bound_details["_joint_model_error"] = str(e)
+
+    for var in variables:
+        if var not in historical_df.columns:
+            continue
+
+        lo = None
+        hi = None
+        source = None
+        conditional_bounds = None
+
+        if joint_bundle is not None and var in joint_bundle.variables:
+            try:
+                import joint_distribution_tools as jdt
+
+                ref_df = _as_dataframe_row(reference_row)
+                ref_row = ref_df.iloc[0]
+
+                conditional_bounds = jdt.get_conditional_bounds_for_variable(
+                    row=ref_row,
+                    variable=var,
+                    joint_bundle=joint_bundle,
+                    q_low=lower_q,
+                    q_high=upper_q,
+                )
+
+                lo = float(conditional_bounds["lower_bound"])
+                hi = float(conditional_bounds["upper_bound"])
+                source = "joint_conditional"
+
+            except Exception as e:
+                conditional_bounds = {
+                    "error": str(e),
+                }
+
+        if lo is None or hi is None:
+            s = pd.to_numeric(historical_df[var], errors="coerce").dropna()
+
+            if s.empty:
+                continue
+
+            lo = float(s.quantile(lower_q))
+            hi = float(s.quantile(upper_q))
+            source = "marginal_quantile"
+
+        if not np.isfinite(lo) or not np.isfinite(hi):
+            continue
+
+        if lo == hi:
+            continue
+
+        bounds[var] = (lo, hi)
+
+        bound_details[var] = {
+            "source": source,
+            "lower_bound": lo,
+            "upper_bound": hi,
+            "conditional_bounds": conditional_bounds,
+        }
+
+    return bounds, bound_details
+
+def _get_variable_boundsDEPRECATED(
     historical_df,
     variables,
     lower_q=0.05,
@@ -407,6 +611,9 @@ def optimize_cost_over_actionable_variables(
     objective_mode="minimize",
     maxiter=80,
     seed=42,
+    hard_dependencies=None,
+    feature_fn=None,
+    max_joint_vars=10
 ):
     """
     Minimize a cost function by changing only actionable variables.
@@ -444,6 +651,15 @@ def optimize_cost_over_actionable_variables(
         if v in base_row.columns and v in historical_df.columns
     ]
 
+    dependent_vars = _dependent_variables_from_hard_dependencies(
+        hard_dependencies
+    )
+
+    actionable_variables = [
+        v for v in actionable_variables
+        if v not in dependent_vars
+    ]
+
     if not actionable_variables:
         return {
             "success": False,
@@ -451,11 +667,15 @@ def optimize_cost_over_actionable_variables(
             "actionable_variables": [],
         }
 
-    bounds_dict = _get_variable_bounds(
+    bounds_dict, bound_details = _get_variable_bounds(
         historical_df=historical_df,
         variables=actionable_variables,
         lower_q=lower_q,
         upper_q=upper_q,
+        reference_row=base_row,
+        use_joint_conditional_bounds=True,
+        feature_fn=feature_fn,
+        max_joint_vars=max_joint_vars,
     )
 
     variables = list(bounds_dict.keys())
@@ -509,6 +729,13 @@ def optimize_cost_over_actionable_variables(
         for var, value in zip(variables, x):
             candidate.at[candidate.index[0], var] = float(value)
 
+        candidate = _apply_hard_dependencies(
+            candidate,
+            base_row,
+            hard_dependencies,
+        )
+        
+
         objective_value = predict_cost(candidate)
 
         model_objective = (
@@ -541,6 +768,9 @@ def optimize_cost_over_actionable_variables(
             excess = max(0.0, dist - joint_constraint["max_distance"])
             penalty = joint_penalty_weight * excess**2
 
+        penalty = 0
+        
+        
         return model_objective + penalty + quality_penalty + invariant_penalty
 
     result = differential_evolution(
@@ -558,6 +788,12 @@ def optimize_cost_over_actionable_variables(
     for var, value in zip(variables, result.x):
         optimized_row.at[optimized_row.index[0], var] = float(value)
 
+    optimized_row = _apply_hard_dependencies(
+        optimized_row,
+        base_row,
+        hard_dependencies,
+    )
+
     optimized_objective_value = predict_cost(optimized_row)
 
     _, optimized_quality_evaluations = _quality_constraint_penalty(
@@ -570,6 +806,12 @@ def optimize_cost_over_actionable_variables(
         optimized_row,
         base_row,
         invariants,
+    )
+
+    hard_dependency_evaluations = _evaluate_hard_dependencies(
+        optimized_row,
+        base_row,
+        hard_dependencies,
     )
 
 
@@ -626,6 +868,7 @@ def optimize_cost_over_actionable_variables(
             }
             for v in variables
         },
+        "bound_details":bound_details,
         "lower_q": float(lower_q),
         "upper_q": float(upper_q),
         # joint feasibility
@@ -671,6 +914,9 @@ def optimize_cost_over_actionable_variables(
             if optimized_invariant_evaluations
             else None
         ),
+        "hard_dependencies": hard_dependencies or [],
+        "hard_dependency_evaluations": hard_dependency_evaluations,
+        "max_joint_vars": max_joint_vars,
     }
 
 def optimize_cost_with_intervention_limit(
@@ -682,6 +928,9 @@ def optimize_cost_with_intervention_limit(
     objective_mode="minimize",
     invariants=None,
     quality_constraints=None,
+    hard_dependencies=None,
+    feature_fn=None,
+    max_joint_vars=10,
     **optimizer_kwargs,
 ):
     """
@@ -703,6 +952,9 @@ def optimize_cost_with_intervention_limit(
             objective_mode=objective_mode,
             invariants=invariants,
             quality_constraints=quality_constraints,
+            hard_dependencies=hard_dependencies,
+            feature_fn=feature_fn,
+            max_joint_vars=max_joint_vars,
             **optimizer_kwargs,
         )
 
@@ -715,6 +967,9 @@ def optimize_cost_with_intervention_limit(
             objective_mode=objective_mode,
             invariants=invariants,
             quality_constraints=quality_constraints,
+            hard_dependencies=hard_dependencies,
+            feature_fn=feature_fn,
+            max_joint_vars=max_joint_vars,
             **optimizer_kwargs,
         )
 
@@ -731,6 +986,9 @@ def optimize_cost_with_intervention_limit(
             objective_mode=objective_mode,
             invariants=invariants,
             quality_constraints=quality_constraints,
+            hard_dependencies=hard_dependencies,
+            feature_fn=feature_fn,
+            max_joint_vars=max_joint_vars,
             **optimizer_kwargs,
         )
 
@@ -767,6 +1025,9 @@ def optimize_cost_with_intervention_limit(
                 objective_mode=objective_mode,
                 invariants=invariants,
                 quality_constraints=quality_constraints,
+                hard_dependencies=hard_dependencies,
+                feature_fn=feature_fn,
+                max_joint_vars=max_joint_vars,
                 **optimizer_kwargs,
             )
 

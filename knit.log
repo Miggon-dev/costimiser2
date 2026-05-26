@@ -5893,3 +5893,57 @@ NameError: name 'steam_cost' is not defined. Did you mean: 'steam_model'?
 2026-05-18 08:31:45,975 INFO: Steam__€/T_
 2026-05-18 08:31:59,316 INFO: Electricity__€/T_
 2026-05-18 08:32:12,888 INFO: Starch__€/T_
+2026-05-25 07:38:33,306 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-05-25 07:38:33,311 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-05-25 07:38:33,314 INFO: Working directory: c:\workspace\costimiser
+2026-05-25 07:39:20,705 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-05-25 07:39:20,708 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-05-25 07:39:20,712 INFO: Working directory: c:\workspace\costimiser
+2026-05-25 07:39:34,573 INFO: Fibre_cost__€/T_
+2026-05-25 07:39:46,804 INFO: Steam__€/T_
+2026-05-25 07:39:59,258 INFO: Electricity__€/T_
+2026-05-25 07:40:10,856 INFO: Starch__€/T_
+2026-05-25 07:40:22,541 INFO: Fibre_cost__€/T_
+2026-05-25 07:40:33,113 INFO: Steam__€/T_
+2026-05-25 07:40:43,347 INFO: Electricity__€/T_
+2026-05-25 07:40:53,403 INFO: Starch__€/T_
+2026-05-25 07:41:09,633 INFO: Fibre_cost__€/T_
+2026-05-25 07:41:25,552 INFO: Steam__€/T_
+2026-05-25 07:41:39,147 INFO: Electricity__€/T_
+2026-05-25 07:41:52,531 INFO: Starch__€/T_
+2026-05-25 07:49:34,205 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-05-25 07:49:34,211 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-05-25 07:49:34,216 INFO: Working directory: c:\workspace\costimiser
+2026-05-25 07:50:07,027 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-05-25 07:50:07,032 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-05-25 07:50:07,040 INFO: Working directory: c:\workspace\costimiser
+2026-05-25 07:50:22,797 INFO: Fibre_cost__€/T_
+2026-05-25 07:50:36,706 INFO: Steam__€/T_
+2026-05-25 07:50:52,042 INFO: Electricity__€/T_
+2026-05-25 07:51:05,165 INFO: Starch__€/T_
+2026-05-25 07:51:18,133 INFO: Fibre_cost__€/T_
+2026-05-25 07:51:30,769 INFO: Steam__€/T_
+2026-05-25 07:51:42,572 INFO: Electricity__€/T_
+2026-05-25 07:51:54,043 INFO: Starch__€/T_
+2026-05-25 07:52:11,699 INFO: Fibre_cost__€/T_
+2026-05-25 07:52:29,757 INFO: Steam__€/T_
+2026-05-25 07:52:46,956 INFO: Electricity__€/T_
+2026-05-25 07:53:02,454 INFO: Starch__€/T_
+2026-05-25 07:55:21,444 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-05-25 07:55:21,449 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-05-25 07:55:21,452 INFO: Working directory: c:\workspace\costimiser
+2026-05-25 07:55:53,005 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-05-25 07:55:53,009 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-05-25 07:55:53,012 INFO: Working directory: c:\workspace\costimiser
+2026-05-25 07:56:05,880 INFO: Fibre_cost__€/T_
+2026-05-25 07:56:17,454 INFO: Steam__€/T_
+2026-05-25 07:56:29,449 INFO: Electricity__€/T_
+2026-05-25 07:56:41,069 INFO: Starch__€/T_
+2026-05-25 07:56:52,905 INFO: Fibre_cost__€/T_
+2026-05-25 07:57:03,729 INFO: Steam__€/T_
+2026-05-25 07:57:14,090 INFO: Electricity__€/T_
+2026-05-25 07:57:23,732 INFO: Starch__€/T_
+2026-05-25 07:57:39,288 INFO: Fibre_cost__€/T_
+2026-05-25 07:57:54,518 INFO: Steam__€/T_
+2026-05-25 07:58:07,866 INFO: Electricity__€/T_
+2026-05-25 07:58:21,240 INFO: Starch__€/T_
