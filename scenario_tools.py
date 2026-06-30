@@ -46,34 +46,34 @@ DEFAULT_TURNUP_SCHEMA: Dict[str, str] = {
 }
  
  
-SCENARIO_COMPONENTS: Dict[str, Dict[str, Any]] = {
-    "fibre": {"cost_fn": fibre_cost, "feature_fn": fibre_features},
-    "fibre_cost": {"cost_fn": fibre_cost, "feature_fn": fibre_features},
-    "steam": {"cost_fn": steam_cost, "feature_fn": steam_features},
-    "steam_cost": {"cost_fn": steam_cost, "feature_fn": steam_features},
-    "electricity": {"cost_fn": electricity_cost, "feature_fn": electricity_features},
-    "electricity_cost": {"cost_fn": electricity_cost, "feature_fn": electricity_features},
-    "starch": {"cost_fn": starch_cost, "feature_fn": starch_features},
-    "starch_cost": {"cost_fn": starch_cost, "feature_fn": starch_features},
-    "sct cd": {"cost_fn": sctcd_strength, "feature_fn": SCTCD_features},
-    "sct_cd": {"cost_fn": sctcd_strength, "feature_fn": SCTCD_features},
-    "sctcd": {"cost_fn": sctcd_strength, "feature_fn": SCTCD_features},
-    "SCT CD": {"cost_fn": sctcd_strength, "feature_fn": SCTCD_features},
+# SCENARIO_COMPONENTS: Dict[str, Dict[str, Any]] = {
+#     "fibre": {"cost_fn": fibre_cost, "feature_fn": fibre_features},
+#     "fibre_cost": {"cost_fn": fibre_cost, "feature_fn": fibre_features},
+#     "steam": {"cost_fn": steam_cost, "feature_fn": steam_features},
+#     "steam_cost": {"cost_fn": steam_cost, "feature_fn": steam_features},
+#     "electricity": {"cost_fn": electricity_cost, "feature_fn": electricity_features},
+#     "electricity_cost": {"cost_fn": electricity_cost, "feature_fn": electricity_features},
+#     "starch": {"cost_fn": starch_cost, "feature_fn": starch_features},
+#     "starch_cost": {"cost_fn": starch_cost, "feature_fn": starch_features},
+#     "sct cd": {"cost_fn": sctcd_strength, "feature_fn": SCTCD_features},
+#     "sct_cd": {"cost_fn": sctcd_strength, "feature_fn": SCTCD_features},
+#     "sctcd": {"cost_fn": sctcd_strength, "feature_fn": SCTCD_features},
+#     "SCT CD": {"cost_fn": sctcd_strength, "feature_fn": SCTCD_features},
 
-    "sct md": {"cost_fn": sctmd_strength, "feature_fn": SCTMD_features},
-    "sct_md": {"cost_fn": sctmd_strength, "feature_fn": SCTMD_features},
-    "sctmd": {"cost_fn": sctmd_strength, "feature_fn": SCTMD_features},
-    "SCT MD": {"cost_fn": sctmd_strength, "feature_fn": SCTMD_features},
+#     "sct md": {"cost_fn": sctmd_strength, "feature_fn": SCTMD_features},
+#     "sct_md": {"cost_fn": sctmd_strength, "feature_fn": SCTMD_features},
+#     "sctmd": {"cost_fn": sctmd_strength, "feature_fn": SCTMD_features},
+#     "SCT MD": {"cost_fn": sctmd_strength, "feature_fn": SCTMD_features},
 
-    "burst": {"cost_fn": burst_strength, "feature_fn": Burst_features},    
-    "Burst": {"cost_fn": burst_strength, "feature_fn": Burst_features},    
+#     "burst": {"cost_fn": burst_strength, "feature_fn": Burst_features},    
+#     "Burst": {"cost_fn": burst_strength, "feature_fn": Burst_features},    
 
-    "cmt 30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
-    "cmt_30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
-    "cmt30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
-    "CMT 30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
-    "CMT30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
-}
+#     "cmt 30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
+#     "cmt_30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
+#     "cmt30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
+#     "CMT 30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
+#     "CMT30": {"cost_fn": cmt30_strength, "feature_fn": CMT30_features},    
+# }
  
  
 def _get_schema(schema: Optional[Dict[str, str]] = None) -> Dict[str, str]:
@@ -125,7 +125,7 @@ def _filter_by_target_range(
     return out
  
  
-def _resolve_cost_component(cost_component: str) -> Tuple[Any, Any, str]:
+def _resolve_cost_component_DEPRECATED(cost_component: str) -> Tuple[Any, Any, str]:
     if cost_component is None:
         raise ValueError("cost_component must be provided")
  
@@ -138,6 +138,71 @@ def _resolve_cost_component(cost_component: str) -> Tuple[Any, Any, str]:
  
     info = SCENARIO_COMPONENTS[key]
     return info["cost_fn"], info["feature_fn"], key
+
+def _resolve_cost_component(cost_component: str) -> Tuple[Any, Any, str]:
+    if cost_component is None:
+        raise ValueError("cost_component must be provided")
+
+    from prediction_tools import PREDICTORS
+
+    raw = str(cost_component).strip()
+    key = raw.lower().replace("_", " ")
+    key = " ".join(key.split())
+
+    aliases = {
+        "fiber": "fibre",
+        "fiber cost": "fibre",
+        "fibre cost": "fibre",
+
+        "steam cost": "steam",
+        "electricity cost": "electricity",
+        "power": "electricity",
+        "power cost": "electricity",
+        "starch cost": "starch",
+
+        "combined": "total",
+        "combined cost": "total",
+        "total cost": "total",
+        "overall": "total",
+        "overall cost": "total",
+
+        "sct cd": "SCT CD",
+        "sctcd": "SCT CD",
+
+        "sct md": "SCT MD",
+        "sctmd": "SCT MD",
+
+        "burst": "Burst",
+
+        "cmt 30": "CMT30",
+        "cmt30": "CMT30",
+    }
+
+    # First alias normalization
+    canonical = aliases.get(key, raw)
+
+    # Direct lookup
+    if canonical in PREDICTORS:
+        spec = PREDICTORS[canonical]
+        return spec["predict_fn"], spec["features_fn"], canonical
+
+    # Case-insensitive fallback against actual PREDICTORS keys
+    normalized_predictors = {
+        str(k).lower().replace("_", " "): k
+        for k in PREDICTORS.keys()
+    }
+
+    predictor_key = normalized_predictors.get(key)
+
+    if predictor_key is not None:
+        spec = PREDICTORS[predictor_key]
+        return spec["predict_fn"], spec["features_fn"], predictor_key
+
+    raise ValueError(
+        f"Unsupported cost_component={cost_component!r}. "
+        f"Supported values: {sorted(PREDICTORS.keys())}"
+    )
+
  
  
 def load_turnup_data_for_scenario(
@@ -407,6 +472,84 @@ def apply_interventions(
         "warnings": warnings,
     }
  
+
+def apply_hard_dependencies_for_scenario(
+    row_df: pd.DataFrame,
+    reference_df: pd.DataFrame,
+) -> Dict[str, Any]:
+    """
+    Apply hard dependency rules from recommendation_config to a scenario row.
+
+    Example:
+        If Headbox_consistency changes, Lip_settings is recomputed before prediction.
+    """
+
+    try:
+        import recommendation_config as rc
+        hard_dependencies = getattr(rc, "RECOMMENDATION_HARD_DEPENDENCIES", None)
+    except Exception:
+        hard_dependencies = None
+
+    if not hard_dependencies:
+        return {
+            "row": row_df,
+            "applied_dependencies": [],
+            "warnings": [],
+        }
+
+    out = row_df.copy()
+    warnings = []
+    applied = []
+
+    for dep in hard_dependencies:
+        name = dep.get("name", "unnamed_hard_dependency")
+        fn = dep.get("apply_fn")
+        dependent_variables = dep.get("dependent_variables", [])
+
+        if fn is None:
+            continue
+
+        before = out.copy()
+
+        try:
+            out = fn(out, reference_df)
+
+            for v in dependent_variables:
+                if v not in before.columns or v not in out.columns:
+                    continue
+
+                old_value = before.iloc[0][v]
+                new_value = out.iloc[0][v]
+
+                try:
+                    old_float = float(old_value)
+                    new_float = float(new_value)
+                except Exception:
+                    old_float = old_value
+                    new_float = new_value
+
+                if old_float != new_float:
+                    applied.append(
+                        {
+                            "variable": v,
+                            "mode": "hard_dependency",
+                            "value": new_float,
+                            "old_value": old_float,
+                            "new_value": new_float,
+                            "dependency": name,
+                        }
+                    )
+
+        except Exception as e:
+            warnings.append(
+                f"Hard dependency {name!r} failed: {e}"
+            )
+
+    return {
+        "row": out,
+        "applied_dependencies": applied,
+        "warnings": warnings,
+    }
  
 def simulate_turnup_scenario(
     cost_component: str,
@@ -530,11 +673,33 @@ def simulate_turnup_scenario(
     baseline_prediction = float(cost_fn(baseline_series))
 
     mod = apply_interventions(baseline_row, resolved_interventions)
-    scenario_row = mod["row"]
+
+    dep = apply_hard_dependencies_for_scenario(
+        row_df=mod["row"],
+        reference_df=baseline_row,
+    )
+
+    scenario_row = dep["row"]
     scenario_series = scenario_row.iloc[0]
     scenario_prediction = float(cost_fn(scenario_series))
 
-    warnings = reference_warnings + resolution_warnings + list(mod["warnings"])
+    applied_interventions = (
+        list(mod["applied_interventions"])
+        + list(dep["applied_dependencies"])
+    )
+
+    warnings = (
+        reference_warnings
+        + resolution_warnings
+        + list(mod["warnings"])
+        + list(dep["warnings"])
+    )
+
+    changed_vars = {
+        a.get("variable")
+        for a in applied_interventions
+        if a.get("variable") is not None
+    }
 
     if changed_vars:
         if len(unused_changed_vars) == len(changed_vars):
@@ -556,7 +721,7 @@ def simulate_turnup_scenario(
         "delta_prediction": scenario_prediction - baseline_prediction,
         "baseline_row": baseline_row,
         "scenario_row": scenario_row,
-        "applied_interventions": mod["applied_interventions"],
+        "applied_interventions": applied_interventions,
         "warnings": warnings,
         "joint_calibration":joint_calibration_results
     }

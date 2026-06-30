@@ -1,27 +1,21 @@
 sudo ntpdate time.nist.gov
 source venv/bin/activate
-kubectl port-forward deploy/my-deployment 8000:8000
+
+kubectl rollout restart deployment cost-analysis-dashboard
+kubectl rollout status deploy -n "costimiser" "cost-analysis-dashboard" || handle_error
+kubectl port-forward deploy/cost-analysis-dashboard 8000:8000
 
 \kubectl -n "$NS" logs -f "pod/$POD" -- | command grep -viE 'info|debug'
+
+SEL=$(kubectl -n "$NS" get deploy cost-analysis-dashboard -o json \
+  | jq -r '.spec.selector.matchLabels | to_entries | map("\(.key)=\(.value)") | join(",")')
 
 POD=$(kubectl -n "$NS" get pods -l "$SEL" \
   --field-selector=status.phase=Running \
   -o jsonpath='{.items[0].metadata.name}')
 
 
-NS=costimiser
-POD=$(kubectl -n $NS get pods -l cost-analysis-dashboard -o jsonpath='{.items[0].metadata.name}')
- 
-# Tail current logs (top container if only one)
-kubectl -n $NS logs -f $POD
- 
-# If there are multiple containers
-kubectl -n $NS logs -f $POD -c <container-name>
- 
-# Logs from the *previous* crash (CrashLoopBackOff cases)
-kubectl -n $NS logs --previous $POD -c <container-name>
-
-NS=costimiser   # or your actual ns
+NS=costimiser   
 
 SEL=$(kubectl -n "$NS" get deploy cost-analysis-dashboard -o json \
   | jq -r '.spec.selector.matchLabels | to_entries | map("\(.key)=\(.value)") | join(",")')
@@ -32,56 +26,164 @@ kubectl -n "$NS" get pods -l "$SEL"
 POD=$(kubectl -n "$NS" get pods -l "$SEL" \
   --field-selector=status.phase=Running \
   -o jsonpath='{.items[0].metadata.name}')
+
 echo "$POD"
 
+kubectl -n $NS logs -f $POD
+\kubectl -n "$NS" logs -f "pod/$POD" -- | command grep -viE 'info|debug'
 
-kubectl rollout status deploy -n "costimiser" "cost-analysis-dashboard" || handle_error
+kubectl describe deployment cost-analysis-dashboard
 
-kubectl rollout restart deployment cost-analysis-dashboard
+
+About executing code in a deployed pod to test MLflow
+
+
+kubectl exec -it $POD -n costimiser -- /bin/bash
+python
+
+import os
+import boto3
+import mlflow
+from mlflow.tracking import MlflowClient
+
+print("AWS_REGION:", os.environ.get("AWS_REGION"))
+print("AWS_ROLE_ARN:", os.environ.get("AWS_ROLE_ARN"))
+print("TOKEN_FILE:", os.environ.get("AWS_WEB_IDENTITY_TOKEN_FILE"))
+sts = boto3.client("sts")
+print(sts.get_caller_identity())
+sm = boto3.client("sagemaker", region_name="eu-west-1")
+
+response = sm.describe_mlflow_tracking_server(
+    TrackingServerName="tracking-server-cmtvu5owg33jx2-6n1vax5t3bfmhi-dev"
+)
+print(response)
+
+tracking_arn = response["TrackingServerArn"]
+
+mlflow.set_tracking_uri(tracking_arn)
+print("Tracking URI:", mlflow.get_tracking_uri())
+
+client = MlflowClient()
+experiments = client.search_experiments()  --| Here get stuck
+
+response["TrackingServerUrl"]
+'https://t-b8cvkbe6febi.eu-west-1.experiments.sagemaker.aws'
+response["TrackingServerStatus"]
+'Created'
+response["ArtifactStoreUri"]
+'s3://amazon-sagemaker-781690932061-eu-west-1-651dc8e6f0b2/dzd_cjw6wottibm3fa/cmtvu5owg33jx2/dev/data/ml/mlflow'
+
+print(mlflow.get_tracking_uri())
+arn:aws:sagemaker:eu-west-1:781690932061:mlflow-tracking-server/tracking-server-cmtvu5owg33jx2-6n1vax5t3bfmhi-dev
+
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
+for name in ["urllib3", "requests", "botocore", "mlflow"]:
+    logging.getLogger(name).setLevel(logging.DEBUG)
+
+
+experiments = client.search_experiments()
+DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): eu-west-1.experiments.sagemaker.aws:443
+
+
+import socket
+
+host = "eu-west-1.experiments.sagemaker.aws"
+port = 443
+
+s = socket.create_connection((host, port), timeout=10)
+print("connected")
+s.close()
+
+
+import requests
+
+requests.post(
+    "https://eu-west-1.experiments.sagemaker.aws/api/2.0/mlflow/experiments/search",
+    timeout=30
+)
+
+
+import socket
+
+host = "t-b8cvkbe6febi.eu-west-1.experiments.sagemaker.aws"
+
+s = socket.create_connection((host, 443), timeout=10)
+print("TCP connected")
+s.close()
+
+import requests
+
+requests.get(
+    "https://t-b8cvkbe6febi.eu-west-1.experiments.sagemaker.aws",
+    timeout=30
+)
+
+import requests
+
+requests.get(
+    "https://t-b8cvkbe6febi.eu-west-1.experiments.sagemaker.aws",
+    timeout=30
+)
+
+
+
+
+
+
+
+
+
 
 python app/backfill_toolkit/scripts/backfill_refetch_api.py --env dev --start 2025-04-01 --end 2026-02-03 --output-target s3 --overwrite 1 --dry-run 0 --cooldown-seconds 5
 
 
-git clone codecommit::eu-west-1://cc-ai-dvt-dashboard
 
+aws codebuild start-build --project-name cbp-ddh-costimiser-support
 
-
-export AWS_PAGER=""
-
-to run
-
-BUILD_ID=$(aws codebuild start-build \
-  --project-name cbp-ddh-cbp-ddh-costimiser-support-prod \
-  --query 'build.id' \
-  --output text \
-  --no-cli-pager)
-
-echo $BUILD_ID
-
-To debug
-
-aws codebuild batch-get-builds \
-  --ids "$BUILD_ID" \
-  --query 'builds[0].[buildStatus,currentPhase]' \
-  --output text \
-  --no-cli-pager
-
-read LOG_GROUP LOG_STREAM <<< $(aws codebuild batch-get-builds \
-  --ids "$BUILD_ID" \
-  --query 'builds[0].logs.[groupName,streamName]' \
-  --output text \
-  --no-cli-pager)
+BUILD_ID=$(aws codebuild start-build  --project-name cbp-ddh-cbp-ddh-costimiser-support-prod --query 'build.id' --output text  --no-cli-pager)
+aws codebuild batch-get-builds   --ids "$BUILD_ID"   --query 'builds[0].[buildStatus,currentPhase]'   --output text   --no-cli-pager
+read LOG_GROUP LOG_STREAM <<< $(aws codebuild batch-get-builds --ids "$BUILD_ID" --query 'builds[0].logs.[groupName,streamName]'  --output text  --no-cli-pager)
 echo "Group: $LOG_GROUP"
 echo "Stream: $LOG_STREAM"
-
-aws logs get-log-events \
-  --log-group-name "$LOG_GROUP" \
-  --log-stream-name "$LOG_STREAM" \
-  --no-cli-pager
+aws logs get-log-events   --log-group-name "$LOG_GROUP"   --log-stream-name "$LOG_STREAM"   --no-cli-pager
 
 
+git clone codecommit::eu-west-1://cc-ai-dvt-dashboard
 
-kubectl get pods | grep costimiser-background
-costimiser-background-29624526-4zjc7            0/1     Error                    0             31s
-costimiser-background-29624526-xph8j            0/1     Error                    0             51s
-kubectl logs costimiser-background-29624526-4zjc7
+To create venv
+python3.10 -m venv venv
+source venv/bin/activate
+
+
+
+kubectl rollout restart deployment ai-analytic-engine
+kubectl rollout status deploy -n "costimiser" "ai-analytic-engine" || handle_error
+kubectl port-forward deploy/ai-analytic-engine 5000:5000
+
+
+export ARTIFACT_BACKEND=local
+export ARTIFACT_LOCAL_DIR=artifacts
+
+python app/app.py
+
+NS=costimiser
+SEL=$(kubectl -n "$NS" get deploy ai-analytic-engine -o json \
+  | jq -r '.spec.selector.matchLabels | to_entries | map("\(.key)=\(.value)") | join(",")')
+kubectl -n "$NS" get pods -l "$SEL"
+POD=$(kubectl -n "$NS" get pods -l "$SEL" \
+  --field-selector=status.phase=Running \
+  -o jsonpath='{.items[0].metadata.name}')
+
+ZScaler Issues
+
+echo "check_certificate = off" >> ~/.wgetrc
+code .
+
+
+git config --global http.sslVerify false
+
+
+

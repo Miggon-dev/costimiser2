@@ -169,10 +169,11 @@ def _eligible_tools_from_parsed(parsed: Dict[str, Any]) -> List[str]:
             eligible = ["recommend"]
 
         elif _has_required_fields(parsed, ["target_range", "baseline_range"]):
+            eligible.append("cost_driver")
+
             if _manual_actionable_mode():
                 eligible.append("recommend")
             else:
-                eligible.append("cost_driver")
                 eligible.append("shap")
                 eligible.append("knowledge")
                 eligible.append("recommend")
@@ -228,6 +229,7 @@ def build_planning_context(parsed: Dict[str, Any], raw_query: Optional[str] = No
             "what's driving",
             "what is causing",
             "what's causing",
+            "diagnose"
         ]),
         "wants_recommendations": any(k in q for k in [
             "recommend",
@@ -446,6 +448,7 @@ def plan_analysis(planning_context: Dict[str, Any]) -> Dict[str, Any]:
     if intent == "diagnosis" and "diagnosis" in allowed_tools:
         steps = []
 
+        
         diagnosis_step = _step(
             tool="diagnosis",
             purpose="Diagnose the issue across the requested drilldown levels and objects.",

@@ -1,0 +1,13 @@
+https://elz.awsapps.com/start/#/?tab=accounts
+https://eu-west-1.signin.aws/platform/login?workflowStateHandle=b5cee518-2a43-4204-8edc-ad5daa9b5260
+https://costimiser.dev-datafactory.eu-west-1.aws.dssmith.local/?tabs=Online%2520Predictions&lang=English
+https://service-creator.dev-datafactory.eu-west-1.aws.dssmith.local/
+https://chat.prod-datafactory.eu-west-1.aws.dssmith.local/
+https://documentation.dev-datafactory.eu-west-1.aws.dssmith.local/
+https://data-lake-browser.dev-datafactory.eu-west-1.aws.dssmith.local/
+https://s3-browser.dev-datafactory.eu-west-1.aws.dssmith.local/
+https://trello.com/b/FYkbjYRL/ds-smith
+https://chat.prod-genai.eu-west-1.aws.dssmith.local/
+https://outlook.office.com/groups/home
+https://headlamp.dev-datafactory.eu-west-1.aws.dssmith.local/c/main/token
+https://credential-service.prod-datafactory.eu-west-1.aws.dssmith.local/

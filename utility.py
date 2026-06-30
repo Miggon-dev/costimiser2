@@ -1024,7 +1024,7 @@ def clustering(
     subsample_frac=0.8,
     icl=True,
     stability=True,
-    min_cluster_size=5,  
+    min_cluster_size=4,  
     verbose = False
 ):
     from sklearn.cross_decomposition import PLSRegression
@@ -1447,6 +1447,172 @@ def shapley_for_pair_mc_batch(
 
     return contrib
 
+
+def shapley_for_pair_mc_batch_conditional(
+    row1,
+    row2,
+    cost,
+    features,
+    history,
+    M=200,
+    random_state=None,
+    cost_variable=None,
+    add_unknown=False,
+    unknown_name="unknown",
+    categorical_features=None,
+    bandwidths=None,
+    max_background=500,
+    min_background=30,
+):
+    import numpy as np
+    import pandas as pd
+
+    rng = np.random.default_rng(random_state)
+
+    features = list(features)
+    categorical_features = set(categorical_features or [])
+    bandwidths = bandwidths or {}
+
+    hist = history[features].dropna().copy()
+
+    def _row_to_dict(row):
+        return {f: row[f] for f in features}
+
+    x1 = _row_to_dict(row1)
+    x2 = _row_to_dict(row2)
+
+    def _weighted_background(x, fixed_features):
+        """
+        Estimate samples from:
+            X_missing | X_fixed = x_fixed
+
+        using historical data.
+        """
+        if len(fixed_features) == 0:
+            sample = hist.sample(
+                n=min(max_background, len(hist)),
+                replace=len(hist) < max_background,
+                random_state=int(rng.integers(0, 1_000_000_000)),
+            )
+            return sample
+
+        df = hist.copy()
+        weights = np.ones(len(df), dtype=float)
+
+        for f in fixed_features:
+            if f in categorical_features:
+                mask = df[f] == x[f]
+                df = df[mask]
+                weights = weights[mask.to_numpy()]
+            else:
+                bw = bandwidths.get(f)
+
+                if bw is None:
+                    std = hist[f].std()
+                    bw = std * 0.25 if std > 0 else 1.0
+
+                z = (df[f].to_numpy(dtype=float) - float(x[f])) / bw
+                weights *= np.exp(-0.5 * z * z)
+
+        if len(df) == 0 or weights.sum() <= 0:
+            # fallback: no conditioning
+            df = hist.copy()
+            weights = np.ones(len(df), dtype=float)
+
+        # avoid collapse if too few effective samples
+        effective_n = (weights.sum() ** 2) / np.sum(weights ** 2)
+
+        if effective_n < min_background:
+            # softer fallback: use unweighted nearest rows for numeric fixed vars
+            if any(f not in categorical_features for f in fixed_features):
+                dist = np.zeros(len(hist), dtype=float)
+
+                for f in fixed_features:
+                    if f in categorical_features:
+                        dist += np.where(hist[f].to_numpy() == x[f], 0.0, 1e6)
+                    else:
+                        std = hist[f].std()
+                        scale = std if std > 0 else 1.0
+                        dist += ((hist[f].to_numpy(dtype=float) - float(x[f])) / scale) ** 2
+
+                idx = np.argsort(dist)[:max(min_background, min(max_background, len(hist)))]
+                df = hist.iloc[idx].copy()
+                weights = np.ones(len(df), dtype=float)
+
+        p = weights / weights.sum()
+
+        sample_size = min(max_background, len(df))
+
+        sampled_idx = rng.choice(
+            np.arange(len(df)),
+            size=sample_size,
+            replace=len(df) < sample_size,
+            p=p,
+        )
+
+        return df.iloc[sampled_idx].copy()
+
+    def _conditional_value(x, fixed_features):
+        """
+        Estimate:
+            E[cost(X) | X_fixed = x_fixed]
+        """
+        fixed_features = list(fixed_features)
+
+        if len(fixed_features) == len(features):
+            return float(cost([{f: x[f] for f in features}])[0])
+
+        bg = _weighted_background(x, fixed_features)
+
+        rows = []
+        for _, r in bg.iterrows():
+            d = {f: r[f] for f in features}
+
+            for f in fixed_features:
+                d[f] = x[f]
+
+            rows.append(d)
+
+        return float(np.mean(cost(rows)))
+
+    def _conditional_shap_for_row(x):
+        from tqdm.notebook import tqdm
+        contrib = {f: 0.0 for f in features}
+
+        for _ in tqdm(range(M)):
+            order = list(rng.permutation(features))
+
+            fixed = []
+            prev_value = _conditional_value(x, fixed)
+
+            for f in order:
+                fixed.append(f)
+                new_value = _conditional_value(x, fixed)
+
+                contrib[f] += new_value - prev_value
+                prev_value = new_value
+
+        for f in features:
+            contrib[f] /= M
+
+        return contrib
+
+    shap1 = _conditional_shap_for_row(x1)
+    shap2 = _conditional_shap_for_row(x2)
+
+    contrib = {
+        f: shap2[f] - shap1[f]
+        for f in features
+    }
+
+    if add_unknown and cost_variable is not None:
+        model_delta = float(cost([x2, x1])[0] - cost([x2, x1])[1])
+        true_delta = float(row2[cost_variable]) - float(row1[cost_variable])
+        contrib[unknown_name] = true_delta - model_delta
+
+    return contrib
+
+
 def shapley_for_pair_filtered(
     row1,
     row2,
@@ -1463,6 +1629,7 @@ def shapley_for_pair_filtered(
     min_abs_delta=None,
     keep_top_n=None,
     return_details=False,
+    conditional=False
 ):
     import numpy as np
     import pandas as pd
@@ -1471,17 +1638,32 @@ def shapley_for_pair_filtered(
     # 1. Shapley contributions
     # ----------------------------
     
-    contrib_all = shapley_for_pair_mc_batch(
-        row1=row1,
-        row2=row2,
-        cost=cost,
-        features=features,
-        M=M,
-        random_state=random_state,
-        cost_variable=cost_variable,
-        add_unknown=add_unknown,
-        unknown_name=unknown_name,
-    )
+    if conditional:
+        contrib_all = shapley_for_pair_mc_batch_conditional(
+            row1=row1,
+            row2=row2,
+            cost=cost,
+            features=features,
+            history=process_data,
+            M=100,
+            random_state=random_state,
+            cost_variable=cost_variable,
+            add_unknown=add_unknown,
+            unknown_name=unknown_name,
+        )
+    else:
+        contrib_all = shapley_for_pair_mc_batch(
+            row1=row1,
+            row2=row2,
+            cost=cost,
+            features=features,            
+            M=M,
+            random_state=random_state,
+            cost_variable=cost_variable,
+            add_unknown=add_unknown,
+            unknown_name=unknown_name,
+        )
+
 
     # ----------------------------
     # 2. Precompute statistics ONCE
@@ -1562,6 +1744,8 @@ def shapley_for_pair_filtered(
             reverse=True
         )[:keep_top_n]
 
+    kept = [f for f in kept if not f.endswith("_L1")]
+
     contrib_filtered = {f: contrib_all[f] for f in kept}
 
     if add_unknown and unknown_name in contrib_all:
@@ -1590,203 +1774,6 @@ def shapley_for_pair_filtered(
     return contrib_filtered
 
 
-
-def shapley_for_pair_filtered_DEPRECATED(
-    row1,
-    row2,
-    cost,
-    features,
-    process_data,
-    M=500,
-    random_state=None,
-    cost_variable=None,
-    add_unknown=False,
-    unknown_name="unknown",
-    min_delta_over_std=0.25,
-    min_delta_over_range=0.05,
-    min_abs_delta=None,
-    keep_top_n=None,
-    return_details=False,
-):    
-    """
-    Compute Monte Carlo Shapley values for a pair of rows, then filter features
-    whose observed change appears too small to be materially relevant.
-
-    Parameters
-    ----------
-    row1, row2 : mapping-like / pd.Series
-        Baseline and target rows.
-    cost : callable
-        Model prediction function accepting a dict-like row of feature values.
-    features : list[str]
-        Features used by the model.
-    process_data : pd.DataFrame
-        Full process dataframe used to estimate relevance statistics.
-    M : int
-        Number of Monte Carlo permutations.
-    random_state : int or None
-        Random seed.
-    cost_variable : str or None
-        Optional observed cost variable for unknown contribution.
-    add_unknown : bool
-        Whether to add unknown contribution.
-    unknown_name : str
-        Name of the unknown contribution key.
-    min_delta_over_std : float
-        Minimum |delta| / std threshold to keep a variable.
-    min_delta_over_range : float
-        Minimum |delta| / (p95 - p05) threshold to keep a variable.
-    min_abs_delta : float or dict or None
-        Optional minimum absolute delta threshold. Can be:
-        - None
-        - scalar
-        - dict {feature_name: threshold}
-    keep_top_n : int or None
-        Optionally keep top N variables by absolute contribution after filtering.
-    return_details : bool
-        If True, return a dict with contrib + diagnostics.
-        If False, return only filtered contributions dict.
-
-    Returns
-    -------
-    dict
-        If return_details=False:
-            {feature: contribution, ...}
-        If return_details=True:
-            {
-                "contrib_all": ...,
-                "contrib_filtered": ...,
-                "diagnostics": pd.DataFrame,
-            }
-    """
-    import math
-    import numpy as np
-    import pandas as pd
-
-    # ----------------------------
-    # 1. Raw Shapley contributions
-    # ----------------------------
-    contrib_all = shapley_for_pair_mc(
-        row1=row1,
-        row2=row2,
-        cost=cost,
-        features=features,
-        M=M,
-        random_state=random_state,
-        cost_variable=cost_variable,
-        add_unknown=add_unknown,
-        unknown_name=unknown_name,
-    )
-
-    # ----------------------------
-    # 2. Feature relevance diagnostics
-    # ----------------------------
-    rows = []
-
-    for f in features:
-        x1 = float(row1[f])
-        x2 = float(row2[f])
-        delta = x2 - x1
-        
-        if f not in process_data.columns:
-            std = np.nan
-            p05 = np.nan
-            p95 = np.nan
-            delta_over_std = np.nan
-            delta_over_range = np.nan
-            keep = True
-        else:
-            
-
-            s = pd.to_numeric(process_data[f], errors="coerce").dropna()
-
-            if len(s) == 0:
-                std = np.nan
-                p05 = np.nan
-                p95 = np.nan
-                delta_over_std = np.nan
-                delta_over_range = np.nan
-                keep = True
-            else:                
-                std = float(s.std(ddof=1)) if len(s) > 1 else 0.0
-                p05 = float(s.quantile(0.05))
-                p95 = float(s.quantile(0.95))
-                robust_range = p95 - p05
-
-                if std is None or math.isnan(std) or std <= 0:
-                    delta_over_std = np.nan
-                else:
-                    delta_over_std = abs(delta) / std
-
-                if robust_range is None or math.isnan(robust_range) or robust_range <= 0:
-                    delta_over_range = np.nan
-                else:
-                    delta_over_range = abs(delta) / robust_range
-
-                keep = True
-
-                # absolute threshold
-                if min_abs_delta is not None:
-                    if isinstance(min_abs_delta, dict):
-                        abs_thr = min_abs_delta.get(f, None)
-                    else:
-                        abs_thr = float(min_abs_delta)
-
-                    if abs_thr is not None and abs(delta) < abs_thr:
-                        keep = False
-
-                # relative thresholds
-                if not pd.isna(delta_over_std) and delta_over_std < min_delta_over_std:
-                    keep = False
-
-                if not pd.isna(delta_over_range) and delta_over_range < min_delta_over_range:
-                    keep = False
-
-        rows.append(
-            {
-                "variable": f,
-                "value_row1": x1,
-                "value_row2": x2,
-                "delta": delta,
-                "abs_delta": abs(delta),
-                "std": std,
-                "p05": p05,
-                "p95": p95,
-                "delta_over_std": delta_over_std,
-                "delta_over_range": delta_over_range,
-                "contribution": contrib_all.get(f, 0.0),
-                "abs_contribution": abs(contrib_all.get(f, 0.0)),
-                "keep": keep,
-            }
-        )
-
-    diagnostics = pd.DataFrame(rows)
-
-    # ----------------------------
-    # 3. Filter contributions
-    # ----------------------------
-    diagnostics_f = diagnostics[diagnostics["keep"]].copy()
-
-    if keep_top_n is not None and keep_top_n > 0 and not diagnostics_f.empty:
-        diagnostics_f = diagnostics_f.sort_values(
-            "abs_contribution", ascending=False
-        ).head(keep_top_n)
-
-    kept_features = diagnostics_f["variable"].tolist()
-    contrib_filtered = {f: contrib_all[f] for f in kept_features}
-
-    # keep unknown if requested
-    if add_unknown and unknown_name in contrib_all:
-        contrib_filtered[unknown_name] = contrib_all[unknown_name]
-
-    if return_details:
-        return {
-            "contrib_all": contrib_all,
-            "contrib_filtered": contrib_filtered,
-            "diagnostics": diagnostics.sort_values("abs_contribution", ascending=False),
-        }
-
-    return contrib_filtered
 
 def make_model_cost(model, feature_fn):
     cols = feature_fn()
@@ -1854,7 +1841,7 @@ def make_models_cost(models, feature_fns, agg="sum"):
 
     return cost
 
-def make_model_cost_batch(model, feature_fn):
+def make_model_cost_batch(model, feature_fn, weight=1):
     cols = list(feature_fn())
 
     def _to_frame(rows):
@@ -1884,10 +1871,10 @@ def make_model_cost_batch(model, feature_fn):
         if len(X) == 0:
             raise ValueError("cost_batch generated an empty DataFrame.")
 
-        return np.asarray(model.predict(X), dtype=float).ravel()
+        return np.asarray(weight * model.predict(X), dtype=float).ravel()
 
     def cost_one(row):
-        return float(cost_batch(row)[0])
+        return weight * float(cost_batch(row)[0])
 
     return cost_one, cost_batch
 
@@ -2683,7 +2670,8 @@ def impute(
     else:
         return result
 
-def _feature_engineering(turnup, setpoint_df, steam_null):
+
+def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
     from datetime import datetime
     import numpy as np
 
@@ -2741,219 +2729,225 @@ def _feature_engineering(turnup, setpoint_df, steam_null):
     turnup[_agg_cost_label()] = turnup[_costs_to_consider()].sum(axis=1)
     turnup[_agg_cost_label2()] = turnup[_costs_to_consider2()].sum(axis=1)
 
-    for v in [v for v in turnup.columns if "speedsizer" not in v.lower() and "speed" in v.lower()]:
-        impute_outside_limits_with_grade_median(turnup, v, 950, 1400, inplace=True)
+    if clip:
+        for v in [v for v in turnup.columns if "speedsizer" not in v.lower() and "speed" in v.lower()]:
+            impute_outside_limits_with_grade_median(turnup, v, 950, 1400, inplace=True)
 
-    for v in [v for v in turnup.columns if "speedsizer_linepressure" in v.lower()]:
-        impute_outside_limits_with_grade_median(turnup, v, 55, 80, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Current_reel_moisture_average(reel)', 7, 10, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Top_Roll', 0.35, 0.55, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Bottom_Roll~^0', 0.14, 0.35, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Current_reel_moisture_average(SpeedSizer)', 8.5, 9.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Current_reel_moisture_average(reel)', 7, 10, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Actual_moisture', 7, 10, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Current_reel_dry_average', 60, 120, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Production_Rate__T/h_', 45, 75, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'BSW_2_sigma', 0.5, 3, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Mois_Size_Press_2_sigma', 0.5, 3, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Mois_2_sigma', 0.5, 3, inplace=True)
+        for d in ['Draw_AD7-PR', 'Draw_SS-AD6', 'Draw_AD6-AD7','Draw_PD5-SS','Draw_WS-PS']:
+            impute_outside_limits_with_grade_median(turnup, v, 0, 0.5, inplace=True)
 
-    impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Top_Roll', 0.35, 0.55, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Bottom_Roll~^0', 0.14, 0.35, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Current_reel_moisture_average(SpeedSizer)', 8.5, 9.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Current_reel_moisture_average(reel)', 7, 10, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Actual_moisture', 7, 10, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Current_reel_dry_average', 60, 120, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Production_Rate__T/h_', 45, 75, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'BSW_2_sigma', 0.5, 3, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Mois_Size_Press_2_sigma', 0.5, 3, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Mois_2_sigma', 0.5, 3, inplace=True)
-    for d in ['Draw_AD7-PR', 'Draw_SS-AD6', 'Draw_AD6-AD7','Draw_PD5-SS','Draw_WS-PS']:
-        impute_outside_limits_with_grade_median(turnup, v, 0, 0.5, inplace=True)
+        for v in ['Draw_PS-PD1','Draw_PD1-PD2','Draw_PD2-PD3', 'Draw_PD3-PD4', 'Draw_PD4-PD5']:
+            impute_outside_limits_with_grade_median(turnup, v, 1, 3, inplace=True) 
 
-    for v in ['Draw_PS-PD1','Draw_PD1-PD2','Draw_PD2-PD3', 'Draw_PD3-PD4', 'Draw_PD4-PD5']:
-        impute_outside_limits_with_grade_median(turnup, v, 1, 3, inplace=True) 
+        for v in ['Contact_pressure_reel_holders', 'Reel_discharge_pressure','Contact_pressure_secondary_arm_OS','Contact_pressure_secondary_arm_DS']:
+            impute_outside_limits_with_grade_median(turnup, v, 40, 60, inplace=True)
 
-    for v in ['Contact_pressure_reel_holders', 'Reel_discharge_pressure','Contact_pressure_secondary_arm_OS','Contact_pressure_secondary_arm_DS']:
-        impute_outside_limits_with_grade_median(turnup, v, 40, 60, inplace=True)
-
-    impute_outside_limits_with_grade_median(turnup, 'CO2_mass_flow__g/T_', 600, 1400, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Consistency_starch_main_line', 10, 30, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Consistency_white_water', 1, 305, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Headbox_consistency', 1, 2, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Thick_Stock_Consistency__%_', 4, 4.4, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Machine_chest_consistency', 4, 4.4, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Short_fibre_B06_consistency', 3.5, 6, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Long_fibre_consistency_B07', 3.5, 6, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Wet_broke_consistency', 2.5, 3.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Pulper_consistency', 1, 10, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Multifractor_1_consistency', 2.5, 3.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Multifractor_2_consistency', 2.5, 3.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Multifractor_3_consistency', 2.5, 3.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_inlet_consistency', 0.3, 1.8, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'LF_screen_3_inlet_consistency', 0, 1, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'DG4_Temperature_Inlet_Air', 70, 130, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'DG5_Temperature_Inlet_Air', 70, 130, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'AirTurn_Temperature', 70, 100, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Reactor_Temperature', 40, 100, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Storage_tank_temperature', 80, 120, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Temperature_starch_working_tank_1', 60, 90, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Temperature_starch_working_tank_2', 60, 90, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Cylinder_1-5_steam_temperature', 100, 140, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Inlet_Air_1_Temperature', 10, 50, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Inlet_Air_2_Temperature', 10, 50, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'DG1_temperature_Inlet_Air', 80, 120, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'DG2_temperature_Inlet_Air', 80, 120, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'DG3_temperature_Inlet_Air', 110, 140, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'White_water_temperature', 25, 55, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Dilution_water_deculator_temperature', 25, 55, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Stock_deculator_temperature', 25, 55, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Steam_temperature_for_PM', 150, 185, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Starch_uptake_by_paper_Top_Roll__g/m2_', 1, 2.7, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Starch_uptake_by_paper_Bottom_Roll__g/m2_', 1.5, 4, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Bottom_Roll~^0', 0.1, 0.4, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Top_Roll', 0.3, 0.6, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Starch_consumption_Bottom___m³/h_', 0.5, 3.0, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Starch_consumption_Top__m³/h_', 0.4, 1.6, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Flow_starch_main_line_to_working_tank_2~^0', 2, 8, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Flow_starch_main_line_to_working_tank_2~^0', 3, 14, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Starch_Top_Roll__ml/m²_', 20, 50, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Starch_Bottom_Roll__ml/m²_', 10, 40, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Starch_flow_to_inactivation', 10000, 20000, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Starch_application_FW_in_ml', 10, 40, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Starch_application_BW_in_ml', 5, 25, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Web_tension_AD6', 50, 150, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'AD7_fabric_tension_bottom', 0.5, 1.2, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'AD6_fabric_tension', 1, 1.4, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'PD1_Fabric_tension', 3.5, 4.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'PD2_Fabric_tension', 3.5, 4.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'PD4_fabric_tension', 2.5, 4.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'PD4_fabric_tension_bottom', 1.4, 2.4, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'PD5_fabric_tension_bottom', 0.8, 1.4, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'PD5_fabric_tension_top', 0.3, 1.1, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'PickUp_Tension', 2.4, 4.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Top_Felt_Tension', 3.0, 4.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Bottom_Felt_Tension', 3.0, 4.0, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Bottom_wire_tension', 7.8, 8.2, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'SpeedSizer_Linepressure_DS', 50, 80, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'SpeedSizer_Linepressure_FS', 50, 80, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Linepressure_1st_press_FS__bar_', 75, 80, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Linepressure_1st_press_DS__bar_', 75, 80, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Linepressure_2nd_press_FS__bar_', 90, 110, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Linepressure_2nd_press_DS__bar_', 90, 110, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Linepressure_shoe_press__bar_', 90, 110, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Airturn_pillow_pressure', 30, 90, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Rod_Pressure_Bottom_Roll', 0.4, 3.0, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Rod_pressure_Top_Roll', 0.4, 3.0, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Rod_clamping_pressure_Bottom_Roll', 1.5, 2.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Air_pressure_of_rod_clamping_hose_Bottom_Roll', 1.5, 2.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Rod_clamping_pressure_Top_Roll', 1.5, 2.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Air_pressure_of_rod_clamping_hose_Top_Roll', 1.5, 2.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Pressure_slurry_pipe_3', 0, 12, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Pressure_slurry_main_pipe', 0.5, 5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Reactor_steam_pressure', 0.2, 0.8, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Pressure_to_inactivation', 2, 5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Pressure_after_inactivation', 1.5, 2.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_filter_storage_tank_1', -0.1, 0.1, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_filter_storage_tank_2', -0.1, 0.1, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Fresh_water_main_pipe_pressure', 2, 5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Compressor_1_outgoing_pressure', 0.2, 1, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Compressor_2_outgoing_pressure', 0.2, 1, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_retention_aid_filter', -0.1, 1, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Inlet_pressure_TrumpJet_station_A1-A4', 3, 7, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_A1-A4_between_stock_and_chemical', 2, 3, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_C1-C4_between_stock_and_chemical', 0.5, 1.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Pre_pressure_TrumpJet', 2, 5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Pressure_of_pressure_amplifying_pump_for_retention_aid_injection', 5, 15, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_B1-B4_between_stock_and_chemical', -0.5, 1.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Headbox_pressure', 1, 3, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Headbox_pressure_DS', 1, 3, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Headbox_pressure_FS', 1, 3, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Dilution_water_deculator_pressure', -1.2, -0.8, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Stock_deculator_pressure', -1.2, -0.8, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'ATS1_differential_pressure', -0.2, 1, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'ATS2_differential_pressure', 1, 1.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Pressure_main_steam_line', 4, 8, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Steam_pressure_for_PM', 4, 8, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Auftrag_Stärkeslurry_FW', 4, 20, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Auftrag_Stärkeslurry_BW', 4, 20, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'VariSTEP_div._Hauben+Lueftung_Ventilatoren', 0.2, 1.2, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Dilution_water_working_tank_1', 2.0, 8.0, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Dilution_water_working_tank_2', 1.8, 7.0, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_white_water_heating', 0.0, 10.0, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Steam_energy_from_power_plant_to_paper_plant', 20, 80.0, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_AfterDryers', 15, 30, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_heat_exchangers', 0.2, 1.4, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_from_power_plant_to_PM', 0, 120, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_PreDryers', 0, 100, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Press_and_Steambox', 14, 30, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'LF_screen_1_power', 100, 140, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_power', 100, 140, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'LF_screen_1_accept_flow', 600, 1000, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_accept_flow', 400, 500, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'LF_screen_1_reject_flow', 130, 150, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_reject_flow', 35, 50, inplace=True)
-    turnup['LF_screen_3_power']=np.where((turnup['LF_screen_3_power']>20) &  (turnup['LF_screen_3_power']<100),turnup['LF_screen_2_power'],0)
-    turnup['LF_screen_3_accept_flow']=np.where((turnup['LF_screen_3_accept_flow']>150) &  (turnup['LF_screen_3_accept_flow']<250),turnup['LF_screen_3_accept_flow'],0)
-    turnup['LF_screen_3_reject_flow']=np.where((turnup['LF_screen_3_reject_flow']>10) &  (turnup['LF_screen_3_reject_flow']<40),turnup['LF_screen_3_reject_flow'],0)
-    turnup['Headbox_total_flow']=0
-    impute_outside_limits_with_grade_median(turnup, 'Multifractor_1_long_fibre_flow', 200, 400, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Multifractor_2_long_fibre_flow', 200, 400, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Multifractor_3_long_fibre_flow', 200, 400, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Multifractor_1_short_fibre_flow', 600, 1000, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Multifractor_2_short_fibre_flow', 600, 1000, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Multifractor_3_short_fibre_flow', 600, 1000, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Multifractor_1_Long_fibre_fraction', 25, 50, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Multifractor_2_long_fibre_fraction', 25, 50, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Multifractor_3_long_fibre_fraction', 25, 50, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Short_fibre_flow', 8000, 18000, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Long_fibre_flow', 3500, 8500, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'ATS1_light_reject_flow', 130, 160, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'ATS2_light_reject_flow', 130, 160, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Approach_flow_returns', 0.8, 1.3, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Stock_Valve_Opening_From_Machine_Chest', 50, 70, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Condensate_energy_from_paper_plant_to_power_plant', 2, 10, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'ATS1_power', 200, 700, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'ATS2_power', 200, 400, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Combisorter_1_power', 50, 150, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Combisorter_2_power', 50, 150, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Contaminex_1_power', 20, 120, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Contaminex_2_power', 20, 120, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Contaminex_3_power', 0, 120, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Jet/wire_ratio', -50, -10, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Inlet_Thickerner_2__m3/h_', 50, 70, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'Act_Production_Rate_Gross', 40, 80, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'MC_SF_LF_Demand', 20, 80, inplace=True)
-
-    impute_outside_limits_with_grade_median(turnup, 'MBS_SCT_MD', 2.2, 4.5, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, 'MBS_SCT_CD', 1.4, 2.4, inplace=True)
-    
-    for v in ['Moisture_after_SpeedSizer',
-                'Actual_moisture',
-                'SP1:_1-000-FC028_01____NaOH-Dosierung_Pulper_:__MESSWERT',
-                'SP1:_1-000-FC028_02____NaOH-Dosierung_Kurzfaser-SF_:__MESSWE',
-                'SP1:_1-000-FC028_03____NaOH-Dosierung_Langfaser-SF_:__MESSWE',
-                'Starch_uptake_by_paper_Top_Roll__g/m2_',
-                'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
-                'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
-                'Conductivity_white_water_B46'
-                ]:
-        outlier_flag = detect_outliers(turnup,v,
-                                        method="iqr",
-                                        #group_col="AB_Grade_ID" 
-                                        )
         
-    for v in ['Starch_uptake_by_paper_Top_Roll__g/m2_',
-            'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
-            ]:
-        outlier_flag = detect_outliers(turnup,v,
-                                        method="iqr",
-                                        group_col="AB_Grade_ID" 
-                                        )
+        impute_outside_limits_with_grade_median(turnup, 'Moisture_out_of_PreDryer', 8.5, 9.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'CO2_mass_flow__g/T_', 600, 1400, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Consistency_starch_main_line', 10, 30, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Consistency_white_water', 1, 305, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Headbox_consistency', 1, 2, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Thick_Stock_Consistency__%_', 4, 4.4, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Machine_chest_consistency', 4, 4.4, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Short_fibre_B06_consistency', 3.5, 6, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Long_fibre_consistency_B07', 3.5, 6, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Wet_broke_consistency', 2.5, 3.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Pulper_consistency', 1, 10, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Multifractor_1_consistency', 2.5, 3.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Multifractor_2_consistency', 2.5, 3.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Multifractor_3_consistency', 2.5, 3.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_inlet_consistency', 0.3, 1.8, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'LF_screen_3_inlet_consistency', 0, 1, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'DG4_Temperature_Inlet_Air', 70, 130, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'DG5_Temperature_Inlet_Air', 70, 130, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'AirTurn_Temperature', 70, 100, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Reactor_Temperature', 40, 100, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Storage_tank_temperature', 80, 120, inplace=True)
 
-        impute(turnup,
-            value_col = v,
-            outlier_flag = outlier_flag, 
-            method = "ffill",
-            group_col = "AB_Grade_ID",
-            constant_value=None,
-            time_col = "Wedge_Time",
-            inplace = True,
-            new_col = None,
-        )
+        impute_outside_limits_with_grade_median(turnup, 'Temperature_starch_working_tank_1', 60, 95, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Temperature_starch_working_tank_2', 60, 95, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Cylinder_1-5_steam_temperature', 100, 140, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Inlet_Air_1_Temperature', 10, 50, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Inlet_Air_2_Temperature', 10, 50, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'DG1_temperature_Inlet_Air', 80, 120, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'DG2_temperature_Inlet_Air', 80, 120, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'DG3_temperature_Inlet_Air', 110, 140, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'White_water_temperature', 25, 55, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Dilution_water_deculator_temperature', 25, 55, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Stock_deculator_temperature', 25, 55, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Steam_temperature_for_PM', 150, 185, inplace=True)
+        
+        impute_outside_limits_with_grade_median(turnup, 'Starch_uptake_by_paper_Top_Roll__g/m2_', 0.5, 3, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Starch_uptake_by_paper_Bottom_Roll__g/m2_', 1.5, 5, inplace=True)
+        
+        impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Bottom_Roll~^0', 0.1, 0.4, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Top_Roll', 0.3, 0.6, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Starch_consumption_Bottom___m³/h_', 0.5, 3.0, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Starch_consumption_Top__m³/h_', 0.4, 1.6, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Flow_starch_main_line_to_working_tank_2~^0', 2, 8, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Flow_starch_main_line_to_working_tank_1~^0', 3, 14, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Starch_Top_Roll__ml/m²_', 20, 50, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Starch_Bottom_Roll__ml/m²_', 10, 40, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Starch_flow_to_inactivation', 10000, 20000, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Starch_application_FW_in_ml', 10, 40, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Starch_application_BW_in_ml', 5, 25, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Web_tension_AD6', 50, 150, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'AD7_fabric_tension_bottom', 0.5, 1.2, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'AD6_fabric_tension', 1, 1.4, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'PD1_Fabric_tension', 3.5, 4.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'PD2_Fabric_tension', 3.5, 4.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'PD4_fabric_tension', 2.5, 4.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'PD4_fabric_tension_bottom', 1.4, 2.4, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'PD5_fabric_tension_bottom', 0.8, 1.4, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'PD5_fabric_tension_top', 0.3, 1.1, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'PickUp_Tension', 2.4, 4.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Top_Felt_Tension', 3.0, 4.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Bottom_Felt_Tension', 3.0, 4.0, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Bottom_wire_tension', 7.8, 8.2, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'SpeedSizer_Linepressure_DS', 50, 80, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'SpeedSizer_Linepressure_FS', 50, 80, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Linepressure_1st_press_FS__bar_', 75, 80, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Linepressure_1st_press_DS__bar_', 75, 80, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Linepressure_2nd_press_FS__bar_', 90, 110, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Linepressure_2nd_press_DS__bar_', 90, 110, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Linepressure_shoe_press__bar_', 90, 110, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Airturn_pillow_pressure', 30, 90, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Rod_Pressure_Bottom_Roll', 0.4, 3.0, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Rod_pressure_Top_Roll', 0.4, 3.0, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Rod_clamping_pressure_Bottom_Roll', 1.5, 2.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Air_pressure_of_rod_clamping_hose_Bottom_Roll', 1.5, 2.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Rod_clamping_pressure_Top_Roll', 1.5, 2.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Air_pressure_of_rod_clamping_hose_Top_Roll', 1.5, 2.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Pressure_slurry_pipe_3', 0, 12, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Pressure_slurry_main_pipe', 0.5, 5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Reactor_steam_pressure', 0.2, 0.8, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Pressure_to_inactivation', 2, 5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Pressure_after_inactivation', 1.5, 2.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_filter_storage_tank_1', -0.1, 0.1, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_filter_storage_tank_2', -0.1, 0.1, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Fresh_water_main_pipe_pressure', 2, 5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Compressor_1_outgoing_pressure', 0.2, 1, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Compressor_2_outgoing_pressure', 0.2, 1, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_retention_aid_filter', -0.1, 1, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Inlet_pressure_TrumpJet_station_A1-A4', 3, 7, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_A1-A4_between_stock_and_chemical', 2, 3, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_C1-C4_between_stock_and_chemical', 0.5, 1.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Pre_pressure_TrumpJet', 2, 5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Pressure_of_pressure_amplifying_pump_for_retention_aid_injection', 5, 15, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Differential_pressure_B1-B4_between_stock_and_chemical', -0.5, 1.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Headbox_pressure', 1, 3, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Headbox_pressure_DS', 1, 3, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Headbox_pressure_FS', 1, 3, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Dilution_water_deculator_pressure', -1.2, -0.8, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Stock_deculator_pressure', -1.2, -0.8, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'ATS1_differential_pressure', -0.2, 1, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'ATS2_differential_pressure', 1, 1.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Pressure_main_steam_line', 4, 8, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Steam_pressure_for_PM', 4, 8, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Auftrag_Stärkeslurry_FW', 4, 20, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Auftrag_Stärkeslurry_BW', 4, 20, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'VariSTEP_div._Hauben+Lueftung_Ventilatoren', 0.2, 1.2, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Dilution_water_working_tank_1', 2.0, 8.0, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Dilution_water_working_tank_2', 1.8, 7.0, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_white_water_heating', 0.0, 10.0, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Steam_energy_from_power_plant_to_paper_plant', 20, 80.0, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_AfterDryers', 15, 30, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_heat_exchangers', 0.2, 1.4, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Steam_flow_from_power_plant_to_PM', 0, 120, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_PreDryers', 0, 100, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Press_and_Steambox', 14, 30, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'LF_screen_1_power', 100, 140, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_power', 100, 140, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'LF_screen_1_accept_flow', 600, 1000, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_accept_flow', 400, 500, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'LF_screen_1_reject_flow', 130, 150, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_reject_flow', 35, 50, inplace=True)
+        turnup['LF_screen_3_power']=np.where((turnup['LF_screen_3_power']>20) &  (turnup['LF_screen_3_power']<100),turnup['LF_screen_2_power'],0)
+        turnup['LF_screen_3_accept_flow']=np.where((turnup['LF_screen_3_accept_flow']>150) &  (turnup['LF_screen_3_accept_flow']<250),turnup['LF_screen_3_accept_flow'],0)
+        turnup['LF_screen_3_reject_flow']=np.where((turnup['LF_screen_3_reject_flow']>10) &  (turnup['LF_screen_3_reject_flow']<40),turnup['LF_screen_3_reject_flow'],0)
+        turnup['Headbox_total_flow']=0
+        impute_outside_limits_with_grade_median(turnup, 'Multifractor_1_long_fibre_flow', 200, 400, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Multifractor_2_long_fibre_flow', 200, 400, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Multifractor_3_long_fibre_flow', 200, 400, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Multifractor_1_short_fibre_flow', 600, 1000, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Multifractor_2_short_fibre_flow', 600, 1000, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Multifractor_3_short_fibre_flow', 600, 1000, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Multifractor_1_Long_fibre_fraction', 25, 50, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Multifractor_2_long_fibre_fraction', 25, 50, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Multifractor_3_long_fibre_fraction', 25, 50, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Short_fibre_flow', 8000, 18000, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Long_fibre_flow', 3500, 8500, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'ATS1_light_reject_flow', 130, 160, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'ATS2_light_reject_flow', 130, 160, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Approach_flow_returns', 0.8, 1.3, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Stock_Valve_Opening_From_Machine_Chest', 50, 70, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Condensate_energy_from_paper_plant_to_power_plant', 2, 10, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'ATS1_power', 200, 700, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'ATS2_power', 200, 400, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Combisorter_1_power', 50, 150, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Combisorter_2_power', 50, 150, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Contaminex_1_power', 20, 120, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Contaminex_2_power', 20, 120, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Contaminex_3_power', 0, 120, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Jet/wire_ratio', -50, -10, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Inlet_Thickerner_2__m3/h_', 50, 70, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Act_Production_Rate_Gross', 40, 80, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'MC_SF_LF_Demand', 20, 80, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Viscosity_for_working_tank_bottom_roll', 15, 65, inplace=True)
 
-    turnup["MBS_SCT_MD"]=turnup["MBS_SCT_MD"].bfill()
-    turnup["MBS_SCT_CD"]=turnup["MBS_SCT_CD"].bfill()
-    turnup["MBS_Burst"]=turnup["MBS_Burst"].bfill()
+        impute_outside_limits_with_grade_median(turnup, 'MBS_SCT_MD', 2.2, 4.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'MBS_SCT_CD', 1.4, 2.4, inplace=True)
+        
+        for v in ['Moisture_after_SpeedSizer',
+                    'Actual_moisture',
+                    'SP1:_1-000-FC028_01____NaOH-Dosierung_Pulper_:__MESSWERT',
+                    'SP1:_1-000-FC028_02____NaOH-Dosierung_Kurzfaser-SF_:__MESSWE',
+                    'SP1:_1-000-FC028_03____NaOH-Dosierung_Langfaser-SF_:__MESSWE',
+                    'Starch_uptake_by_paper_Top_Roll__g/m2_',
+                    'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
+                    'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
+                    'Conductivity_white_water_B46'
+                    ]:
+            outlier_flag = detect_outliers(turnup,v,
+                                            method="iqr",
+                                            #group_col="AB_Grade_ID" 
+                                            )
+            
+        for v in ['Starch_uptake_by_paper_Top_Roll__g/m2_',
+                'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
+                ]:
+            outlier_flag = detect_outliers(turnup,v,
+                                            method="iqr",
+                                            group_col="AB_Grade_ID" 
+                                            )
+
+            impute(turnup,
+                value_col = v,
+                outlier_flag = outlier_flag, 
+                method = "ffill",
+                group_col = "AB_Grade_ID",
+                constant_value=None,
+                time_col = "Wedge_Time",
+                inplace = True,
+                new_col = None,
+            )
+
+        turnup["MBS_SCT_MD"]=turnup["MBS_SCT_MD"].bfill()
+        turnup["MBS_SCT_CD"]=turnup["MBS_SCT_CD"].bfill()
+        turnup["MBS_Burst"]=turnup["MBS_Burst"].bfill()
+
     turnup.loc[(turnup["AB_Grade_ID"]=="6010100") &  ( turnup["MBS_CMT30"] > 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]=="6010100"]["MBS_CMT30"].mean()
     turnup.loc[(turnup["AB_Grade_ID"]=="6010100") &  ( turnup["MBS_CMT30"].isnull()), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]=="6010100"]["MBS_CMT30"].mean()
     turnup.loc[(turnup["AB_Grade_ID"]=="6010120") &  ( turnup["MBS_CMT30"] < 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]=="6010120"]["MBS_CMT30"].mean()
@@ -2970,8 +2964,8 @@ def _feature_engineering(turnup, setpoint_df, steam_null):
 
     turnup = turnup.copy()
     turnup["Starch_uptake__g/m2_"]=turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]+turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"]
-    turnup["concentration_starch_working_tank_1"]=turnup["Flow_starch_main_line_to_working_tank_1~^0"]/(turnup["Dilution_water_working_tank_1"]+turnup["Flow_starch_main_line_to_working_tank_1~^0"])
-    turnup["concentration_starch_working_tank_2"]=turnup["Flow_starch_main_line_to_working_tank_2~^0"]/(turnup["Dilution_water_working_tank_2"]+turnup["Flow_starch_main_line_to_working_tank_2~^0"])
+    turnup["concentration_starch_working_tank_1"]=21.5 * turnup["Flow_starch_main_line_to_working_tank_1~^0"]/(turnup["Dilution_water_working_tank_1"]+turnup["Flow_starch_main_line_to_working_tank_1~^0"])
+    turnup["concentration_starch_working_tank_2"]=21.5 * turnup["Flow_starch_main_line_to_working_tank_2~^0"]/(turnup["Dilution_water_working_tank_2"]+turnup["Flow_starch_main_line_to_working_tank_2~^0"])
     turnup["retention"]=1-turnup['Consistency_white_water']/(10*turnup['Headbox_consistency'])
 
     steam_flows=['Steam_flow_to_PreDryers','Steam_flow_to_AfterDryers','Steam_flow_to_starch_kitchen','Steam_flow_to_heat_exchangers','Steam_flow_to_white_water_heating']
@@ -3025,201 +3019,6 @@ def _feature_engineering(turnup, setpoint_df, steam_null):
     turnup=pd.merge(turnup,overprocessing,on='MBS_Current_reel_ID',how="left")
     return turnup
 
-def _feature_engineering_DEPRECATED(turnup, setpoint_df, steam_null):
-    from datetime import datetime
-    import numpy as np
-
-    for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
-        turnup[v]=turnup[v].astype("float32")
-
-    turnup['MBS_Current_reel_ID']=turnup['MBS_Current_reel_ID'].astype(int)
-    turnup['AB_Grade_ID']=turnup['AB_Grade_ID'].astype(int)
-    turnup['Wedge_Time']=pd.to_datetime(turnup['Wedge_Time'])
-
-    
-    turnup = turnup.assign(
-        grammage = turnup["AB_Grade_ID"].mod(1000),
-        paper_type = (turnup["AB_Grade_ID"] // 1000).astype("string")
-    )
-
-    turnup = turnup[turnup.grammage.isin([85,90,95,100,110,115,120,125,130,135])]
-    turnup = turnup[turnup.paper_type.isin(["3200", "6010", "3300"])]
-
-    update_turnup_grammage(turnup)
-
-    paper_type = pd.get_dummies(turnup["paper_type"])
-    turnup = pd.concat([turnup, paper_type], axis=1)
-
-    
-
-    for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
-        if any(e in v.lower() for e in ["€","g/m2","g/t","mbs_","t/t","level","consistency","temperature","l/min","fibre_fraction"]):
-            turnup.loc[turnup[v] <= 0, v] = np.nan
-
-    for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
-        if any(e in v.lower() for e in ["power","flow"]):
-            turnup.loc[turnup[v] < 0, v] = np.nan
-
-    for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
-        if any(e in v.lower() for e in ["vacuum"]):
-            turnup.loc[turnup[v] > 0, v] = np.nan
-
-    #for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
-    #    if any(e in v.lower() for e in ["mbs_sct"]):
-    #        turnup.loc[turnup[v] > 3, v] = np.nan
-
-    for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
-        if any(e in v.lower() for e in ["moisture"]):
-            turnup.loc[turnup[v] < 5, v] = np.nan
-
-    turnup.loc[turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] > 4, "Starch_uptake_by_paper_Bottom_Roll__g/m2_"] = np.nan
-    turnup.loc[turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"] > 4, "Starch_uptake_by_paper_Top_Roll__g/m2_"] = np.nan
-    turnup.loc[turnup["LF_screen_1_accept_flow"] < 600, "LF_screen_1_accept_flow"] = np.nan
-    turnup.loc[turnup["LF_screen_1_accept_flow"] > 1000, "LF_screen_1_accept_flow"] = np.nan
-    turnup.loc[turnup["Starch_consumption_Top__m³/h_"] > 2, "Starch_consumption_Top__m³/h_"] = np.nan
-    turnup.loc[turnup["Starch_application_BW_in_ml"] > 30, "Starch_application_BW_in_ml"] = np.nan
-    turnup.loc[turnup["Starch_flow_to_inactivation"] > 1e8, "Starch_flow_to_inactivation"] = np.nan
-    turnup.loc[turnup["Flow_starch_main_line_to_working_tank_2~^0"] > 8, "Flow_starch_main_line_to_working_tank_2~^0"] = np.nan
-    turnup.loc[turnup["Dilution_water_working_tank_2"] > 6, "Dilution_water_working_tank_2"] = np.nan
-    turnup.loc[turnup["Pulper_consistency"] > 20, "Pulper_consistency"] = np.nan
-    turnup.loc[turnup["Combisorter_1_power"] > 150, "Combisorter_1_power"] = np.nan
-    turnup.loc[turnup["Combisorter_2_power"] > 100, "Combisorter_2_power"] = np.nan
-    turnup.loc[turnup["Contaminex_1_power"] > 100, "Contaminex_1_power"] = np.nan
-    turnup.loc[turnup["Contaminex_2_power"] > 100, "Contaminex_2_power"] = np.nan
-    turnup.loc[turnup["Contaminex_3_power"] > 100, "Contaminex_3_power"] = np.nan
-    turnup.loc[turnup["LF_screen_1_power"] > 150, "LF_screen_1_power"] = np.nan
-    turnup.loc[turnup["LF_screen_1_power"] < 100, "LF_screen_1_power"] = np.nan
-    turnup.loc[turnup["LF_screen_2_power"] > 100, "LF_screen_2_power"] = np.nan
-    turnup.loc[turnup["LF_screen_2_power"] < 85, "LF_screen_2_power"] = np.nan
-    turnup.loc[turnup["LF_screen_3_power"] > 50, "LF_screen_3_power"] = np.nan
-    turnup.loc[turnup["LF_screen_3_power"] < 40, "LF_screen_3_power"] = np.nan
-    turnup.loc[turnup["Multifractor_1_Long_fibre_fraction"] > 50, "Multifractor_1_Long_fibre_fraction"] = np.nan
-    turnup.loc[turnup["Multifractor_2_long_fibre_fraction"] > 50, "Multifractor_2_long_fibre_fraction"] = np.nan
-    turnup.loc[turnup["LF_screen_2_inlet_consistency"] > 2, "LF_screen_2_inlet_consistency"] = np.nan
-    turnup.loc[turnup["Cylinder_14_differential_pressure"] > 0.22, "Cylinder_14_differential_pressure"] = np.nan
-    turnup.loc[turnup["Multifractor_1_long_fibre_flow"] > 400, "Multifractor_1_long_fibre_flow"] = np.nan
-    turnup.loc[turnup["Short_fibre_B06_consistency"] < 4, "Short_fibre_B06_consistency"] = np.nan
-    turnup.loc[turnup["LF_screen_1_accept_flow"] < 600, "LF_screen_1_accept_flow"] = np.nan
-    turnup.loc[turnup["LF_screen_1_accept_flow"] > 1000, "LF_screen_1_accept_flow"] = np.nan
-    turnup.loc[turnup["Jet/wire_ratio"] > -10, "LF_screen_1_accept_flow"] = np.nan
-    turnup.loc[turnup["MBS_SCT_CD"] > 2.5, "MBS_SCT_CD"] = np.nan
-    turnup.loc[turnup["Draw_AD7-PR"] < 0, "Draw_AD7-PR"] = np.nan
-    turnup.loc[turnup["Draw_SS-AD6"] > 0.25, "Draw_SS-AD6"] = np.nan
-    turnup.loc[turnup["Draw_PD5-SS"] < -0.25, "Draw_PD5-SS"] = np.nan
-    turnup.loc[turnup["Draw_PD3-PD4"] > 0.35, "Draw_PD3-PD4"] = np.nan
-    turnup.loc[turnup["White_water_temperature"] > 60, "White_water_temperature"] = np.nan
-    turnup.loc[turnup["Bentonite_filter_differential_pressure"] > 0, "Bentonite_filter_differential_pressure"] = np.nan
-    turnup.loc[turnup["Jet/wire_ratio"] > -10, "Jet/wire_ratio"] = np.nan
-    turnup.loc[turnup["Free_gas_before_dilution_water_deculator_measurement_1~^0"] > 2, "Free_gas_before_dilution_water_deculator_measurement_1~^0"] = np.nan
-    turnup.loc[turnup["Free_gas_before_dilution_water_deculator_measurement_2"] > 2, "Free_gas_before_dilution_water_deculator_measurement_2"] = np.nan
-    turnup.loc[turnup["Dissolved_gas_before_dilution_water_deculator"] > 2,  "Dissolved_gas_before_dilution_water_deculator"] = np.nan
-    turnup.loc[turnup["Dissolved_gas_before_dilution_water_deculator"] > 2,  "Dissolved_gas_before_dilution_water_deculator"] = np.nan
-    turnup.loc[turnup["Free_gas_after_stock_deculator~^0"] > 0.8,  "Free_gas_after_stock_deculator~^0"] = np.nan
-    turnup.loc[turnup["Dissolved_gas_after_stock_deculator_measurement_1"] > 1,  "Dissolved_gas_after_stock_deculator_measurement_1"] = np.nan
-    turnup.loc[turnup["Dissolved_gas_after_stock_deculator_measurement_2"] > 1,  "Dissolved_gas_after_stock_deculator_measurement_2"] = np.nan
-    turnup.loc[turnup["Condensate_energy_from_paper_plant_to_power_plant"] < 4.5,  "Condensate_energy_from_paper_plant_to_power_plant"] = np.nan
-    turnup.loc[(turnup["Long_fibre_consistency_B07"] <= 0) & (turnup["Long_fibre_consistency_B07"] >= 100),  "Long_fibre_consistency_B07"] = np.nan
-    turnup.loc[(turnup["Short_fibre_B06_consistency"] <= 0) & (turnup["Short_fibre_B06_consistency"] >= 100),  "Short_fibre_B06_consistency"] = np.nan
-    turnup.loc[turnup["Long_fibre_flow"] <= 0,  "Long_fibre_flow"] = np.nan
-
-    for v in ["Pressure_to_inactivation","Current_reel_moisture_average(reel)","Current_reel_dry_average"]:
-        turnup.loc[turnup[v] <= 2, v] = np.nan
-
-    for v in ["Multifractor_1_long_fibre_flow"]:
-        turnup.loc[turnup[v] <= 250, v] = np.nan
-
-    for v in ["Starch_flow_to_inactivation"]:
-        turnup.loc[turnup[v] <= 10000, v] = np.nan
-
-    turnup.loc[(turnup["AB_Grade_ID"]==6010100) &  ( turnup["MBS_CMT30"] > 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]==6010100]["MBS_CMT30"].mean()
-    turnup.loc[(turnup["AB_Grade_ID"]==6010120) &  ( turnup["MBS_CMT30"] < 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]==6010120]["MBS_CMT30"].mean()
-    turnup.loc[turnup["MBS_SCT_CD"] > 2.5, "MBS_SCT_CD"] = np.nan
-
-    turnup = turnup.ffill().bfill().copy()
-
-    # TO ADD
-    if not steam_null:
-        turnup = turnup[turnup["Steam_flow_to_PreDryers"]>42] 
-        turnup = turnup[~((turnup.Wedge_Time > "2025-10-23 11:56") & (turnup.Wedge_Time <"2025-11-16 10:00"))]
-    # END TO ADD
-
-    turnup["Fibre_usage__T/T_"]=(turnup["Current_basis_weight"]*(1-turnup["Current_reel_moisture_average(reel)"]/100)-turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]-turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"])/turnup["Current_basis_weight"]
-    turnup['Combined_cost__€/T_'] = turnup['Combined_cost__€/T_'] - turnup['Fibre_cost__€/T_'] + 146.46 * turnup["Fibre_usage__T/T_"] - turnup['Electricity__€/T_'] + turnup["Electricity__kWh/T_"] * 113.66 / 1000
-    turnup['Fibre_cost__€/T_'] = 146.46*turnup["Fibre_usage__T/T_"]
-    turnup['Electricity__€/T_'] = turnup["Electricity__kWh/T_"] * 113.66 / 1000
-
-    turnup.loc[:,"Starch_uptake__g/m2_"]=turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]+turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"]
-    turnup.loc[:,"ratio_starch"]=turnup["Starch_uptake__g/m2_"]/turnup["Current_basis_weight"]
-    turnup.loc[:,'MC_SF_LF_Demand'] = ((turnup['Short_fibre_flow'] * (turnup['Short_fibre_B06_consistency']/100))+(turnup['Long_fibre_flow']*(turnup['Long_fibre_consistency_B07']/100)))*(60/1000)
-
-    turnup.loc[:,"Steam_current__€/h_"] = turnup["Steam__€/T_"] * turnup["Production_Rate__T/h_"]
-    turnup.loc[:,"Electricity_current__€/h_"] = turnup["Electricity__€/T_"] * turnup["Production_Rate__T/h_"]
-    turnup.loc[:,"Starch_current__€/h_"] = turnup['Starch__€/T_'] * turnup["Production_Rate__T/h_"]
-    turnup['Flow_starch_main_line_to_working_tank']=turnup['Flow_starch_main_line_to_working_tank_2~^0']+turnup["Flow_starch_main_line_to_working_tank_1~^0"]
-    
-    turnup["concentration_starch_working_tank_1"]=turnup["Flow_starch_main_line_to_working_tank_1~^0"]/(turnup["Dilution_water_working_tank_1"]+turnup["Flow_starch_main_line_to_working_tank_1~^0"])
-    turnup["concentration_starch_working_tank_2"]=turnup["Flow_starch_main_line_to_working_tank_2~^0"]/(turnup["Dilution_water_working_tank_2"]+turnup["Flow_starch_main_line_to_working_tank_2~^0"])
-
-    turnup["fibre_short/long"] = turnup['Short_fibre_flow']*turnup['Short_fibre_B06_consistency']/(turnup['Long_fibre_flow']*turnup['Long_fibre_consistency_B07'])
-    turnup["delta_moisture"]=turnup["Current_reel_moisture_average(reel)"]-turnup["Moisture_out_of_PreDryer"]
-    turnup["Fibre_sqm"]=(turnup["Current_reel_dry_average"]-turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]-turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"])
-
-    turnup["AB_Grade_ID"] = turnup["AB_Grade_ID"].astype(str)
-
-    turnup[_agg_cost_label()] = turnup[_costs_to_consider()].sum(axis=1)
-
-    turnup['Combined_cost__€/T_'] = np.where(turnup['Combined_cost__€/T_'] < turnup[_agg_cost_label()] + turnup['Fibre_cost__€/T_'] ,
-                                                turnup[_agg_cost_label()] + turnup['Fibre_cost__€/T_'],
-                                                turnup['Combined_cost__€/T_'])        
-    turnup['Chemicals__€/T_'] = turnup['Combined_cost__€/T_'] - turnup[['Steam__€/T_','Electricity__€/T_','Starch__€/T_','Fibre_cost__€/T_']].sum(axis=1)
-
-    turnup["Combined_cost_current_€/h_"] = turnup[_agg_cost_label()] * turnup["Production_Rate__T/h_"]
-
-    turnup["Steam_flow_to_PreDryers_sqm"]=turnup["Steam_flow_to_PreDryers"]*1e5/(turnup["Speed"]*turnup["Current_reel_width"]*60) # Kg/m2
-    turnup["Steam_flow_to_PreDryers_index"]=turnup["Steam_flow_to_PreDryers_sqm"]*1000/turnup["Current_basis_weight"]   # Kg/Kg
-    turnup["Steam_flow_to_AfterDryers_sqm"]=turnup["Steam_flow_to_AfterDryers"]*1e5/(turnup["Speed"]*turnup["Current_reel_width"]*60)
-    turnup["Steam_flow_to_AfterDryers_index"]=turnup["Steam_flow_to_AfterDryers_sqm"]*1000/turnup["Current_basis_weight"]
-    turnup["Steam__kW"]=turnup["Steam__kWh/T_"]*turnup["Production_Rate__T/h_"]
-
-    turnup["Electricity_index"]=turnup["Electricity__kWh/T_"]
-    turnup["Electricity_sqm"]=turnup["Electricity__kWh/T_"]*turnup["Production_Rate__T/h_"]*100/(turnup["Speed"]*turnup["Current_reel_width"]*60)
-    turnup["SCT_CD_index"]=turnup["MBS_SCT_CD"]/turnup["Current_basis_weight"]
-    turnup["retention"]=1-turnup['Consistency_white_water']/(10*turnup['Headbox_consistency'])
-
-    coef_df = pd.DataFrame({
-        "property": ["MBS_SCT_MD", "MBS_SCT_CD", "MBS_Burst", "MBS_CMT30"],
-        "starch_coef": [0.1356332061139627, 0.15738688100760012, 10.8090692825425, 3.701831560389852]
-    })
-
-    turnup["Wedge_Date"] = turnup["Wedge_Time"].dt.date
-
-    turnup.drop_duplicates(["MBS_Current_reel_ID"],keep="last", inplace=True)
-
-    overprocessing=pd.melt(turnup[["Wedge_Time",'AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_','MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30']], id_vars=['Wedge_Time','AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_'], value_vars=['MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30'],var_name="property").merge(setpoint_df.pivot(index=["AB_Grade_ID","property"], columns=["variable"], values="value").reset_index(), on=["AB_Grade_ID","property"], how="left").dropna()
-    overprocessing=pd.merge(overprocessing,coef_df,on=["property"],how="left")
-    overprocessing["property_diff"]=overprocessing["value"]-overprocessing["min"]
-    overprocessing["property_pct"]=overprocessing["property_diff"]/overprocessing["min"]
-    overprocessing["overprocessing_std"]=(overprocessing["value"]-(overprocessing["min"] + overprocessing["target"])/2)/((overprocessing["target"] - overprocessing["min"])/2)
-    overprocessing["overprocessing_score"]=(overprocessing["overprocessing_std"]-1).clip(0)
-    overprocessing["underprocessing_score"]=(-overprocessing["overprocessing_std"]-1).clip(0)
-    overprocessing["starch_uptake_diff"]=overprocessing["property_diff"]*overprocessing["starch_coef"]
-    overprocessing["starch_mass_flow_diff_avg"]=overprocessing["starch_uptake_diff"]*1000/overprocessing['Current_basis_weight'] #kg/T
-    overprocessing["starch_cost_diff"]=overprocessing["starch_mass_flow_diff_avg"]* 434.22 / 1000
-    overprocessing = overprocessing[["MBS_Current_reel_ID","property","property_pct","starch_cost_diff","overprocessing_std","overprocessing_score","underprocessing_score"]]
-    overprocessingT=overprocessing.groupby('MBS_Current_reel_ID').agg({"property_pct":"mean","starch_cost_diff":"mean", "overprocessing_std":"mean","overprocessing_score":"sum","underprocessing_score":"sum"}).reset_index()
-    overprocessingT["property"]="ALL"
-    overprocessing=pd.concat([overprocessing,overprocessingT],axis=0)
-    overprocessing.pivot(index=["MBS_Current_reel_ID"],columns="property",values=["property_pct","overprocessing_std","starch_cost_diff"])
-    overprocessing=overprocessing.pivot(index=["MBS_Current_reel_ID"],columns="property",values=["property_pct","overprocessing_std","starch_cost_diff"])
-    overprocessing1=overprocessing["property_pct"].rename(columns={"ALL":"Overprocessing_percentage","MBS_SCT_CD":"Overprocessing_SCT_CD","MBS_Burst":"Overprocessing_Burst","MBS_CMT30":"Overprocessing_CMT30"})
-    overprocessing2=overprocessing["starch_cost_diff"][["ALL"]].rename(columns={"ALL":"Overprocessing_cost__€/T_"})
-    overprocessing3=overprocessingT[["MBS_Current_reel_ID","overprocessing_std","overprocessing_score","underprocessing_score"]].set_index("MBS_Current_reel_ID")
-    overprocessing4=overprocessing["overprocessing_std"].rename(columns={"ALL":"Overprocessing_std_ALL","MBS_SCT_CD":"Overprocessing_std_SCT_CD","MBS_Burst":"Overprocessing_std_Burst","MBS_CMT30":"Overprocessing_std_CMT30"})
-    overprocessing=pd.concat([overprocessing1,overprocessing2,overprocessing3,overprocessing4],axis=1)
-    overprocessing=overprocessing.reset_index()[["MBS_Current_reel_ID","Overprocessing_percentage","Overprocessing_SCT_CD","Overprocessing_Burst","Overprocessing_CMT30","Overprocessing_cost__€/T_",'Overprocessing_std_ALL', 'Overprocessing_std_Burst',
-        'Overprocessing_std_CMT30', 'Overprocessing_std_SCT_CD',"overprocessing_std","overprocessing_score","underprocessing_score"]]
-    turnup=pd.merge(turnup,overprocessing,on='MBS_Current_reel_ID',how="left")
-    return turnup
 
 def _turnup_data(local, bucket, fs, setpoint_df, steam_null):
     from datetime import datetime
@@ -3227,11 +3026,26 @@ def _turnup_data(local, bucket, fs, setpoint_df, steam_null):
 
     if local:
 
-        turnup=[]
+        from datetime import date
+        import pandas as pd
 
-        for time_ref in ["2025-06-01","2025-07-01","2025-08-01","2025-09-01","2025-10-01","2025-11-01","2025-12-01","2026-01-01","2026-02-01","2026-03-01","2026-04-01","2026-05-01"]:
-            #print(time_ref)
-            turnup.append(pd.read_parquet(f"./data/costimier_turnup_{time_ref}.parquet",engine="fastparquet"))
+        start = "2025-06-01"
+
+        today = date.today()
+
+        # If today is the first day of the month, exclude current month
+        end = pd.Timestamp(today).replace(day=1)
+
+        month_starts = pd.date_range(start=start, end=end, freq="MS")
+
+        turnup = []
+
+        for time_ref in month_starts.strftime("%Y-%m-%d"):
+            try:    
+                turnup.append(pd.read_parquet(f"./data/costimier_turnup_{time_ref}.parquet",engine="fastparquet"))
+            except:
+                ...
+
         turnup=pd.concat(turnup,axis=0).copy()
     else:            
         prefix = "turnup"
@@ -3296,7 +3110,7 @@ def shapley_contribution(df1, df2, cost_component, fibre_cost, steam_cost, elect
   shapley_df = pd.DataFrame(results).set_index("id")
   return shapley_df
 
-def shapley_contribution_filtered(process_data,df1, df2, cost_component, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features):
+def shapley_contribution_filtered(process_data,df1, df2, cost_component, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=False):
   
 
   steam_feats = steam_features()
@@ -3311,16 +3125,16 @@ def shapley_contribution_filtered(process_data,df1, df2, cost_component, fibre_c
       row2 = df2.loc[idx]
       if cost_component=='Fibre_cost__€/T_':
           logger.info(cost_component)
-          contrib_full = shapley_for_pair_filtered(row1, row2, fibre_cost, fibre_feats, process_data, cost_variable=cost_component, return_details=True)
+          contrib_full = shapley_for_pair_filtered(row1, row2, fibre_cost, fibre_feats, process_data, cost_variable=cost_component, return_details=True, conditional=conditional)
       elif cost_component=='Steam__€/T_':
           logger.info(cost_component)
-          contrib_full = shapley_for_pair_filtered(row1, row2, steam_cost, steam_feats, process_data, cost_variable=cost_component, return_details=True)
+          contrib_full = shapley_for_pair_filtered(row1, row2, steam_cost, steam_feats, process_data, cost_variable=cost_component, return_details=True, conditional=conditional)
       elif cost_component=='Electricity__€/T_':
           logger.info(cost_component)
-          contrib_full = shapley_for_pair_filtered(row1, row2, electricity_cost, elec_feats, process_data, cost_variable=cost_component, return_details=True)
+          contrib_full = shapley_for_pair_filtered(row1, row2, electricity_cost, elec_feats, process_data, cost_variable=cost_component, return_details=True, conditional=conditional)
       elif cost_component=='Starch__€/T_':
           logger.info(cost_component)
-          contrib_full = shapley_for_pair_filtered(row1, row2, starch_cost, starch_feats, process_data, cost_variable=cost_component, return_details=True)
+          contrib_full = shapley_for_pair_filtered(row1, row2, starch_cost, starch_feats, process_data, cost_variable=cost_component, return_details=True, conditional=conditional)
       else:
           return None            
       
@@ -3346,12 +3160,12 @@ def _shapley_contrib(data_version, df1, df2, cost_component, grade, fibre_cost, 
   return df
 
 
-def _shapley_contrib_filtered(data_version, process_data, df1, df2, cost_component, grade, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features):
+def _shapley_contrib_filtered(data_version, process_data, df1, df2, cost_component, grade, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=False):
   
   df1 = df1.groupby("AB_Grade_ID").mean()
   df2 = df2.groupby("AB_Grade_ID").mean()
     
-  shapley_df, contrib_filtered, diagnostics = shapley_contribution_filtered(process_data,df1, df2, cost_component, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_df, contrib_filtered, diagnostics = shapley_contribution_filtered(process_data,df1, df2, cost_component, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=conditional)
   
   df = df2.subtract(df1, axis=0).reset_index()
   df = df[df.AB_Grade_ID.isin(shapley_df.index.unique())]
@@ -4013,162 +3827,225 @@ def _model_performance_plot(model_metrics, model_targets, prediction_models, str
   return fig
 
 def _working_plot(shapley_contrib, df1, df2, cost_component_drilldown):
-  import plotly.graph_objects as go
-  import plotly.express as px
-  import pandas as pd
-  from collections import defaultdict
-  import numpy as np
+    import plotly.graph_objects as go
+    import plotly.express as px
+    import pandas as pd
+    from collections import defaultdict
+    import numpy as np
+    import textwrap
 
-  df = shapley_contrib.copy()
-  contrib_vars = list(df.groupby("variable").agg(contribution_abs=("contribution", lambda s: s.abs().max())).sort_values("contribution_abs", ascending=False).head(10).index.values)
+    df = shapley_contrib.copy()
+    contrib_vars = list(df.groupby("variable").agg(contribution_abs=("contribution", lambda s: s.abs().max())).sort_values("contribution_abs", ascending=False).head(10).index.values)
 
-  df1 = df1[df1.AB_Grade_ID.isin(list(set(df1.AB_Grade_ID) & set(df2.AB_Grade_ID)))]
-  df2 = df2[df2.AB_Grade_ID.isin(list(set(df1.AB_Grade_ID) & set(df2.AB_Grade_ID)))]
+    df1 = df1[df1.AB_Grade_ID.isin(list(set(df1.AB_Grade_ID) & set(df2.AB_Grade_ID)))]
+    df2 = df2[df2.AB_Grade_ID.isin(list(set(df1.AB_Grade_ID) & set(df2.AB_Grade_ID)))]
 
-  df1 = df1[contrib_vars + ["AB_Grade_ID", cost_component_drilldown]]
-  df2 = df2[contrib_vars + ["AB_Grade_ID", cost_component_drilldown]]
+    df1 = df1[contrib_vars + ["AB_Grade_ID", cost_component_drilldown]]
+    df2 = df2[contrib_vars + ["AB_Grade_ID", cost_component_drilldown]]
 
-  dfb = pd.melt(
-      df1,
-      id_vars=["AB_Grade_ID"],
-  )
-  dfb["target"] = "baseline"
-  
-  dfc = pd.melt(
-      df2,
-      id_vars=["AB_Grade_ID"],
-  )
-  dfc["target"] = "current"
-  
-  df = pd.concat([dfb, dfc], axis=0)
-  
-  # --- Aggregate to mean + std + count + median (median unused now) ---
-  agg = (
-      df.groupby(["AB_Grade_ID", "variable", "target"])["value"]
-      .agg(mean="mean", std="std", count="count", median="median")
-      .reset_index()
-  )
-  
-  # standard error
-  agg["stderr"] = agg["std"] / np.sqrt(agg["count"])
+    dfb = pd.melt(
+        df1,
+        id_vars=["AB_Grade_ID"],
+    )
+    dfb["target"] = "baseline"
 
-  vars_all = list(agg["variable"].unique())
-  vars_cost = sorted([v for v in vars_all if "€" in v.lower()])
-  vars_other = sorted([v for v in vars_all if "€" not in v.lower()])
-  if vars_cost:
-      variable_order = vars_cost + vars_other
-  else:
-      variable_order = vars_all
-  
-  n_grades = agg["AB_Grade_ID"].nunique()
-  row_height = 120  # adjust if needed
-  
-  # --- Bar plot with error bars ---
-  fig = px.bar(
-      agg,
-      x="target",
-      y="mean",
-      facet_row="AB_Grade_ID",
-      facet_col="variable",
-      facet_col_wrap=1,
-      color="target",
-      error_y="stderr",
-      facet_row_spacing=0.02,
-      height=row_height * n_grades,
-      custom_data=["median"],   # median is passed but not used anymore
-      category_orders={"variable": variable_order},
-  )
-  
-  # Clean facet labels: "AB_Grade_ID=123" -> "123"
-  fig.for_each_annotation(
-      lambda a: a.update(
-          text=a.text.split("=")[-1].split("__")[0],
-          font=dict(size=11),
-      )
-  )
-  
-  # Independent y-axes + visible labels everywhere
-  fig.update_yaxes(matches=None, showticklabels=True)
-  
-  # --- Per-axis range based on mean ± stderr (without forcing zero) ---
-  axis_extents = defaultdict(lambda: {"low": np.inf, "high": -np.inf})
-  
-  for trace in fig.data:
-      axis_name = trace.yaxis if hasattr(trace, "yaxis") else "y"
-      y = np.array(trace.y, dtype=float)
-  
-      # error bars
-      err_obj = getattr(trace, "error_y", None)
-      if err_obj is not None:
-          if getattr(err_obj, "array", None) is not None:
-              e = np.array(err_obj.array, dtype=float)
-          elif getattr(err_obj, "value", None) is not None:
-              e = np.full_like(y, float(err_obj.value))
-          else:
-              e = np.zeros_like(y)
-      else:
-          e = np.zeros_like(y)
-  
-      low = np.min(y - e)
-      high = np.max(y + e)
-  
-      axis_extents[axis_name]["low"] = min(axis_extents[axis_name]["low"], low)
-      axis_extents[axis_name]["high"] = max(axis_extents[axis_name]["high"], high)
-  
-  # Apply per-axis ranges
-  for axis_name, ext in axis_extents.items():
-      lo, hi = ext["low"], ext["high"]
-  
-      # padding
-      if lo == hi:
-          pad = abs(lo) * 0.1 if lo != 0 else 1.0
-          lo -= pad
-          hi += pad
-      else:
-          pad = (hi - lo) * 0.1
-          lo -= pad
-          hi += pad
-  
-      layout_axis = "yaxis" if axis_name == "y" else "yaxis" + axis_name[1:]
-      fig.layout[layout_axis].update(range=[lo, hi])
-  
-  # --- Add mean labels (top of bars, shifted right) ---
-  for trace in fig.data:
-      if trace.type != "bar":
-          continue
-  
-      for x, y, cd in zip(trace.x, trace.y, trace.customdata):
-          mean_val = y
-  
-          fig.add_annotation(
-              x=x,
-              y=y,
-              xref=trace.xaxis,
-              yref=trace.yaxis,
-              text=f"{mean_val:.2f}",   # ⬅ show mean
-              showarrow=False,
-              xanchor="left",
-              yanchor="bottom",
-              xshift=6,                # slight right shift
-              yshift=2,                # small lift above bar
-              font=dict(size=10),
-          )
-  
-  # Layout
-  base_width=800
-  aspect_ratio=16/16
-  fig.update_layout(
-      template="simple_white",
-      plot_bgcolor="white",
-      paper_bgcolor="white",
-      autosize=True,
-      width=None,
-      height=base_width*aspect_ratio,
-      yaxis_title="mean(value)",
-      margin=dict(l=80, r=20, t=40, b=40),
-      showlegend=False,
-  )        
-  return fig
+    dfc = pd.melt(
+        df2,
+        id_vars=["AB_Grade_ID"],
+    )
+    dfc["target"] = "current"
+
+    df = pd.concat([dfb, dfc], axis=0)
+
+    # --- Aggregate to mean + std + count + median (median unused now) ---
+    agg = (
+        df.groupby(["AB_Grade_ID", "variable", "target"])["value"]
+        .agg(mean="mean", std="std", count="count", median="median")
+        .reset_index()
+    )
+
+    # standard error
+    agg["stderr"] = agg["std"] / np.sqrt(agg["count"])
+
+    vars_all = list(agg["variable"].unique())
+    vars_cost = sorted([v for v in vars_all if "€" in v.lower()])
+    vars_other = sorted([v for v in vars_all if "€" not in v.lower()])
+    if vars_cost:
+        variable_order = vars_cost + vars_other
+    else:
+        variable_order = vars_all
+
+    n_grades = agg["AB_Grade_ID"].nunique()
+    row_height = 120  # adjust if needed
+
+    # --- Bar plot with error bars ---
+    fig = px.bar(
+        agg,
+        x="target",
+        y="mean",
+        facet_row="AB_Grade_ID",
+        facet_col="variable",
+        facet_col_wrap=1,
+        color="target",
+        error_y="stderr",
+        facet_row_spacing=0.02,
+        height=row_height * n_grades,
+        custom_data=["median"],   # median is passed but not used anymore
+        category_orders={"variable": variable_order},
+    )
+
+    # Clean facet labels: "AB_Grade_ID=123" -> "123"
+    # fig.for_each_annotation(
+    #     lambda a: a.update(
+    #         text=a.text.split("=")[-1].split("__")[0],
+    #         font=dict(size=11),
+    #     )
+    # )
+
+    # Short variable labels
+    var_map = {
+        v: v[:12] + "..."
+        if len(v) > 15 else v
+        for v in variable_order
+    }
+
+    for a in fig.layout.annotations:
+
+        if a.text.startswith("variable="):
+            full_var = a.text.split("=", 1)[1]
+            a.update(
+                text=var_map.get(full_var, full_var),
+                font=dict(size=11),
+            )
+
+        elif a.text.startswith("AB_Grade_ID="):
+            a.update(
+                text=a.text.split("=", 1)[1],
+                font=dict(size=11),
+            )
+
+    
+
+    # Independent y-axes + visible labels everywhere
+    fig.update_yaxes(matches=None, showticklabels=True)
+
+    # --- Per-axis range based on mean ± stderr (without forcing zero) ---
+    axis_extents = defaultdict(lambda: {"low": np.inf, "high": -np.inf})
+
+    for trace in fig.data:
+        axis_name = trace.yaxis if hasattr(trace, "yaxis") else "y"
+        y = np.array(trace.y, dtype=float)
+
+        # error bars
+        err_obj = getattr(trace, "error_y", None)
+        if err_obj is not None:
+            if getattr(err_obj, "array", None) is not None:
+                e = np.array(err_obj.array, dtype=float)
+            elif getattr(err_obj, "value", None) is not None:
+                e = np.full_like(y, float(err_obj.value))
+            else:
+                e = np.zeros_like(y)
+        else:
+            e = np.zeros_like(y)
+
+        low = np.min(y - e)
+        high = np.max(y + e)
+
+        axis_extents[axis_name]["low"] = min(axis_extents[axis_name]["low"], low)
+        axis_extents[axis_name]["high"] = max(axis_extents[axis_name]["high"], high)
+
+    # Apply per-axis ranges
+    for axis_name, ext in axis_extents.items():
+        lo, hi = ext["low"], ext["high"]
+
+        # padding
+        if lo == hi:
+            pad = abs(lo) * 0.1 if lo != 0 else 1.0
+            lo -= pad
+            hi += pad
+        else:
+            pad = (hi - lo) * 0.1
+            lo -= pad
+            hi += pad
+
+        layout_axis = "yaxis" if axis_name == "y" else "yaxis" + axis_name[1:]
+        fig.layout[layout_axis].update(range=[lo, hi])
+
+    # --- Add mean labels (top of bars, shifted right) ---
+    for trace in fig.data:
+        if trace.type != "bar":
+            continue
+
+        for x, y, cd in zip(trace.x, trace.y, trace.customdata):
+            mean_val = y
+
+            fig.add_annotation(
+                x=x,
+                y=y,
+                xref=trace.xaxis,
+                yref=trace.yaxis,
+                text=f"{mean_val:.2f}",   # ⬅ show mean
+                showarrow=False,
+                xanchor="left",
+                yanchor="bottom",
+                xshift=6,                # slight right shift
+                yshift=2,                # small lift above bar
+                font=dict(size=10),
+            )
+
+    # Layout
+    base_width=800
+    aspect_ratio=16/16
+    fig.update_layout(
+        template="simple_white",
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        autosize=True,
+        width=None,
+        height=base_width*aspect_ratio,
+        yaxis_title="mean(value)",
+        margin=dict(l=80, r=20, t=40, b=40),
+        showlegend=False,
+    )     
+
+    # Build mapping text in columns
+    items = [f"{code}: {var}" for var, code in var_map.items()]
+
+    n_cols = 3
+    rows = []
+
+    for i in range(0, len(items), n_cols):
+        rows.append(" &nbsp;&nbsp;&nbsp; ".join(items[i:i+n_cols]))
+
+    mapping_text = "<br>".join(rows)
+
+    fig.add_annotation(
+        text=mapping_text,
+        xref="paper",
+        yref="paper",
+        x=0,
+        y=-0.18,
+        showarrow=False,
+        align="left",
+        xanchor="left",
+        yanchor="top",
+        font=dict(size=10),
+    )
+
+    fig.update_layout(
+        margin=dict(
+            l=80,
+            r=20,
+            t=60,
+            b=120 + 20 * len(rows) # adapt to legend size
+        )
+    )
+
+
+    return fig
+
+
+
 
 def _cost_driver_plot(shapley_contrib):
   import plotly.graph_objects as go
@@ -5866,7 +5743,7 @@ def build_drilldown_text(drilldown, mix_contribution=None, lang="en"):
 
 
         # Average change per component
-        avg_by_comp = dd_comp[(dd_comp.current_cost>0) & ~dd_comp.cost.isin(sub_components)].groupby(component_col, as_index=False)["pct_cost"].mean()
+        avg_by_comp = dd_comp[(dd_comp.current_cost>0) & ~dd_comp[component_col].isin(sub_components)].groupby(component_col, as_index=False)["pct_cost"].mean()
 
 
         lines = []
@@ -6111,7 +5988,7 @@ def build_shapley_text(shapley_contrib, top_frac=0.20, lang="en"):
         out_lines.append(header)
 
         if not dec.empty:
-            out_lines.append(_t("Cost-reducing drivers:", "Kostensenkende Treiber:"))
+            out_lines.append(_t("**Cost-reducing drivers**:", "**Kostensenkende Treiber**:"))
             for _, r in dec.iterrows():
                 var = _pretty_var(r["variable"])
                 out_lines.append(
@@ -6120,7 +5997,7 @@ def build_shapley_text(shapley_contrib, top_frac=0.20, lang="en"):
                 )
 
         if not inc.empty:
-            out_lines.append(_t("Cost-increasing drivers:", "Kostentreibende Faktoren:"))
+            out_lines.append(_t("**Cost-increasing drivers**:", "**Kostentreibende Faktoren**:"))
             for _, r in inc.iterrows():
                 var = _pretty_var(r["variable"])
                 out_lines.append(
@@ -6325,8 +6202,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
     def _deps(cls):
         return {
             "Fibre__g/m2_": ["Starch_uptake__g/m2_"],
-            "Water_flow": ["Water_flow_Predryer", "Water_flow_Afterdryer"],
-            "Water_flow_Afterdryer_input": ["flow_diluted_starch"],
+            "Water_flow": ["Water_flow_Predryer", "Water_flow_Afterdryer"],            
         }
 
     @classmethod
@@ -6345,29 +6221,49 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             "Starch_uptake__g/m2_": [
                 "Starch_uptake_by_paper_Top_Roll__g/m2_",
                 "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
+                
             ],
+            # "Water_flow_Predryer": [
+            #     "grammage",
+            #     "Speed",
+            #     "Current_reel_width",
+            #     "Moisture_out_of_PreDryer",
+            # ],
             "Water_flow_Predryer": [
-                "Current_basis_weight",
-                "Speed_PD1",
-                "Current_reel_width",
+                "grammage",                
+                #"Speed",
+                #"Current_reel_width",
+                "Current_reel_moisture_average(reel)",
                 "Moisture_out_of_PreDryer",
+                "Starch_uptake_by_paper_Top_Roll__g/m2_",
+                "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
+            ],
+            "Water_Predryer": [
+                "grammage",                
+                "Current_reel_moisture_average(reel)",
+                "Moisture_out_of_PreDryer",
+                "Starch_uptake_by_paper_Top_Roll__g/m2_",
+                "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
             ],
             "Water_flow_Afterdryer": [
-                "Current_basis_weight",
-                "Speed_PD1",
+                "grammage",
+                "Speed",
                 "Current_reel_width",
                 "Moisture_after_SpeedSizer",
                 "Actual_moisture",
             ],
             "Water_flow": [
-                "Current_basis_weight",
-                "Speed_PD1",
+                "grammage",
+                "Speed",
                 "Current_reel_width",
                 "Moisture_out_of_PreDryer",
                 "Moisture_after_SpeedSizer",
                 "Actual_moisture",
-            ],
-            "flow_diluted_starch": [
+            ],            
+            "diluted_starch": [
+                "grammage",
+                "Speed",
+                "Current_reel_width",
                 "concentration_starch_working_tank_2",
                 "concentration_starch_working_tank_1",
                 "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
@@ -6381,8 +6277,8 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
                 "Production_Rate__T/h_",
             ],
             "Water_flow_Afterdryer_input": [
-                "Current_basis_weight",
-                "Speed_PD1",
+                "grammage",
+                "Speed",
                 "Current_reel_width",
                 "concentration_starch_working_tank_2",
                 "concentration_starch_working_tank_1",
@@ -6390,11 +6286,30 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
                 "Starch_uptake_by_paper_Top_Roll__g/m2_",
             ],
             "Water_flow_Afterdryer_output": [
-                "Current_basis_weight",
-                "Speed_PD1",
+                "grammage",
+                "Speed",
                 "Current_reel_width",
+                "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
+                "Starch_uptake_by_paper_Top_Roll__g/m2_",
                 "Current_reel_moisture_average(reel)",
                 "Moisture_out_of_PreDryer",
+            ],
+            "Water_Afterdryer_output": [
+                "grammage",
+                "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
+                "Starch_uptake_by_paper_Top_Roll__g/m2_",
+                "Current_reel_moisture_average(reel)",
+                "Moisture_out_of_PreDryer",
+            ],
+            "inv_Production_Rate__T/h_": [
+                "grammage",
+                "Speed",
+                "Current_reel_width",
+            ],
+            "Production_Rate__T/h_": [
+                "Current_basis_weight",
+                "Speed",
+                "Current_reel_width",
             ],
             "inv_Rod_Pressure_Bottom_Roll": ["Rod_Pressure_Bottom_Roll"],
             "inv_Rod_pressure_Top_Roll": ["Rod_pressure_Top_Roll"],
@@ -6406,6 +6321,8 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
                 "Dewatering_top_wire_suction_box_zone_2",
                 "Total_Dewatering_Press",
                 "Dewatering_First_Press_Roll",
+                "Uhle_box_1_flow___l/min_",
+                "Uhle_box_2_flow___l/min_"
             ],
             "fibre_short/long": [
                 "Short_fibre_flow",
@@ -6452,6 +6369,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]
         )
 
+
     @staticmethod
     def _add_fibre(df):
         df["Fibre__g/m2_"] = (
@@ -6460,22 +6378,38 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             - df["Starch_uptake__g/m2_"]
         )
 
+    # @staticmethod
+    # def _add_water_flow_predryer(df):
+    #     df["Water_flow_Predryer"] = (
+    #         df["grammage"]
+    #         * df["Speed"]
+    #         * df["Current_reel_width"]
+    #         * (100 - 53 - df["Moisture_out_of_PreDryer"])
+    #         * 60
+    #         / 1e10
+    #     )
+    
+    @staticmethod
+    def _add_water_predryer(df):
+        prod = 1 #df["Speed"]*df["grammage"]*df["Current_reel_width"]*60/1e8
+        starch_uptake = df["Starch_uptake_by_paper_Top_Roll__g/m2_"] + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]
+        moist_press = 50
+
+        df["Water_Predryer"] = prod * (1 -  df["Current_reel_moisture_average(reel)"] / 100 - starch_uptake/df["grammage"]) * moist_press/(100-moist_press) * (1 - df["Moisture_out_of_PreDryer"]*(100-moist_press)/moist_press/(100 - df["Moisture_out_of_PreDryer"]))
+
     @staticmethod
     def _add_water_flow_predryer(df):
-        df["Water_flow_Predryer"] = (
-            df["Current_basis_weight"]
-            * df["Speed_PD1"]
-            * df["Current_reel_width"]
-            * (100 - 53 - df["Moisture_out_of_PreDryer"])
-            * 60
-            / 1e10
-        )
+        prod = df["Speed"]*df["grammage"]*df["Current_reel_width"]*60/1e8
+        starch_uptake = df["Starch_uptake_by_paper_Top_Roll__g/m2_"] + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]
+        moist_press = 50
+
+        df["Water_flow_Predryer"] = prod * (1 -  df["Current_reel_moisture_average(reel)"] / 100 - starch_uptake/df["grammage"]) * moist_press/(100-moist_press) * (1 - df["Moisture_out_of_PreDryer"]*(100-moist_press)/moist_press/(100 - df["Moisture_out_of_PreDryer"]))
 
     @staticmethod
     def _add_water_flow_afterdryer(df):
         df["Water_flow_Afterdryer"] = (
-            df["Current_basis_weight"]
-            * df["Speed_PD1"]
+            df["grammage"]
+            * df["Speed"]
             * df["Current_reel_width"]
             * (df["Moisture_after_SpeedSizer"] - df["Actual_moisture"])
             * 60
@@ -6487,11 +6421,13 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
         df["Water_flow"] = df["Water_flow_Predryer"] + df["Water_flow_Afterdryer"]
 
     @staticmethod
-    def _add_flow_diluted_starch(df):
-        df["flow_diluted_starch"] = (
-            df["Starch_uptake_by_paper_Top_Roll__g/m2_"]
+    def _add_diluted_starch(df):
+        prod = 1 #df["Speed"]*df["grammage"]*df["Current_reel_width"]*60/1e8
+
+        df["diluted_starch"] = prod * (
+            df["Starch_uptake_by_paper_Top_Roll__g/m2_"] * (1 - df["concentration_starch_working_tank_2"])
             / df["concentration_starch_working_tank_2"]
-            + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]
+            + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] * (1 - df["concentration_starch_working_tank_1"])
             / df["concentration_starch_working_tank_1"]
         )
 
@@ -6509,28 +6445,39 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
 
     @staticmethod
     def _add_water_flow_afterdryer_input(df):
-        df["Water_flow_Afterdryer_input"] = (
-            df["Current_basis_weight"]
-            * df["Speed_PD1"]
-            * df["Current_reel_width"]
-            * df["flow_diluted_starch"]
-            * 60
-            / 1e10
+        prod = df["Speed"]*df["grammage"]*df["Current_reel_width"]*60/1e8
+
+        df["Water_flow_Afterdryer_input"] = prod * (
+            df["Starch_uptake_by_paper_Top_Roll__g/m2_"] * (1 - df["concentration_starch_working_tank_2"])
+            / df["concentration_starch_working_tank_2"]
+            + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] * (1 - df["concentration_starch_working_tank_1"])
+            / df["concentration_starch_working_tank_1"]
         )
 
     @staticmethod
+    def _add_water_afterdryer_output(df):
+        prod = 1 
+        starch_uptake = df["Starch_uptake_by_paper_Top_Roll__g/m2_"] + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]
+
+        df["Water_Afterdryer_output"] = prod * ((1 -  df["Current_reel_moisture_average(reel)"] / 100 - starch_uptake/df["grammage"]) * df["Moisture_out_of_PreDryer"]/(100-df["Moisture_out_of_PreDryer"]) - df["Current_reel_moisture_average(reel)"] / 100)
+        
+
+    @staticmethod
     def _add_water_flow_afterdryer_output(df):
-        df["Water_flow_Afterdryer_output"] = (
-            df["Current_basis_weight"]
-            * df["Speed_PD1"]
-            * df["Current_reel_width"]
-            * (
-                df["Current_reel_moisture_average(reel)"]
-                - df["Moisture_out_of_PreDryer"]
-            )
-            * 60
-            / 1e10
-        )
+        prod = df["Speed"]*df["grammage"]*df["Current_reel_width"]*60/1e8
+        starch_uptake = df["Starch_uptake_by_paper_Top_Roll__g/m2_"] + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]
+
+        df["Water_flow_Afterdryer_output"] = prod * ((1 -  df["Current_reel_moisture_average(reel)"] / 100 - starch_uptake/df["grammage"]) * df["Moisture_out_of_PreDryer"]/(100-df["Moisture_out_of_PreDryer"]) - df["Current_reel_moisture_average(reel)"] / 100)
+
+    @staticmethod
+    def _add_inv_production_rate(df):
+        prod = df["Speed"]*df["grammage"]*df["Current_reel_width"]*60/1e8
+        df["inv_Production_Rate__T/h_"] = 1/prod
+
+    @staticmethod
+    def _add_production_rate(df):
+        prod = df["Speed"]*df["Current_basis_weight"]*df["Current_reel_width"]*60/1e8
+        df["Production_Rate__T/h_"] = prod
 
     @staticmethod
     def _add_inv_rod_pressure_bottom_roll(df):
@@ -6564,6 +6511,8 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             "Dewatering_top_wire_suction_box_zone_2",
             "Total_Dewatering_Press",
             "Dewatering_First_Press_Roll",
+            "Uhle_box_1_flow___l/min_",
+            "Uhle_box_2_flow___l/min_"
         ]
         df["dewatering"] = df[cols].sum(axis=1)
 
@@ -6577,12 +6526,16 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             "Starch_uptake__g/m2_": cls._add_starch_uptake,
             "Fibre__g/m2_": cls._add_fibre,
             "Water_flow_Predryer": cls._add_water_flow_predryer,
+            "Water_Predryer": cls._add_water_predryer,
             "Water_flow_Afterdryer": cls._add_water_flow_afterdryer,
-            "Water_flow": cls._add_water_flow,
-            "flow_diluted_starch": cls._add_flow_diluted_starch,
+            "Water_flow": cls._add_water_flow,            
+            "diluted_starch": cls._add_diluted_starch,
             "flow_diluted_starch_index": cls._add_flow_diluted_starch_index,
             "Water_flow_Afterdryer_input": cls._add_water_flow_afterdryer_input,
             "Water_flow_Afterdryer_output": cls._add_water_flow_afterdryer_output,
+            "Water_Afterdryer_output": cls._add_water_afterdryer_output,
+            "inv_Production_Rate__T/h_": cls._add_inv_production_rate,
+            "Production_Rate__T/h_": cls._add_production_rate,
             "inv_Rod_Pressure_Bottom_Roll": cls._add_inv_rod_pressure_bottom_roll,
             "inv_Rod_pressure_Top_Roll": cls._add_inv_rod_pressure_top_roll,
             "square_Rod_Pressure_Bottom_Roll": cls._add_square_rod_pressure_bottom_roll,
@@ -6591,6 +6544,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             "fibre_short/long": cls._add_fibre_short_long_ratio,
             "delta_basis_weight": cls._add_delta_basis_weight,
         }
+    
     
 class SKColumnSelector(BaseEstimator, TransformerMixin):
     def __init__(self, columns):
@@ -6620,373 +6574,6 @@ class ColumnSelector(BaseEstimator, TransformerMixin):
     
 
 
-class FeatureCreator_DEPRECATED(BaseEstimator, TransformerMixin):
-    """
-    A scikit-learn compatible transformer that creates predefined engineered features.
-    Only the features listed in `features_to_create` are created (plus any prerequisites).
-
-    Parameters
-    ----------
-    features_to_create : list[str] | None
-        Names of engineered features to create. If None, creates all known engineered features.
-    features_to_keep : list[str] | None
-        Names of features to keep in the output.
-    errors : {"raise", "ignore"}
-        If "raise", raise if a feature cannot be computed.
-        If "ignore", silently skip that feature.
-    copy : bool
-        If True, works on a copy of the input DataFrame.
-    """
-
-    def __init__(self, features_to_create=None, features_to_keep=None, errors="raise", copy=True):
-        self.features_to_create = features_to_create
-        self.features_to_keep = features_to_keep
-        self.errors = errors
-        self.copy = copy
-
-    def features_required(self):
-        dd = []
-        for v in self.features_to_create:
-            if v == "Fibre__g/m2_":
-                dd.append("Current_basis_weight")
-                dd.append("Current_reel_moisture_average(reel)")
-                dd.append("Starch_uptake_by_paper_Top_Roll__g/m2_")
-                dd.append("Starch_uptake_by_paper_Bottom_Roll__g/m2_")
-
-            elif v == "Starch_uptake__g/m2_":
-                dd.append("Starch_uptake_by_paper_Top_Roll__g/m2_")
-                dd.append("Starch_uptake_by_paper_Bottom_Roll__g/m2_")
-
-            elif v == "Water_flow_Predryer":
-                dd.append("Current_basis_weight")
-                dd.append("Speed_PD1")
-                dd.append("Current_reel_width")
-                dd.append("Moisture_out_of_PreDryer")
-
-            elif v == "Water_flow_Afterdryer":
-                dd.append("Current_basis_weight")
-                dd.append("Speed_PD1")
-                dd.append("Current_reel_width")
-                dd.append("Moisture_after_SpeedSizer")
-                dd.append("Actual_moisture")
-
-            elif v == "Water_flow":
-                dd.append("Current_basis_weight")
-                dd.append("Speed_PD1")
-                dd.append("Current_reel_width")
-                dd.append("Moisture_out_of_PreDryer")
-                dd.append("Moisture_after_SpeedSizer")
-                dd.append("Actual_moisture")
-
-            elif v == "flow_diluted_starch":
-                dd.append("concentration_starch_working_tank_2")
-                dd.append("concentration_starch_working_tank_1")
-                dd.append("Starch_uptake_by_paper_Bottom_Roll__g/m2_")
-                dd.append("Starch_uptake_by_paper_Top_Roll__g/m2_")
-
-            elif v == "flow_diluted_starch_index":
-                dd.append("Flow_starch_main_line_to_working_tank_2~^0")
-                dd.append("concentration_starch_working_tank_2")
-                dd.append("Flow_starch_main_line_to_working_tank_1~^0")
-                dd.append("concentration_starch_working_tank_1")
-                dd.append("Production_Rate__T/h_")
-
-            elif v == "Water_flow_Afterdryer_input":
-                dd.append("Current_basis_weight")
-                dd.append("Speed_PD1")
-                dd.append("Current_reel_width")
-                dd.append("concentration_starch_working_tank_2")
-                dd.append("concentration_starch_working_tank_1")
-                dd.append("Starch_uptake_by_paper_Bottom_Roll__g/m2_")
-                dd.append("Starch_uptake_by_paper_Top_Roll__g/m2_")
-
-            elif v == "Water_flow_Afterdryer_output":
-                dd.append("Current_basis_weight")
-                dd.append("Speed_PD1")
-                dd.append("Current_reel_width")
-                dd.append("Current_reel_moisture_average(reel)")
-                dd.append("Moisture_out_of_PreDryer")
-
-            elif v == "inv_Rod_Pressure_Bottom_Roll":
-                dd.append("Rod_Pressure_Bottom_Roll")
-
-            elif v == "inv_Rod_pressure_Top_Roll":
-                dd.append("Rod_pressure_Top_Roll")
-
-            elif v == "square_Rod_Pressure_Bottom_Roll":
-                dd.append("Rod_Pressure_Bottom_Roll")
-
-            elif v == "square_Rod_pressure_Top_Roll":
-                dd.append("Rod_pressure_Top_Roll")
-
-            elif v == "dewatering":
-                dd.extend([
-                    "Dewatering_Shoe_press",
-                    "Dewatering_Suction_Press_Roll",
-                    "Dewatering_top_wire_suction_box_zone_2",
-                    "Total_Dewatering_Press",
-                    "Dewatering_First_Press_Roll",
-                ])
-
-        return list(set(dd))
-
-    def fit(self, X, y=None):
-        if hasattr(X, "columns"):
-            self.feature_names_in_ = np.array(list(X.columns), dtype=object)
-        else:
-            self.feature_names_in_ = None
-        return self
-
-    def transform(self, X):
-        if not hasattr(self, "feature_names_in_"):
-            self.fit(X)
-
-        X_df = self._to_dataframe(X)
-
-        if self.features_to_create is not None:
-            X_df = X_df.drop(
-                [v for v in self.features_to_create if v in X_df.columns],
-                axis=1
-            )
-
-        if self.copy:
-            X_df = X_df.copy()
-
-        registry = self._registry()
-        requested = list(registry.keys()) if self.features_to_create is None else list(self.features_to_create)
-
-        to_make = self._expand_with_deps(requested)
-
-        created = []
-        for name in to_make:
-            if name in X_df.columns:
-                continue
-
-            fn = registry.get(name)
-            if fn is None:
-                msg = f"Unknown engineered feature '{name}'. Available: {sorted(registry.keys())}"
-                if self.errors == "raise":
-                    raise ValueError(msg)
-                continue
-
-            try:
-                X_df = fn(X_df)
-                created.append(name)
-            except Exception:
-                if self.errors == "raise":
-                    raise
-                continue
-
-        self.created_features_ = created
-
-        if self.features_to_keep is None:
-            return X_df
-        return X_df[self.features_to_keep]
-
-    def get_feature_names_out(self, input_features=None):
-        if self.features_to_keep is None:
-            if getattr(self, "feature_names_in_", None) is not None:
-                return np.array(list(self.feature_names_in_), dtype=object)
-            return np.array([], dtype=object)
-        return np.array(self.features_to_keep, dtype=object)
-
-    def _to_dataframe(self, X):
-        if isinstance(X, pd.DataFrame):
-            return X
-        if getattr(self, "feature_names_in_", None) is None:
-            raise ValueError(
-                "FeatureCreator received a numpy array without known column names. "
-                "Pass a pandas DataFrame into the pipeline or fit with a DataFrame first."
-            )
-        return pd.DataFrame(X, columns=list(self.feature_names_in_))
-
-    @classmethod
-    def _deps(cls):
-        return {
-            "Fibre__g/m2_": ["Starch_uptake__g/m2_"],
-            "Water_flow": ["Water_flow_Predryer", "Water_flow_Afterdryer"],
-            "Water_flow_Afterdryer_input": ["flow_diluted_starch"],
-        }
-
-    def _expand_with_deps(self, requested):
-        deps = self._deps()
-        seen = set()
-        order = []
-
-        def visit(f):
-            if f in seen:
-                return
-            seen.add(f)
-            for d in deps.get(f, []):
-                visit(d)
-            order.append(f)
-
-        for f in requested:
-            visit(f)
-        return order
-
-    @staticmethod
-    def _safe_inverse(series: pd.Series, eps: float = 1e-9) -> pd.Series:
-        s = pd.to_numeric(series, errors="coerce")
-        s = s.where(s.abs() > eps, np.nan)
-        return 1.0 / s
-
-    @staticmethod
-    def _add_starch_uptake(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        df["Starch_uptake__g/m2_"] = (
-            df["Starch_uptake_by_paper_Top_Roll__g/m2_"]
-            + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]
-        )
-        return df
-
-    @staticmethod
-    def _add_fibre(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        df["Fibre__g/m2_"] = (
-            df["Current_basis_weight"] * (1 - df["Current_reel_moisture_average(reel)"] / 100)
-            - df["Starch_uptake__g/m2_"]
-        )
-        return df
-
-    @staticmethod
-    def _add_water_flow_predryer(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        df["Water_flow_Predryer"] = (
-            df["Current_basis_weight"]
-            * df["Speed_PD1"]
-            * df["Current_reel_width"]
-            * (100 - 35 - df["Moisture_out_of_PreDryer"])
-            * 60
-            / 1e10
-        )
-        return df
-
-    @staticmethod
-    def _add_water_flow_afterdryer(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        df["Water_flow_Afterdryer"] = (
-            df["Current_basis_weight"]
-            * df["Speed_PD1"]
-            * df["Current_reel_width"]
-            * (df["Moisture_after_SpeedSizer"] - df["Actual_moisture"])
-            * 60
-            / 1e10
-        )
-        return df
-
-    @staticmethod
-    def _add_water_flow(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        df["Water_flow"] = df["Water_flow_Predryer"] + df["Water_flow_Afterdryer"]
-        return df
-
-    @staticmethod
-    def _add_flow_diluted_starch(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        df["flow_diluted_starch"] = (
-            df["Starch_uptake_by_paper_Top_Roll__g/m2_"] / df["concentration_starch_working_tank_2"]
-            + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] / df["concentration_starch_working_tank_1"]
-        )
-        return df
-
-    @staticmethod
-    def _add_flow_diluted_starch_index(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        df["flow_diluted_starch_index"] = (
-            (
-                df["Flow_starch_main_line_to_working_tank_2~^0"] / df["concentration_starch_working_tank_2"]
-                + df["Flow_starch_main_line_to_working_tank_1~^0"] / df["concentration_starch_working_tank_1"]
-            ) / df["Production_Rate__T/h_"]
-        )
-        return df
-
-    @staticmethod
-    def _add_water_flow_afterdryer_input(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        df["Water_flow_Afterdryer_input"] = (
-            df["Current_basis_weight"]
-            * df["Speed_PD1"]
-            * df["Current_reel_width"]
-            * df["flow_diluted_starch"]
-            * 60
-            / 1e10
-        )
-        return df
-
-    @staticmethod
-    def _add_water_flow_afterdryer_output(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        df["Water_flow_Afterdryer_output"] = (
-            df["Current_basis_weight"]
-            * df["Speed_PD1"]
-            * df["Current_reel_width"]
-            * (df["Current_reel_moisture_average(reel)"] - df["Moisture_out_of_PreDryer"])
-            * 60
-            / 1e10
-        )
-        return df
-
-    @staticmethod
-    def _add_inv_rod_pressure_bottom_roll(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        df["inv_Rod_Pressure_Bottom_Roll"] = FeatureCreator._safe_inverse(df["Rod_Pressure_Bottom_Roll"])
-        return df
-
-    @staticmethod
-    def _add_inv_rod_pressure_top_roll(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        df["inv_Rod_pressure_Top_Roll"] = FeatureCreator._safe_inverse(df["Rod_pressure_Top_Roll"])
-        return df
-
-    @staticmethod
-    def _add_square_rod_pressure_bottom_roll(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        df["square_Rod_Pressure_Bottom_Roll"] = pd.to_numeric(
-            df["Rod_Pressure_Bottom_Roll"], errors="coerce"
-        ) ** 2
-        return df
-
-    @staticmethod
-    def _add_square_rod_pressure_top_roll(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        df["square_Rod_pressure_Top_Roll"] = pd.to_numeric(
-            df["Rod_pressure_Top_Roll"], errors="coerce"
-        ) ** 2
-        return df
-
-    @staticmethod
-    def _add_dewatering(df: pd.DataFrame) -> pd.DataFrame:
-        df = df.copy()
-        cols = [
-            "Dewatering_Shoe_press",
-            "Dewatering_Suction_Press_Roll",
-            "Dewatering_top_wire_suction_box_zone_2",
-            "Total_Dewatering_Press",
-            "Dewatering_First_Press_Roll",
-        ]
-        df["dewatering"] = df[cols].sum(axis=1)
-        return df
-
-    @classmethod
-    def _registry(cls):
-        return {
-            "Starch_uptake__g/m2_": cls._add_starch_uptake,
-            "Fibre__g/m2_": cls._add_fibre,
-            "Water_flow_Predryer": cls._add_water_flow_predryer,
-            "Water_flow_Afterdryer": cls._add_water_flow_afterdryer,
-            "Water_flow": cls._add_water_flow,
-            "flow_diluted_starch": cls._add_flow_diluted_starch,
-            "flow_diluted_starch_index": cls._add_flow_diluted_starch_index,
-            "Water_flow_Afterdryer_input": cls._add_water_flow_afterdryer_input,
-            "Water_flow_Afterdryer_output": cls._add_water_flow_afterdryer_output,
-            "inv_Rod_Pressure_Bottom_Roll": cls._add_inv_rod_pressure_bottom_roll,
-            "inv_Rod_pressure_Top_Roll": cls._add_inv_rod_pressure_top_roll,
-            "square_Rod_Pressure_Bottom_Roll": cls._add_square_rod_pressure_bottom_roll,
-            "square_Rod_pressure_Top_Roll": cls._add_square_rod_pressure_top_roll,
-            "dewatering": cls._add_dewatering,
-        }
-    
 def calculate_manual_shap(model, X_sample, grade_id=None, X_reference=None, grade_col=None):
     """
     SHAP (using shap library) for NON-linear pipelines, computed per grade to avoid grade-mix bias.
@@ -8005,11 +7592,15 @@ class DivideByFeatureRegressor(BaseEstimator, RegressorMixin):
         self,
         base_model,
         divisor_feature="Current_basis_weight",
-        epsilon=1e-9
+        weight=1,
+        epsilon=1e-9,
+        create = False
     ):
         self.base_model = base_model
         self.divisor_feature = divisor_feature
+        self.weight = weight
         self.epsilon = epsilon
+        self.create = create
 
     def fit(self, X, y=None):
         """
@@ -8023,8 +7614,15 @@ class DivideByFeatureRegressor(BaseEstimator, RegressorMixin):
             cols = list(self.base_model.feature_names_in_)
 
         # ensure divisor feature exists in feature_names_in_
-        if self.divisor_feature not in cols:
-            cols.append(self.divisor_feature)
+        if self.create:
+            fc = FeatureCreator(features_to_create=[self.divisor_feature], features_to_keep= [self.divisor_feature])
+            self.features_required_to_create =  fc.features_required()
+            for fet in fc.features_required():
+                if fet not in cols:
+                    cols.append(fet)    
+        else:
+            if self.divisor_feature not in cols:
+                cols.append(self.divisor_feature)
 
         self.feature_names_in_ = np.array(cols, dtype=object)
 
@@ -8035,17 +7633,33 @@ class DivideByFeatureRegressor(BaseEstimator, RegressorMixin):
         if not isinstance(X, pd.DataFrame):
             X = pd.DataFrame(X, columns=self.feature_names_in_)
 
-        if self.divisor_feature not in X.columns:
-            raise ValueError(
-                f"Missing divisor feature: {self.divisor_feature}"
-            )
+        if self.create:
+            missing = set(self.features_required_to_create).difference(X.columns)
+            if len(missing)>0:
+                raise ValueError(
+                    f"Missing divisor features: {missing}"
+                )
+        else:    
+            if self.divisor_feature not in X.columns:
+                raise ValueError(
+                    f"Missing divisor feature: {self.divisor_feature}"
+                )
 
         uptake_pred = self.base_model.predict(X)
 
-        divisor = (
-            X[self.divisor_feature]
+        if self.create:
+            fc = FeatureCreator(features_to_create=[self.divisor_feature], features_to_keep= [self.divisor_feature])
+            divisor = (
+            fc.fit_transform(X[fc.features_required()])
             .astype(float)
-            .to_numpy()
-        )
+                .to_numpy()
+            )
 
-        return uptake_pred / np.clip(divisor, self.epsilon, None)
+        else:
+            divisor = (
+                X[self.divisor_feature]
+                .astype(float)
+                .to_numpy()
+            )
+
+        return self.weight * uptake_pred / np.clip(divisor, self.epsilon, None)

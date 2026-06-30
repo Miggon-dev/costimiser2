@@ -151,6 +151,7 @@ def fibre_cost(X):
             raise KeyError(f"Missing columns for 'fibre': {missing}")
 
         basis_weight = X["Current_basis_weight"]
+        print(X["Starch_uptake_by_paper_Bottom_Roll__g/m2_"])
         starch_uptake = X["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] + X["Starch_uptake_by_paper_Top_Roll__g/m2_"]
         moisture = X["Current_reel_moisture_average(reel)"]
 

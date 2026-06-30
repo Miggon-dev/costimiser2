@@ -1,6 +1,44 @@
 import numpy as np
 import pandas as pd
 from scipy.optimize import differential_evolution
+import time
+from collections import defaultdict
+
+_TIMING = defaultdict(float)
+_TIMING_COUNTS = defaultdict(int)
+
+
+def _time_block(name):
+    class _Timer:
+        def __enter__(self_inner):
+            self_inner.t0 = time.perf_counter()
+
+        def __exit__(self_inner, exc_type, exc, tb):
+            dt = time.perf_counter() - self_inner.t0
+            _TIMING[name] += dt
+            _TIMING_COUNTS[name] += 1
+
+    return _Timer()
+
+
+def _timing_summary():
+    rows = []
+
+    for k in sorted(_TIMING):
+        rows.append({
+            "step": k,
+            "total_seconds": round(_TIMING[k], 4),
+            "n_calls": _TIMING_COUNTS[k],
+            "avg_seconds": round(
+                _TIMING[k] / max(_TIMING_COUNTS[k], 1),
+                6,
+            ),
+        })
+
+    return pd.DataFrame(rows).sort_values(
+        "total_seconds",
+        ascending=False,
+    )
 
 
 def _dependent_variables_from_hard_dependencies(hard_dependencies):
@@ -280,6 +318,8 @@ def _get_variable_bounds(
     use_joint_conditional_bounds=True,
     feature_fn=None,
     max_joint_vars=10,
+    joint_model_cache=None,
+    conditional_bounds_cache=None,
 
 ):
     """
@@ -316,18 +356,30 @@ def _get_variable_bounds(
 
             joint_vars = jdt.build_joint_variable_set(
                 interventions=interventions_like,
-                baseline_row=ref_df,
-                feature_fn=feature_fn,
+                baseline_row= None,#ref_df,
+                feature_fn=None, # feature_fn, #TRYING
                 top_driver_variables=None,
                 shap_result=None,
                 max_vars=max_joint_vars,
             )
 
             if grade is not None and joint_vars:
-                joint_bundle = jdt.fit_joint_model_for_grade_from_tools(
-                    grade=grade,
-                    variables=joint_vars,
+                cache_key = (
+                    str(grade),
+                    tuple(sorted(joint_vars)),
                 )
+
+                if joint_model_cache is not None and cache_key in joint_model_cache:
+                    joint_bundle = joint_model_cache[cache_key]
+                else:
+                    with _time_block("fit_joint_model"):
+                        joint_bundle = jdt.fit_joint_model_for_grade_from_tools(
+                            grade=grade,
+                            variables=joint_vars,
+                        )
+
+                    if joint_model_cache is not None:
+                        joint_model_cache[cache_key] = joint_bundle
 
         except Exception as e:
             joint_bundle = None
@@ -349,14 +401,36 @@ def _get_variable_bounds(
                 ref_df = _as_dataframe_row(reference_row)
                 ref_row = ref_df.iloc[0]
 
-                conditional_bounds = jdt.get_conditional_bounds_for_variable(
-                    row=ref_row,
-                    variable=var,
-                    joint_bundle=joint_bundle,
-                    q_low=lower_q,
-                    q_high=upper_q,
+                bounds_cache_key = (
+                    tuple(joint_bundle.variables),
+                    var,
+                    float(lower_q),
+                    float(upper_q),
+                    tuple(
+                        float(ref_row[v])
+                        for v in joint_bundle.variables
+                        if v in ref_row.index
+                    ),
                 )
 
+                if (
+                    conditional_bounds_cache is not None
+                    and bounds_cache_key in conditional_bounds_cache
+                ):
+                    conditional_bounds = conditional_bounds_cache[bounds_cache_key]
+                else:
+                    with _time_block("conditional_bounds"):
+                        conditional_bounds = jdt.get_conditional_bounds_for_variable(
+                            row=ref_row,
+                            variable=var,
+                            joint_bundle=joint_bundle,
+                            q_low=lower_q,
+                            q_high=upper_q,
+                        )
+
+                    if conditional_bounds_cache is not None:
+                        conditional_bounds_cache[bounds_cache_key] = conditional_bounds
+    
                 lo = float(conditional_bounds["lower_bound"])
                 hi = float(conditional_bounds["upper_bound"])
                 source = "joint_conditional"
@@ -613,7 +687,9 @@ def optimize_cost_over_actionable_variables(
     seed=42,
     hard_dependencies=None,
     feature_fn=None,
-    max_joint_vars=10
+    max_joint_vars=10,
+    joint_model_cache=None,
+    conditional_bounds_cache=None,
 ):
     """
     Minimize a cost function by changing only actionable variables.
@@ -676,6 +752,8 @@ def optimize_cost_over_actionable_variables(
         use_joint_conditional_bounds=True,
         feature_fn=feature_fn,
         max_joint_vars=max_joint_vars,
+        joint_model_cache=joint_model_cache,
+        conditional_bounds_cache=conditional_bounds_cache,
     )
 
     variables = list(bounds_dict.keys())
@@ -729,14 +807,17 @@ def optimize_cost_over_actionable_variables(
         for var, value in zip(variables, x):
             candidate.at[candidate.index[0], var] = float(value)
 
-        candidate = _apply_hard_dependencies(
-            candidate,
-            base_row,
-            hard_dependencies,
-        )
+        
+        with _time_block("hard_dependencies"):
+                candidate = _apply_hard_dependencies(
+                candidate,
+                base_row,
+                hard_dependencies,
+            )
         
 
-        objective_value = predict_cost(candidate)
+        with _time_block("prediction"):
+            objective_value = predict_cost(candidate)
 
         model_objective = (
             -objective_value
@@ -773,15 +854,16 @@ def optimize_cost_over_actionable_variables(
         
         return model_objective + penalty + quality_penalty + invariant_penalty
 
-    result = differential_evolution(
-        objective,
-        bounds=bounds,
-        maxiter=maxiter,
-        seed=seed,
-        polish=True,
-        updating="immediate",
-        workers=1,
-    )
+    with _time_block("optimizer"):
+        result = differential_evolution(
+            objective,
+            bounds=bounds,
+            maxiter=maxiter,
+            seed=seed,
+            polish=True,
+            updating="immediate",
+            workers=1,
+        )
 
     optimized_row = base_row.copy()
 
@@ -942,55 +1024,71 @@ def optimize_cost_with_intervention_limit(
     - keep the candidate that gives the best objective improvement
     - final result uses only selected variables
     """
-
+    joint_model_cache = {}
+    conditional_bounds_cache = {}
+    
     if max_interventions is None:
-        return optimize_cost_over_actionable_variables(
-            reference_row=reference_row,
-            historical_df=historical_df,
-            actionable_variables=actionable_variables,
-            cost_function=cost_function,
-            objective_mode=objective_mode,
-            invariants=invariants,
-            quality_constraints=quality_constraints,
-            hard_dependencies=hard_dependencies,
-            feature_fn=feature_fn,
-            max_joint_vars=max_joint_vars,
-            **optimizer_kwargs,
-        )
+        with _time_block("subset_trial"):
+            opt = optimize_cost_over_actionable_variables(
+                reference_row=reference_row,
+                historical_df=historical_df,
+                actionable_variables=actionable_variables,
+                cost_function=cost_function,
+                objective_mode=objective_mode,
+                invariants=invariants,
+                quality_constraints=quality_constraints,
+                hard_dependencies=hard_dependencies,
+                feature_fn=feature_fn,
+                max_joint_vars=max_joint_vars,
+                joint_model_cache=joint_model_cache,
+                conditional_bounds_cache=conditional_bounds_cache,
+                **optimizer_kwargs,
+            )
+        return opt
 
     if isinstance(max_interventions, str) and max_interventions.lower() == "all":
-        return optimize_cost_over_actionable_variables(
-            reference_row=reference_row,
-            historical_df=historical_df,
-            actionable_variables=actionable_variables,
-            cost_function=cost_function,
-            objective_mode=objective_mode,
-            invariants=invariants,
-            quality_constraints=quality_constraints,
-            hard_dependencies=hard_dependencies,
-            feature_fn=feature_fn,
-            max_joint_vars=max_joint_vars,
-            **optimizer_kwargs,
-        )
+        with _time_block("subset_trial"):
+            opt = optimize_cost_over_actionable_variables(
+                reference_row=reference_row,
+                historical_df=historical_df,
+                actionable_variables=actionable_variables,
+                cost_function=cost_function,
+                objective_mode=objective_mode,
+                invariants=invariants,
+                quality_constraints=quality_constraints,
+                hard_dependencies=hard_dependencies,
+                feature_fn=feature_fn,
+                max_joint_vars=max_joint_vars,
+                joint_model_cache=joint_model_cache,
+                conditional_bounds_cache=conditional_bounds_cache,
+                **optimizer_kwargs,
+            )
+        return opt
 
     max_interventions = int(max_interventions)
 
     actionable_variables = list(dict.fromkeys(actionable_variables))
 
+    
+
     if max_interventions >= len(actionable_variables):
-        return optimize_cost_over_actionable_variables(
-            reference_row=reference_row,
-            historical_df=historical_df,
-            actionable_variables=actionable_variables,
-            cost_function=cost_function,
-            objective_mode=objective_mode,
-            invariants=invariants,
-            quality_constraints=quality_constraints,
-            hard_dependencies=hard_dependencies,
-            feature_fn=feature_fn,
-            max_joint_vars=max_joint_vars,
-            **optimizer_kwargs,
-        )
+        with _time_block("subset_trial"):
+            opt = optimize_cost_over_actionable_variables(
+                reference_row=reference_row,
+                historical_df=historical_df,
+                actionable_variables=actionable_variables,
+                cost_function=cost_function,
+                objective_mode=objective_mode,
+                invariants=invariants,
+                quality_constraints=quality_constraints,
+                hard_dependencies=hard_dependencies,
+                feature_fn=feature_fn,
+                max_joint_vars=max_joint_vars,
+                joint_model_cache=joint_model_cache,
+                conditional_bounds_cache=conditional_bounds_cache,
+                **optimizer_kwargs,
+            )
+        return opt
 
     selected = []
     remaining = actionable_variables.copy()
@@ -1017,19 +1115,22 @@ def optimize_cost_with_intervention_limit(
         for var in remaining:
             trial_vars = selected + [var]
 
-            opt = optimize_cost_over_actionable_variables(
-                reference_row=reference_row,
-                historical_df=historical_df,
-                actionable_variables=trial_vars,
-                cost_function=cost_function,
-                objective_mode=objective_mode,
-                invariants=invariants,
-                quality_constraints=quality_constraints,
-                hard_dependencies=hard_dependencies,
-                feature_fn=feature_fn,
-                max_joint_vars=max_joint_vars,
-                **optimizer_kwargs,
-            )
+            with _time_block("subset_trial"):
+                opt = optimize_cost_over_actionable_variables(
+                    reference_row=reference_row,
+                    historical_df=historical_df,
+                    actionable_variables=trial_vars,
+                    cost_function=cost_function,
+                    objective_mode=objective_mode,
+                    invariants=invariants,
+                    quality_constraints=quality_constraints,
+                    hard_dependencies=hard_dependencies,
+                    feature_fn=feature_fn,
+                    max_joint_vars=max_joint_vars,
+                    joint_model_cache=joint_model_cache,
+                    conditional_bounds_cache=conditional_bounds_cache,
+                    **optimizer_kwargs,
+                )
 
             if not opt.get("changes"):
                 continue

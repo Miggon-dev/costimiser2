@@ -97,12 +97,40 @@ def parse_quality_constraints(query: str):
  
 def parse_cost_component(query: str) -> Optional[str]:
     q = query.lower()
- 
-    for canonical, aliases in COMPONENT_ALIASES.items():
-        for alias in aliases:
-            if alias in q:
+
+    # For scenario queries, the objective is before "if".
+    # Example:
+    # "simulate SCT CD for reel id ... if starch uptake bottom is reduced by 10%"
+    # We must not let the intervention variable decide the model.
+    objective_part = re.split(r"\s+if\s+", q, maxsplit=1)[0]
+
+    priority = [
+        "SCT CD",
+        "SCT MD",
+        "Burst",
+        "CMT30",
+        "total",
+        "steam",
+        "electricity",
+        "fibre",
+        "starch",
+    ]
+
+    for canonical in priority:
+        aliases = COMPONENT_ALIASES.get(canonical, [])
+
+        # longest aliases first, e.g. "total cost" before "total"
+        for alias in sorted(aliases, key=len, reverse=True):
+            if re.search(rf"\b{re.escape(alias)}\b", objective_part):
                 return canonical
- 
+
+    # fallback: full query
+    for canonical in priority:
+        aliases = COMPONENT_ALIASES.get(canonical, [])
+        for alias in sorted(aliases, key=len, reverse=True):
+            if re.search(rf"\b{re.escape(alias)}\b", q):
+                return canonical
+
     return None
  
  
@@ -620,46 +648,45 @@ def parse_from_to_range(query: str):
  
     return (m.group(1), m.group(2))
 
-def parse_levels(query: str):
-    """
-    Diagnosis levels:
-    1 = overall
-    2 = by grade
-    3 = by grade and cost component
-    """
-    q = query.lower()
+def parse_levels(q: str):
+    q = q.lower()
     levels = []
- 
+
     if "by grade and cost component" in q:
         levels.append(3)
- 
+
     q_without_l3 = q.replace("by grade and cost component", "")
- 
+
     if "overall" in q_without_l3 or "total" in q_without_l3:
         levels.append(1)
- 
-    if "grade" in q_without_l3 :
+
+    if re.search(r"\bby\s+grade\b", q_without_l3):
         levels.append(2)
- 
+
     if re.search(r"\blevel\s*1\b", q):
         levels.append(1)
     if re.search(r"\blevel\s*2\b", q):
         levels.append(2)
     if re.search(r"\blevel\s*3\b", q):
         levels.append(3)
- 
-    matches = re.findall(r"\blevels?\s+([123](?:\s*(?:,|and)\s*[123])*)", q)
+
+    matches = re.findall(
+        r"\blevels?\s+([123](?:\s*(?:,|and)\s*[123])*)\b",
+        q,
+    )
+
     for m in matches:
-        nums = re.findall(r"[123]", m)
+        nums = re.findall(r"\b[123]\b", m)
         levels.extend(int(x) for x in nums)
- 
+
     out = []
     seen = set()
+
     for x in levels:
         if x not in seen:
             out.append(x)
             seen.add(x)
- 
+
     return out or None
 
 def parse_diagnosis_objects(query: str):

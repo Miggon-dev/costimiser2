@@ -21,6 +21,32 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
+import pickle
+import hashlib
+import shutil
+
+JOINT_CACHE_DIR = Path(".cache/joint_distribution")
+JOINT_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _hash_key(obj) -> str:
+    raw = pickle.dumps(obj)
+    return hashlib.md5(raw).hexdigest()
+
+
+def clear_joint_distribution_cache():
+    _JOINT_MODEL_CACHE.clear()
+
+    try:
+        _CONDITIONAL_BOUNDS_CACHE.clear()
+    except NameError:
+        pass
+
+    if JOINT_CACHE_DIR.exists():
+        shutil.rmtree(JOINT_CACHE_DIR)
+
+    JOINT_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ---------------------------------------------------------------------
@@ -45,7 +71,37 @@ def _get_joint_backend():
 # Simple in-memory cache
 # ---------------------------------------------------------------------
 _JOINT_MODEL_CACHE: Dict[Tuple[str, Tuple[str, ...]], "JointModelBundle"] = {}
+_CONDITIONAL_BOUNDS_CACHE: Dict[Any, Dict[str, Any]] = {}
 
+CACHE_VERSION = "joint_cache_v1"
+
+
+def _disk_cache_path(cache_key) -> Path:
+    disk_key = _hash_key((CACHE_VERSION, cache_key))
+    return JOINT_CACHE_DIR / f"{disk_key}.pkl"
+
+
+def _load_from_disk_cache(cache_key):
+    path = _disk_cache_path(cache_key)
+
+    if not path.exists():
+        return None
+
+    try:
+        with open(path, "rb") as f:
+            return pickle.load(f)
+    except Exception:
+        return None
+
+
+def _save_to_disk_cache(cache_key, value):
+    path = _disk_cache_path(cache_key)
+
+    try:
+        with open(path, "wb") as f:
+            pickle.dump(value, f)
+    except Exception:
+        pass
 
 # ---------------------------------------------------------------------
 # Data container
@@ -186,10 +242,24 @@ def fit_joint_model_for_grade_from_tools(
     - fits the grade-specific joint model
     - optionally caches it
     """
-    cache_key = (str(grade), tuple(sorted(variables)))
+    cache_key = (
+        "joint_model",
+        str(grade),
+        tuple(sorted(map(str, variables))),
+        str(grade_col),
+        int(min_rows),
+    )
+
+    print("cache_key=",cache_key)
 
     if use_cache and cache_key in _JOINT_MODEL_CACHE:
         return _JOINT_MODEL_CACHE[cache_key]
+
+    if use_cache:
+        cached = _load_from_disk_cache(cache_key)
+        if cached is not None:
+            _JOINT_MODEL_CACHE[cache_key] = cached
+            return cached
 
     df = load_joint_process_data(grade=grade)
 
@@ -203,6 +273,7 @@ def fit_joint_model_for_grade_from_tools(
 
     if use_cache:
         _JOINT_MODEL_CACHE[cache_key] = bundle
+        _save_to_disk_cache(cache_key, bundle)
 
     return bundle
 
@@ -246,6 +317,42 @@ def score_row_feasibility(
         "is_valid": bool(np.isfinite(loglik)),
     }
 
+def _conditional_bounds_cache_key(
+    row,
+    variable,
+    joint_bundle,
+    q_low,
+    q_high,
+    grid_step,
+    safety_pad,
+    control_min,
+    control_max,
+    nonneg_control,
+    pre_expand,
+    post_expand,
+):
+    row_key = tuple(
+        round(float(row[v]), 8)
+        for v in joint_bundle.variables
+        if v in row.index
+    )
+
+    return (
+        "conditional_bounds",
+        str(joint_bundle.grade),
+        tuple(map(str, joint_bundle.variables)),
+        str(variable),
+        float(q_low),
+        float(q_high),
+        float(grid_step),
+        float(safety_pad),
+        None if control_min is None else float(control_min),
+        None if control_max is None else float(control_max),
+        bool(nonneg_control),
+        float(pre_expand),
+        float(post_expand),
+        row_key,
+    )
 
 # ---------------------------------------------------------------------
 # Conditional bounds
@@ -292,6 +399,29 @@ def get_conditional_bounds_for_variable(
             f"Fixed conditioning row contains NaNs for variable {variable!r}."
         )
 
+    cache_key = _conditional_bounds_cache_key(
+        row=row,
+        variable=variable,
+        joint_bundle=joint_bundle,
+        q_low=q_low,
+        q_high=q_high,
+        grid_step=grid_step,
+        safety_pad=safety_pad,
+        control_min=control_min,
+        control_max=control_max,
+        nonneg_control=nonneg_control,
+        pre_expand=pre_expand,
+        post_expand=post_expand,
+    )
+
+    if cache_key in _CONDITIONAL_BOUNDS_CACHE:
+        return dict(_CONDITIONAL_BOUNDS_CACHE[cache_key])
+
+    cached = _load_from_disk_cache(cache_key)
+    if cached is not None:
+        _CONDITIONAL_BOUNDS_CACHE[cache_key] = cached
+        return dict(cached)
+
     lo, hi, profile_df = conditional_bounds_from_joint(
         free_variable=variable,
         df_hist=joint_bundle.data_used,
@@ -335,7 +465,7 @@ def get_conditional_bounds_for_variable(
             except Exception:
                 median = np.nan
 
-    return {
+    out = {
         "grade": joint_bundle.grade,
         "variable": variable,
         "current_value": float(row[variable]),
@@ -344,6 +474,11 @@ def get_conditional_bounds_for_variable(
         "median": None if pd.isna(median) else float(median),
         "profile_df": profile_df,
     }
+
+    _CONDITIONAL_BOUNDS_CACHE[cache_key] = dict(out)
+    _save_to_disk_cache(cache_key, dict(out))
+
+    return out
 
 
 # ---------------------------------------------------------------------

@@ -1,0 +1,184 @@
+{
+  "AF": {
+    "count": 1,
+    "attributes": [
+      "Created",
+      "Database",
+      "Description",
+      "ExportMode",
+      "ExportedObject",
+      "ExportedType",
+      "Identity",
+      "PISystem",
+      "ParentKey",
+      "SchemaVersion",
+      "SoftwareVersion",
+      "id",
+      "{http://www.w3.org/2001/XMLSchema-instance}noNamespaceSchemaLocation"
+    ],
+    "children": [
+      "AFElement"
+    ]
+  },
+  "AFElement": {
+    "count": 153,
+    "attributes": [
+      "ReferenceType"
+    ],
+    "children": [
+      "AFAnalysis",
+      "AFAttribute",
+      "AFElement",
+      "AFElementRef",
+      "Description",
+      "Name",
+      "Template"
+    ]
+  },
+  "Name": {
+    "count": 3322,
+    "attributes": [],
+    "children": []
+  },
+  "Template": {
+    "count": 402,
+    "attributes": [],
+    "children": []
+  },
+  "AFAttribute": {
+    "count": 2907,
+    "attributes": [],
+    "children": [
+      "AFAttribute",
+      "AFAttributeCategoryRef",
+      "ConfigString",
+      "DataReference",
+      "DefaultUOM",
+      "Description",
+      "IsConfigurationItem",
+      "IsExcluded",
+      "Name",
+      "Type",
+      "UOM",
+      "Value"
+    ]
+  },
+  "AFAttributeCategoryRef": {
+    "count": 2236,
+    "attributes": [],
+    "children": []
+  },
+  "Value": {
+    "count": 94,
+    "attributes": [
+      "type"
+    ],
+    "children": []
+  },
+  "DataReference": {
+    "count": 1186,
+    "attributes": [],
+    "children": []
+  },
+  "ConfigString": {
+    "count": 1100,
+    "attributes": [],
+    "children": []
+  },
+  "IsExcluded": {
+    "count": 108,
+    "attributes": [],
+    "children": []
+  },
+  "AFAnalysis": {
+    "count": 262,
+    "attributes": [],
+    "children": [
+      "AFAnalysisCategoryRef",
+      "AFAnalysisRule",
+      "AFTimeRule",
+      "Description",
+      "Name",
+      "Status",
+      "Target",
+      "Template"
+    ]
+  },
+  "Description": {
+    "count": 118,
+    "attributes": [],
+    "children": []
+  },
+  "Status": {
+    "count": 262,
+    "attributes": [],
+    "children": []
+  },
+  "Target": {
+    "count": 262,
+    "attributes": [],
+    "children": [
+      "AFElementRef"
+    ]
+  },
+  "AFElementRef": {
+    "count": 264,
+    "attributes": [
+      "ReferenceType"
+    ],
+    "children": []
+  },
+  "Type": {
+    "count": 11,
+    "attributes": [],
+    "children": []
+  },
+  "UOM": {
+    "count": 16,
+    "attributes": [],
+    "children": []
+  },
+  "IsConfigurationItem": {
+    "count": 3,
+    "attributes": [],
+    "children": []
+  },
+  "DefaultUOM": {
+    "count": 1,
+    "attributes": [],
+    "children": []
+  },
+  "AFAnalysisCategoryRef": {
+    "count": 1,
+    "attributes": [],
+    "children": []
+  },
+  "AFAnalysisRule": {
+    "count": 11,
+    "attributes": [],
+    "children": [
+      "AFAnalysisRule",
+      "AFPlugIn",
+      "ConfigString",
+      "VariableMapping"
+    ]
+  },
+  "AFPlugIn": {
+    "count": 26,
+    "attributes": [],
+    "children": []
+  },
+  "VariableMapping": {
+    "count": 4,
+    "attributes": [],
+    "children": []
+  },
+  "AFTimeRule": {
+    "count": 15,
+    "attributes": [],
+    "children": [
+      "AFPlugIn",
+      "ConfigString"
+    ]
+  }
+}

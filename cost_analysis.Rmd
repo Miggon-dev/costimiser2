@@ -469,13 +469,12 @@ object_drilldown = "overprocessing"
 reference = "baseline"
 
 drilldown = drilldown_df(process_data[process_data.AB_Grade_ID.isin(grades_summary)], level , object_drilldown, reference)
-mix_contribution = mix_effect(object_drilldown, reference, grades_summary, process_data)
 
 
 descriptions_md = build_drilldown_text(drilldown.rename(columns={"cost":object_drilldown}), lang=LANG)
 descriptions.append(descriptions_md)
 
-fig = _drilldown_analysis_plot(drilldown, mix_contribution,  level, object_drilldown, reference)
+fig = _drilldown_analysis_plot(drilldown, None,  level, object_drilldown, reference)
 fig = fig.update_layout(
             title="",
         )
@@ -527,7 +526,7 @@ cat(paste0("# ", tr("Breakdown by grades", "Aufschlüsselung nach Sorten"), "\n\
 ```
 
 ```{python check_6010085}
-if "current" in process_data[process_data.AB_Grade_ID=="6010085"].target.unique():
+if len(process_data[(process_data.AB_Grade_ID=="6010085") & (process_data.target=="current")])>=5:
   current_enabled = True
 else:
   current_enabled = False
@@ -740,7 +739,7 @@ if (visualize_plots && py$current_enabled) {
 ```
 
 ```{python check_3200115}
-if "current" in process_data[process_data.AB_Grade_ID=="3200115"].target.unique():
+if len(process_data[(process_data.AB_Grade_ID=="3200115") & (process_data.target=="current")])>=5:
   current_enabled = True
 else:
   current_enabled = False
@@ -946,7 +945,7 @@ if (visualize_plots && py$current_enabled) {
 ```
 
 ```{python check_6010100}
-if "current" in process_data[process_data.AB_Grade_ID=="6010100"].target.unique():
+if len(process_data[(process_data.AB_Grade_ID=="6010100") & (process_data.target=="current")])>=5:
   current_enabled = True
 else:
   current_enabled = False
@@ -1152,7 +1151,7 @@ if (visualize_plots && py$current_enabled) {
 ```
 
 ```{python check_6010120}
-if "current" in process_data[process_data.AB_Grade_ID=="6010120"].target.unique():
+if len(process_data[(process_data.AB_Grade_ID=="6010120") & (process_data.target=="current")])>=5:
   current_enabled = True
 else:
   current_enabled = False

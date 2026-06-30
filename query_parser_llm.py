@@ -61,7 +61,14 @@ def _normalize_llm_parse(obj: Dict[str, Any]) -> Dict[str, Any]:
     if not isinstance(levels, list):
         levels = None
     else:
-        levels = [x for x in levels if x in ALLOWED_LEVELS] or None
+        level_map = {
+            "overall": 1,
+            "grade": 2,
+            "grade_component": 3,
+        }
+
+        levels = [level_map[x] for x in levels if x in level_map] or None
+
 
     objects = obj.get("objects")
     if not isinstance(objects, list):
@@ -193,7 +200,7 @@ Query:
 
     return _normalize_llm_parse(parsed)
 
-def merge_rule_and_llm_parse(rule_parsed: dict, llm_parsed: dict) -> dict:
+def merge_rule_and_llm_parseDEPRECATED(rule_parsed: dict, llm_parsed: dict) -> dict:
     out = dict(rule_parsed)
 
     for key in [
@@ -210,6 +217,71 @@ def merge_rule_and_llm_parse(rule_parsed: dict, llm_parsed: dict) -> dict:
     if not out.get("interventions"):
         out["interventions"] = llm_parsed.get("interventions", [])
 
+    if out.get("target_range") is None and llm_parsed.get("target_range_text"):
+        out["target_range_text"] = llm_parsed["target_range_text"]
+
+    if out.get("baseline_range") is None and llm_parsed.get("baseline_range_text"):
+        out["baseline_range_text"] = llm_parsed["baseline_range_text"]
+
+    return out
+
+def merge_rule_and_llm_parse(rule_parsed: dict, llm_parsed: dict) -> dict:
+    import re
+
+    out = dict(rule_parsed)
+
+    raw_query = (
+        out.get("raw_query")
+        or out.get("query")
+        or rule_parsed.get("raw_query")
+        or rule_parsed.get("query")
+        or ""
+    )
+    q = str(raw_query).lower()
+
+    # --------------------------------------------------
+    # Merge simple fields
+    # --------------------------------------------------
+    for key in [
+        "intent",
+        "cost_component",
+        "grade",
+        "objects",
+    ]:
+        if out.get(key) in [None, [], "unknown"]:
+            if llm_parsed.get(key) not in [None, [], "unknown"]:
+                out[key] = llm_parsed[key]
+
+    # --------------------------------------------------
+    # Merge levels carefully
+    # --------------------------------------------------
+    if out.get("levels") in [None, []]:
+        llm_levels = llm_parsed.get("levels")
+
+        explicit_level_request = (
+            re.search(r"\blevel\s*[123]\b", q)
+            or re.search(r"\blevels?\s+[123]", q)
+            or re.search(r"\bby\s+grade\b", q)
+            or "by grade and cost component" in q
+            or re.search(r"\boverall\b", q)
+        )
+
+        # Do not let "for grade 6010120" become levels=[2].
+        # That is a grade filter, not a drilldown-level request.
+        if explicit_level_request and llm_levels not in [None, [], "unknown"]:
+            out["levels"] = llm_levels
+        else:
+            out["levels"] = None
+
+    # --------------------------------------------------
+    # Interventions
+    # --------------------------------------------------
+    if not out.get("interventions"):
+        out["interventions"] = llm_parsed.get("interventions", [])
+
+    # --------------------------------------------------
+    # Time range text
+    # --------------------------------------------------
     if out.get("target_range") is None and llm_parsed.get("target_range_text"):
         out["target_range_text"] = llm_parsed["target_range_text"]
 
