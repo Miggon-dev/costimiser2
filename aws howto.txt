@@ -1,4 +1,4 @@
-sudo ntpdate time.nist.gov
+sudo ntpdate time.nist.gov (or run wsl --shutdown in Windows and after 10 seconds open WSL)
 source venv/bin/activate
 
 kubectl rollout restart deployment cost-analysis-dashboard
@@ -64,75 +64,15 @@ mlflow.set_tracking_uri(tracking_arn)
 print("Tracking URI:", mlflow.get_tracking_uri())
 
 client = MlflowClient()
-experiments = client.search_experiments()  --| Here get stuck
+experiments = client.search_experiments() 
 
-response["TrackingServerUrl"]
-'https://t-b8cvkbe6febi.eu-west-1.experiments.sagemaker.aws'
-response["TrackingServerStatus"]
-'Created'
-response["ArtifactStoreUri"]
-'s3://amazon-sagemaker-781690932061-eu-west-1-651dc8e6f0b2/dzd_cjw6wottibm3fa/cmtvu5owg33jx2/dev/data/ml/mlflow'
-
-print(mlflow.get_tracking_uri())
-arn:aws:sagemaker:eu-west-1:781690932061:mlflow-tracking-server/tracking-server-cmtvu5owg33jx2-6n1vax5t3bfmhi-dev
-
-import logging
-
-logging.basicConfig(level=logging.DEBUG)
-
-for name in ["urllib3", "requests", "botocore", "mlflow"]:
-    logging.getLogger(name).setLevel(logging.DEBUG)
-
-
-experiments = client.search_experiments()
-DEBUG:urllib3.connectionpool:Starting new HTTPS connection (1): eu-west-1.experiments.sagemaker.aws:443
-
-
-import socket
-
-host = "eu-west-1.experiments.sagemaker.aws"
-port = 443
-
-s = socket.create_connection((host, port), timeout=10)
-print("connected")
-s.close()
-
-
-import requests
-
-requests.post(
-    "https://eu-west-1.experiments.sagemaker.aws/api/2.0/mlflow/experiments/search",
-    timeout=30
-)
-
-
-import socket
-
-host = "t-b8cvkbe6febi.eu-west-1.experiments.sagemaker.aws"
-
-s = socket.create_connection((host, 443), timeout=10)
-print("TCP connected")
-s.close()
-
-import requests
-
-requests.get(
-    "https://t-b8cvkbe6febi.eu-west-1.experiments.sagemaker.aws",
-    timeout=30
-)
-
-import requests
-
-requests.get(
-    "https://t-b8cvkbe6febi.eu-west-1.experiments.sagemaker.aws",
-    timeout=30
-)
-
-
-
-
-
-
+REGISTERED_MODEL_NAME = "SCTCD-uoc"
+versions = client.search_model_versions(f"name='{REGISTERED_MODEL_NAME}'")
+if not versions:
+    raise RuntimeError(f"No versions found for model {REGISTERED_MODEL_NAME}")
+latest = sorted(versions, key=lambda v: int(v.version))[-1]
+model_uri = f"models:/{REGISTERED_MODEL_NAME}/{latest.version}"
+model = mlflow.pyfunc.load_model(model_uri)
 
 
 

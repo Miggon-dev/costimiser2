@@ -7663,3 +7663,5 @@ class DivideByFeatureRegressor(BaseEstimator, RegressorMixin):
             )
 
         return self.weight * uptake_pred / np.clip(divisor, self.epsilon, None)
+
+        

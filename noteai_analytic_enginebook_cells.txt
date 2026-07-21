@@ -1,0 +1,1988 @@
+
+================================================================================
+CELL 1 — MARKDOWN
+================================================================================
+
+# Health
+
+================================================================================
+CELL 2 — CODE
+================================================================================
+
+print("hello")
+
+================================================================================
+CELL 3 — CODE
+================================================================================
+
+import requests
+
+r = requests.get("http://127.0.0.1:5000/health")
+
+print(r.status_code)
+print(r.text)
+
+================================================================================
+CELL 4 — CODE
+================================================================================
+
+def extract(
+    out,
+    download_artifacts,
+    show_text=True,
+    show_tables=False,
+    show_figures=False,
+    base_url="http://127.0.0.1:5000",
+):
+    import io
+
+    import pandas as pd
+    import plotly.graph_objects as go
+    import requests
+    from IPython.display import display, Markdown
+
+    if show_text and out.get("text"):
+        display(Markdown(out["text"]))
+
+    tables = {}
+    figures = {}
+
+    if download_artifacts:
+        for table in out.get("tables", []):
+            table_url = base_url.rstrip("/") + table["artifact"]["url"]
+
+            rt = requests.get(
+                table_url,
+                timeout=120,
+            )
+            rt.raise_for_status()
+
+            df = pd.read_parquet(io.BytesIO(rt.content))
+            tables[table["id"]] = df
+
+            if show_tables:
+                print(table["id"])
+                display(df.head())
+
+        for fig_payload in out.get("figures", []):
+            fig_url = base_url.rstrip("/") + fig_payload["artifact"]["url"]
+
+            rf = requests.get(
+                fig_url,
+                timeout=120,
+            )
+            rf.raise_for_status()
+
+            fig = go.Figure(rf.json())
+            figures[fig_payload["id"]] = fig
+
+            if show_figures:
+                fig.show()
+
+    else:
+        for table in out.get("tables", []):
+            df = pd.DataFrame(table["inline"]["data"])
+            tables[table["id"]] = df
+
+            if show_tables:
+                print(table["id"])
+                display(df.head())
+
+        for fig_payload in out.get("figures", []):
+            fig_json = fig_payload["plotly_json"]
+
+            fig = go.Figure(fig_json)
+            figures[fig_payload["id"]] = fig
+
+            if show_figures:
+                fig.show()
+
+    return tables, figures
+
+
+def wait_for_job(
+    job_id: str,
+    endpoint_url: str = "http://127.0.0.1:5000/",
+    poll_interval: float = 2.0,
+    timeout: float = 15 * 60,
+):
+    import time
+    import requests
+
+    base_url = endpoint_url.rstrip("/")
+    job_url = f"{base_url}/jobs/{job_id}"
+
+    start_time = time.monotonic()
+    previous_status = None
+
+    while True:
+        r = requests.get(
+            job_url,
+            timeout=30,
+        )
+
+        print("Job HTTP status:", r.status_code)
+
+        if not r.ok:
+            try:
+                response = r.json()
+            except ValueError:
+                response = r.text
+
+            raise RuntimeError(
+                f"Could not retrieve job {job_id}: {response}"
+            )
+
+        job = r.json()
+        status = job.get("status")
+
+        if status != previous_status:
+            print(f"Job status: {status}")
+            previous_status = status
+
+        if status == "completed":
+            if "result" not in job:
+                raise RuntimeError(
+                    f"Job {job_id} completed but returned no result."
+                )
+
+            return job["result"]
+
+        if status == "failed":
+            error = job.get("error", "Unknown optimisation error")
+            result = job.get("result")
+
+            if result:
+                raise RuntimeError(
+                    f"Optimisation failed: {error}\n"
+                    f"Engine response: {result}"
+                )
+
+            raise RuntimeError(
+                f"Optimisation failed: {error}"
+            )
+
+        if status not in {"queued", "running"}:
+            raise RuntimeError(
+                f"Unexpected job status: {status}"
+            )
+
+        elapsed = time.monotonic() - start_time
+
+        if elapsed >= timeout:
+            raise TimeoutError(
+                f"Job {job_id} did not finish within "
+                f"{timeout:.0f} seconds."
+            )
+
+        time.sleep(poll_interval)
+
+
+def run_query(
+    query: str,
+    download_artifacts: bool = True,
+    endpoint_url: str = "http://127.0.0.1:5000/ask-card",
+):
+    import requests
+
+    r = requests.post(
+        endpoint_url,
+        json={
+            "query": query,
+            "download_artifacts": download_artifacts,
+            "diagnosis_summary": True,
+            "cost_driver_summary": False,
+        },
+        timeout=120,
+    )
+
+    print("HTTP status:", r.status_code)
+
+    try:
+        response = r.json()
+    except ValueError:
+        print("The server did not return JSON:")
+        print(r.text)
+        return None, None
+
+    if r.ok:
+        base_url = endpoint_url.rsplit("/", 1)[0]
+
+        return extract(
+            response,
+            download_artifacts,
+            show_tables=True,
+            show_figures=True,
+            base_url=base_url,
+        )
+
+    print("\nERROR RESPONSE")
+    print(response)
+
+    if isinstance(response, dict):
+        print("\nMessage:")
+        print(response.get("message", response))
+
+    return None, None
+
+def ask_engine(
+    params: dict,
+    endpoint: str,
+    download_artifacts: bool = True,
+    endpoint_url: str = "http://127.0.0.1:5000/",
+    run_async: bool = True,
+    poll_interval: float = 5.0,
+    job_timeout: float = 30 * 60,
+):
+    import io
+    import time
+
+    import pandas as pd
+    import requests
+
+    base_url = endpoint_url.rstrip("/")
+    endpoint = endpoint.lstrip("/")
+    full_endpoint = f"{base_url}/{endpoint}"
+
+    # Do not modify the original dictionary.
+    request_params = dict(params)
+
+    request_params["download_artifacts"] = download_artifacts
+    request_params["async"] = run_async
+
+    print(f"Calling: {full_endpoint}")
+    print(f"Mode: {'asynchronous' if run_async else 'synchronous'}")
+
+    # Endpoint returning parquet directly.
+    if endpoint == "process-data/parquet":
+        try:
+            response = requests.get(
+                full_endpoint,
+                params=request_params,
+                timeout=(10, 120),
+            )
+
+        except requests.exceptions.RequestException as exc:
+            print(f"Request failed: {exc}")
+            return None, None
+
+        print("HTTP status:", response.status_code)
+
+        if response.ok:
+            process_df = pd.read_parquet(
+                io.BytesIO(response.content)
+            )
+            return {"process": process_df}, None
+
+        print("\nERROR RESPONSE")
+
+        try:
+            error_response = response.json()
+        except ValueError:
+            error_response = response.text
+
+        print(error_response)
+        return None, None
+
+    # Normal JSON POST endpoints.
+    submission_started = time.monotonic()
+
+    try:
+        response = requests.post(
+            full_endpoint,
+            json=request_params,
+            timeout=(10, 30 if run_async else job_timeout),
+        )
+
+    except requests.exceptions.ReadTimeout:
+        elapsed = time.monotonic() - submission_started
+
+        if run_async:
+            print(
+                f"The initial POST timed out after {elapsed:.1f} seconds.\n"
+                "An asynchronous endpoint should return a job_id "
+                "almost immediately. Check that the service was "
+                "restarted and that this endpoint supports async mode."
+            )
+        else:
+            print(
+                f"The synchronous request timed out after "
+                f"{elapsed:.1f} seconds."
+            )
+
+        return None, None
+
+    except requests.exceptions.ConnectionError as exc:
+        print(f"Could not connect to the engine: {exc}")
+        return None, None
+
+    except requests.exceptions.RequestException as exc:
+        print(f"Request failed: {exc}")
+        return None, None
+
+    submission_elapsed = time.monotonic() - submission_started
+
+    print(
+        f"Submission response received after "
+        f"{submission_elapsed:.2f} seconds."
+    )
+    print("HTTP status:", response.status_code)
+
+    try:
+        response_payload = response.json()
+
+    except ValueError:
+        print("\nThe server did not return valid JSON:")
+        print(response.text)
+        return None, None
+
+    if not response.ok:
+        print("\nERROR RESPONSE")
+        print(response_payload)
+
+        if isinstance(response_payload, dict):
+            print("\nMessage:")
+            print(
+                response_payload.get(
+                    "message",
+                    response_payload.get(
+                        "text",
+                        response_payload,
+                    ),
+                )
+            )
+
+        return None, None
+
+    # Generic asynchronous response handling.
+    if response.status_code == 202:
+        if "job_id" not in response_payload:
+            print(
+                "\nThe endpoint returned HTTP 202 but no job_id."
+            )
+            print(response_payload)
+            return None, None
+
+        job_id = response_payload["job_id"]
+        job_type = response_payload.get(
+            "job_type",
+            endpoint,
+        )
+
+        print(f"{job_type} accepted.")
+        print(f"Job ID: {job_id}")
+
+        try:
+            response_payload = wait_for_job(
+                job_id=job_id,
+                endpoint_url=endpoint_url,
+                poll_interval=poll_interval,
+                timeout=job_timeout,
+            )
+
+        except Exception as exc:
+            print(f"\nJob failed: {exc}")
+            return None, None
+
+        print(f"{job_type} completed.")
+
+    # Defensive check: async=True was requested, but the endpoint
+    # returned a final synchronous response.
+    elif run_async:
+        print(
+            "Warning: asynchronous mode was requested, but the "
+            f"endpoint returned HTTP {response.status_code} instead "
+            "of HTTP 202. Treating the response as a final result."
+        )
+
+    return extract(
+        response_payload,
+        download_artifacts,
+        show_tables=True,
+        show_figures=True,
+        base_url=base_url,
+    )
+
+
+
+================================================================================
+CELL 5 — MARKDOWN
+================================================================================
+
+# Process data
+
+================================================================================
+CELL 6 — MARKDOWN
+================================================================================
+
+## Raw
+
+================================================================================
+CELL 7 — CODE
+================================================================================
+
+import requests
+import pandas as pd
+
+response = requests.get(
+    "http://localhost:5000/process-data/reels",
+    params={
+        "start": "2026-03-01T00:00:00",
+        "end": "2026-03-31T23:59:59"
+    }
+)
+
+print(response.json())
+pd.DataFrame(response.json()["items"])
+
+================================================================================
+CELL 8 — CODE
+================================================================================
+
+response = requests.get(
+    "http://localhost:5000/process-data/snapshot",
+    params={"timestamp": "2026-03-11T15:50:00"},
+)
+
+pd.DataFrame([response.json()["snapshot"]])
+
+================================================================================
+CELL 9 — CODE
+================================================================================
+
+response = requests.get(
+    "http://localhost:5000/process-data/snapshot",
+    params={"reel_id": "12601843"},
+)
+
+pd.DataFrame([response.json()["snapshot"]])
+
+================================================================================
+CELL 10 — CODE
+================================================================================
+
+response = requests.get(
+    "http://localhost:5000/process-data/grades",
+)
+
+response.json()["grades"]
+
+================================================================================
+CELL 11 — CODE
+================================================================================
+
+response = requests.get(
+        "http://localhost:5000/process-data/variables",
+        params={
+            "functions":None
+        },
+    )
+response.json()["variables"]
+
+================================================================================
+CELL 12 — CODE
+================================================================================
+
+[v for v  in response.json()["variables"] if "current" in v.lower()]
+
+================================================================================
+CELL 13 — CODE
+================================================================================
+
+response = requests.get(
+        "http://localhost:5000/process-data/variables",
+        params={
+            "functions":["steam"]
+        },
+    )
+response.json()["variables"]
+
+================================================================================
+CELL 14 — CODE
+================================================================================
+
+response = requests.get(
+        "http://localhost:5000/process-data/variables",
+        params={
+            "functions":["SCT CD","steam"]
+        },
+    )
+response.json()["variables"]
+
+================================================================================
+CELL 15 — CODE
+================================================================================
+
+response = requests.get(
+        "http://localhost:5000/process-data/variables",
+        params={
+            "functions":["starch uptake"]
+        },
+    )
+response.json()["variables"]
+
+================================================================================
+CELL 16 — CODE
+================================================================================
+
+response = requests.get(
+    "http://localhost:5000/process-data/variables",
+)
+
+response.json()["variables"]
+
+================================================================================
+CELL 17 — CODE
+================================================================================
+
+r
+
+================================================================================
+CELL 18 — CODE
+================================================================================
+
+import pandas as pd
+
+================================================================================
+CELL 19 — CODE
+================================================================================
+
+r = requests.get(
+    "http://localhost:5000/process-data/variable-bounds",
+    params={
+        "variables": [
+            "Current_basis_weight", 'Current_reel_moisture_average(reel)'      
+        ],
+        "grade": "6010120",
+        "lower_percentile": 0.05,
+        "upper_percentile": 0.95
+    }
+)
+
+pd.DataFrame(r.json()["bounds"])
+
+================================================================================
+CELL 20 — CODE
+================================================================================
+
+r = requests.get(
+    "http://localhost:5000/process-data/variable-bounds",
+    params={
+        "variables": [
+            "Current_basis_weight", 'Current_reel_moisture_average(reel)'      
+        ],
+        "grade": "6010120",
+        "lower_percentile": 0.05,
+        "upper_percentile": 0.95
+    }
+)
+
+pd.DataFrame(r.json()["bounds"])
+
+================================================================================
+CELL 21 — CODE
+================================================================================
+
+r = requests.get(
+    "http://localhost:5000/process-data/variable-bounds",
+    params={
+        "variables": [
+            "Current_basis_weight", 'Current_reel_moisture_average(reel)'      
+        ],
+        "reel_id": 12602792,
+        "lower_percentile": 0.05,
+        "upper_percentile": 0.95
+    }
+)
+
+pd.DataFrame(r.json()["bounds"])
+
+================================================================================
+CELL 22 — CODE
+================================================================================
+
+import requests
+
+r = requests.post(
+    "http://localhost:5000/process-data/snapshot-predictions",
+    json={
+        "reel_id": 12602792,
+        "functions": ["SCT CD", "steam", "electricity"]
+    }
+)
+
+pd.DataFrame(r.json()["predictions"])
+
+================================================================================
+CELL 23 — CODE
+================================================================================
+
+import requests
+
+r = requests.post(
+    "http://localhost:5000/process-data/snapshot-predictions",
+    json={
+        "reel_id": 12602792,
+        "functions": ["SCT CD", "steam", "electricity"],
+        "cost_per_m2":True
+    }
+)
+
+pd.DataFrame(r.json()["predictions"])
+
+================================================================================
+CELL 24 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "grade": "6010120",
+    "start": "2026-03-01",
+    "end": "2026-03-10",
+    "variables": "MBS_SCT_CD,Combined_cost__€/T_",
+}, endpoint="process-data/parquet")
+
+tables["process"].head()
+
+================================================================================
+CELL 25 — CODE
+================================================================================
+
+import pandas as pd
+
+================================================================================
+CELL 26 — CODE
+================================================================================
+
+import requests
+
+r = requests.post(
+    "http://localhost:5000/process-data/snapshot-predictions",
+    json={
+        "reel_id": 12602792,
+        "functions": ["starch uptake"]
+    }
+)
+
+pd.DataFrame(r.json()["predictions"])
+
+================================================================================
+CELL 27 — MARKDOWN
+================================================================================
+
+## Query
+
+================================================================================
+CELL 28 — CODE
+================================================================================
+
+#run_query("show steam cost for grade 6010120 for week 11"),
+#run_query("show starch uptake top for grade 6010120 in February"),
+#run_query("show starch uptake for grade 6010120 in February"),
+#run_query("show SCT CD not overprocessing for grade 6010120 in February"),
+#run_query("show starch uptake not top bottom with SCT CD not overprocessing on secondary axis for grade 6010120 in February"),
+tables, figures  = run_query("show current basis weight and starch uptake not top bottom in secondary axis for grade 6010120 in week 12")
+
+================================================================================
+CELL 29 — CODE
+================================================================================
+
+import requests
+
+download_artifacts = True
+r = requests.post(
+    "http://127.0.0.1:5000/ask-card",
+    json={
+        #"query":  "show steam cost for grade 6010120 for week 11",
+        #"query":  "show starch uptake top for grade 6010120 in February",
+        #"query":  "show starch uptake for grade 6010120 in February",
+        #"query":  "show SCT CD not overprocessing for grade 6010120 in February",
+        #"query":  "show starch uptake not top bottom with SCT CD not overprocessing on secondary axis for grade 6010120 in February",
+        "query":  "show current basis weight and starch uptake not top bottom in secondary axis for grade 6010120 in week 12",
+        "download_artifacts": download_artifacts,
+    },
+)
+
+out = r.json()
+
+tables, figures = extract(out, download_artifacts, show_tables=True, show_figures=True)
+
+================================================================================
+CELL 30 — CODE
+================================================================================
+
+import requests
+
+download_artifacts = True
+r = requests.post(
+    "http://127.0.0.1:5000/ask-card",
+    json={
+        "query":  "show steam cost for grade 6010120 for week 11",
+        "download_artifacts": download_artifacts,
+    },
+)
+
+out = r.json()
+
+tables, figures = extract(out, download_artifacts, show_tables=True, show_figures=True)
+
+================================================================================
+CELL 31 — MARKDOWN
+================================================================================
+
+# Shap values
+
+================================================================================
+CELL 32 — MARKDOWN
+================================================================================
+
+## Raw
+
+================================================================================
+CELL 33 — CODE
+================================================================================
+
+tables["shap_values"]
+
+================================================================================
+CELL 34 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "target": "starch uptake",
+    "grade": "3200115",
+    "start": "2026-03-01",
+    "end": "2026-03-10",
+    "max_rows": 200,
+    "background_rows": 200,
+    "max_features":5,
+}, endpoint="shap-values",
+run_async=True
+)
+
+================================================================================
+CELL 35 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "target": "steam",
+    "grade": "3200115",
+    "start": "2026-03-01",
+    "end": "2026-03-10",
+    "max_rows": 200,
+    "background_rows": 200,
+    "max_features":5,
+}, endpoint="shap-values")
+
+================================================================================
+CELL 36 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "target": "steam",
+    "grade": "3200115",
+    "start": "2026-03-01",
+    "end": "2026-03-10",
+    "max_rows": 100,
+    "background_rows": 100,
+    "variables":['Current_basis_weight']
+}, endpoint="shap-values")
+
+================================================================================
+CELL 37 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "target": "steam",
+    "grade": "6010120",
+    "start": "2026-03-01",
+    "end": "2026-03-10",
+    "max_rows": 100,
+    "background_rows": 50
+}, endpoint="shap-values")
+
+================================================================================
+CELL 38 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "target": "SCT CD",
+    "grade": "6010120",
+    "start": "2026-03-01",
+    "end": "2026-03-10",
+    "max_rows": 100,
+    "background_rows": 50
+}, endpoint="shap-values")
+
+================================================================================
+CELL 39 — MARKDOWN
+================================================================================
+
+## Query
+
+================================================================================
+CELL 40 — CODE
+================================================================================
+
+#tables, figures  = run_query("explain model for SCT CD for grade 6010120 in April"),
+#tables, figures  = run_query("explain model for steam cost for grade 6010120"),
+#tables, figures  = run_query("explain model for total cost for grade 6010120 in April"),
+#tables, figures  = run_query("explain model for starch cost for grade 6010120 in April"),
+#tables, figures  = run_query("explain model for SCT CD for grade 6010120 in April 2026")
+tables, figures  = run_query("explain model for SCT CD for grade 6010120 in April 2026")
+
+================================================================================
+CELL 41 — MARKDOWN
+================================================================================
+
+# Diagnosis
+
+================================================================================
+CELL 42 — MARKDOWN
+================================================================================
+
+## Raw
+
+================================================================================
+CELL 43 — MARKDOWN
+================================================================================
+
+### Description
+
+================================================================================
+CELL 44 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "grade": None,
+    "target_range": ["2026-04-01", "2026-04-30"],
+    "baseline_range": ["2026-03-01", "2026-03-31"],
+    "levels": [1, 2, 3, 4],
+    "objects": ["cost"],
+    "secondary_objects":["chemicals","steam","electricity"],
+    "summary": True
+}, endpoint="diagnosis",run_async=True)
+
+================================================================================
+CELL 45 — MARKDOWN
+================================================================================
+
+### Cost Drivers
+
+================================================================================
+CELL 46 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "grade": "6010120",
+    "cost_component": "steam",
+    "target_range": ["2026-04-01", "2026-04-30"],
+    "baseline_range": ["2026-03-01", "2026-03-31"],
+}, endpoint="cost-drivers",run_async=True)
+
+================================================================================
+CELL 47 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "grade": "6010120",
+    "cost_component": "starch uptake",
+    "target_range": ["2026-04-01", "2026-04-30"],
+    "baseline_range": ["2026-03-01", "2026-03-31"],
+}, endpoint="cost-drivers")
+
+================================================================================
+CELL 48 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "grade": "6010085",
+    "cost_component": "SCT CD",
+    #"target_range": ["2026-06-08", "2026-06-21"],
+    "target_range": ["2026-06-08", "2026-06-14"],
+    "baseline_range": ["2026-05-10", "2026-06-07"],
+}, endpoint="cost-drivers")
+
+================================================================================
+CELL 49 — MARKDOWN
+================================================================================
+
+## Query
+
+================================================================================
+CELL 50 — CODE
+================================================================================
+
+tables, figures  = run_query("steam cost drivers for grade 6010120 in week 18")
+
+================================================================================
+CELL 51 — CODE
+================================================================================
+
+tables, figures  = run_query("Describe cost for grade 6010120 in week 18")
+
+================================================================================
+CELL 52 — CODE
+================================================================================
+
+tables, figures  = run_query("Describe cost for grade 6010120 in week 18")
+
+================================================================================
+CELL 53 — CODE
+================================================================================
+
+tables, figures  = run_query("Describe overprocessing for grade 6010120 in week 18")
+
+================================================================================
+CELL 54 — CODE
+================================================================================
+
+tables, figures  = run_query("Describe steam cost for grade 6010120 in week 18")
+
+================================================================================
+CELL 55 — CODE
+================================================================================
+
+tables, figures  = run_query("Diagnose cost for grade 6010120 in week 18")
+
+================================================================================
+CELL 56 — MARKDOWN
+================================================================================
+
+# What-if Scenario
+
+================================================================================
+CELL 57 — MARKDOWN
+================================================================================
+
+## Raw
+
+================================================================================
+CELL 58 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "reel_id": "12604448",
+    "actions": {     
+        'Current_basis_weight': 115.0
+    },
+    "functions":["SCT CD", "SCT MD","steam", "total"],
+    "cost_per_m2":True
+}, endpoint="scenario",run_async=True)
+
+================================================================================
+CELL 59 — CODE
+================================================================================
+
+tables["scenario_full_snapshot"]
+
+================================================================================
+CELL 60 — CODE
+================================================================================
+
+tables["scenario_full_snapshot"][["MBS_SCT_CD","Current_basis_weight","Lip_settings","snapshot"]]
+
+================================================================================
+CELL 61 — CODE
+================================================================================
+
+tables["scenario_full_snapshot"].iloc[0]
+
+================================================================================
+CELL 62 — CODE
+================================================================================
+
+tables["scenario_full_snapshot"].iloc[1]
+
+================================================================================
+CELL 63 — CODE
+================================================================================
+
+tables["scenario_function_evaluation"]
+
+================================================================================
+CELL 64 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "reel_id": "12602792",
+    "actions": {
+        'Starch_uptake_by_paper_Top_Roll__g/m2_': 2.5,
+        'Current_basis_weight': 120.0
+    },
+    "functions":["SCT CD"],
+}, endpoint="scenario",run_async=False)
+
+
+================================================================================
+CELL 65 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "reel_id": "12602792",
+    "actions": {
+        'Starch_uptake_by_paper_Top_Roll__g/m2_': 2.5,
+        'Current_basis_weight': 120.0
+    },
+    "functions":["starch"],
+}, endpoint="scenario",run_async=False)
+
+================================================================================
+CELL 66 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "reel_id": "12602792",
+    "actions": {
+        "Moisture_after_SpeedSizer":0
+    },
+    "functions":["starch uptake"],
+}, endpoint="scenario",run_async=False)
+
+================================================================================
+CELL 67 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "reel_id": "12602792",
+    "actions": {        
+        'Current_basis_weight': 120.0
+    },
+    "functions":["starch"],
+}, endpoint="scenario",run_async=False)
+
+================================================================================
+CELL 68 — CODE
+================================================================================
+
+tables["scenario_full_snapshot"][["snapshot", "Current_basis_weight"]]
+
+================================================================================
+CELL 69 — CODE
+================================================================================
+
+tables["scenario_function_evaluation"]
+
+================================================================================
+CELL 70 — CODE
+================================================================================
+
+tables["scenario_full_snapshot"].columns[tables["scenario_full_snapshot"].iloc[[1]].isnull().sum()>0]
+
+================================================================================
+CELL 71 — CODE
+================================================================================
+
+tables["scenario_full_snapshot"]['Temperature_working_tank_to_bottom_roll']
+
+================================================================================
+CELL 72 — CODE
+================================================================================
+
+
+
+================================================================================
+CELL 73 — CODE
+================================================================================
+
+import json
+new_snapshot=tables["scenario_full_snapshot"].dropna(axis=1, how='all').iloc[1]
+
+tables, figures = ask_engine(params = {
+    "reference_data":json.loads(new_snapshot.to_json(date_format="iso")),
+    "actions": {        
+        'Current_basis_weight': 119.0
+    },
+    "functions":["starch"],
+}, endpoint="scenario",run_async=False)
+
+================================================================================
+CELL 74 — MARKDOWN
+================================================================================
+
+## Query
+
+================================================================================
+CELL 75 — CODE
+================================================================================
+
+tables, figures  = run_query("simulate SCT CD for reel id 12602792 if starch uptake bottom is reduced by 10% and current basis weight is increased by 1%")
+
+================================================================================
+CELL 76 — MARKDOWN
+================================================================================
+
+# Recommendation | Prescription | Control
+
+================================================================================
+CELL 77 — MARKDOWN
+================================================================================
+
+## Raw
+
+================================================================================
+CELL 78 — MARKDOWN
+================================================================================
+
+### Recommendation
+
+================================================================================
+CELL 79 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "grade": "6010120",
+    "cost_component": "steam",
+    "target_range": ["2026-04-01", "2026-05-03"],
+    "baseline_range": ["2026-05-04", "2026-05-10"],
+}, endpoint="recommendations",run_async=False)
+
+
+================================================================================
+CELL 80 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "grade": "6010120",
+    "cost_component": "starch",
+    "target_range": ["2026-04-01", "2026-05-03"],
+    "baseline_range": ["2026-05-04", "2026-05-10"],
+}, endpoint="recommendations",run_async=True)
+
+
+================================================================================
+CELL 81 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "grade": "6010120",
+    "cost_component": "starch uptake",
+    "target_range": ["2026-04-01", "2026-05-03"],
+    "baseline_range": ["2026-05-04", "2026-05-10"],
+}, endpoint="recommendations")
+
+
+================================================================================
+CELL 82 — MARKDOWN
+================================================================================
+
+### Optimisation
+
+================================================================================
+CELL 83 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "reel_id": "12602792",
+    "objective_function": "steam",
+    "direction": "minimize",
+    "constraints": {
+        "SCT CD": 2.05,
+        "SCT MD": 4
+    },
+    "max_interventions": 5,
+}, endpoint="optimize",run_async=True)
+
+================================================================================
+CELL 84 — CODE
+================================================================================
+
+tables["block_4"][['Current_basis_weight',"Starch_uptake_by_paper_Bottom_Roll__g/m2_","Lip_settings"]]
+
+================================================================================
+CELL 85 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "reel_id": "12604077",
+    "objective_function": "steam",
+    "direction": "minimize",
+    "constraints": [
+        {
+            "function":"SCT CD",
+            "operator":">=",
+            "value":1.95
+        },
+        {
+            "function":"Burst",
+            "operator":">=",
+            "value":240
+        }
+    ],    
+    "candidate_features":["Starch_uptake_by_paper_Bottom_Roll__g/m2_"],
+    "max_interventions": 1,
+    "overprocessing":True,   
+}, endpoint="optimize",run_async=True)
+
+================================================================================
+CELL 86 — CODE
+================================================================================
+
+[v for v in tables["block_6"]. iloc[[0]].columns if "dissolved" in v.lower()]
+
+================================================================================
+CELL 87 — CODE
+================================================================================
+
+tables["block_6"]. iloc[[0]]
+
+================================================================================
+CELL 88 — CODE
+================================================================================
+
+import requests
+import json
+import pandas as pd
+
+r = requests.post(
+    "http://localhost:5000/process-data/snapshot-predictions",
+    json={
+        "reference_data":json.loads(snapshot_initial.to_json(date_format="iso")),
+        "functions": ["total", "fibre","steam","electricity","starch","SCT CD","Burst"]
+    }
+)
+
+before = pd.DataFrame(r.json()["predictions"]).set_index("function")["prediction"]
+before
+
+================================================================================
+CELL 89 — CODE
+================================================================================
+
+import requests
+import json
+import pandas as pd
+
+r = requests.post(
+    "http://localhost:5000/process-data/snapshot-predictions",
+    json={
+        "reference_data":json.loads(snapshot_step1.to_json(date_format="iso")),
+        "functions": ["total","fibre","steam","electricity","starch","SCT CD","Burst"]
+    }
+)
+
+after = pd.DataFrame(r.json()["predictions"]).set_index("function")["prediction"]
+after
+
+================================================================================
+CELL 90 — CODE
+================================================================================
+
+after - before
+
+================================================================================
+CELL 91 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "reel_id": "12604077",
+    "objective_function": "total",
+    "direction": "minimize",
+    "constraints": [
+        {
+            "function":"SCT CD",
+            "operator":">=",
+            "value":1.95
+        },
+        {
+            "function":"Burst",
+            "operator":">=",
+            "value":240
+        }
+    ],    
+    "candidate_features":[
+        'Current_basis_weight',
+        "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
+        ],
+    "max_interventions": 2,
+    "overprocessing":True,
+    "cost_per_m2": True,
+}, endpoint="optimize",run_async=True)
+
+snapshot_initial = tables["block_6"]. iloc[0]
+snapshot_step1 = tables["block_6"]. iloc[1]
+
+================================================================================
+CELL 92 — CODE
+================================================================================
+
+tables["block_6"][["MBS_SCT_CD_L1"]]
+
+================================================================================
+CELL 93 — CODE
+================================================================================
+
+tables["block_6"][["MBS_SCT_CD_L1"]]
+
+================================================================================
+CELL 94 — CODE
+================================================================================
+
+import pandas as pd
+import json
+
+
+tables, figures = ask_engine(params = {    
+    "reference_data":json.loads(snapshot_step1.to_json(date_format="iso")),
+    "objective_function": "SCT CD",
+    "direction": "maximize",
+    "constraints": None,
+    "max_interventions": 5,
+    "exclude_features":['Current_basis_weight',"Starch_uptake_by_paper_Bottom_Roll__g/m2_",'Starch_uptake_by_paper_Top_Roll__g/m2_'],    
+}, endpoint="optimize",run_async=True)
+
+snapshot_step1_ = tables["block_5"]. iloc[0]
+snapshot_step2 = tables["block_5"]. iloc[1]
+
+================================================================================
+CELL 95 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "reel_id": "12602792",
+    "objective_function": "starch",
+    "direction": "minimize",
+    "constraints": {
+        "SCT CD": 2.05,
+        "SCT MD": 4
+    },
+    "max_interventions": 5,
+}, endpoint="optimize",run_async=True)
+
+================================================================================
+CELL 96 — CODE
+================================================================================
+
+tables, figures = ask_engine(params = {
+    "reel_id": "12602792",
+    "objective_function": "starch uptake",
+    "direction": "minimize",
+    "constraints": {
+        "SCT CD": 2.05,
+        "SCT MD": 4
+    },
+    "max_interventions": 5,
+}, endpoint="optimize",run_async=True)
+
+================================================================================
+CELL 97 — MARKDOWN
+================================================================================
+
+## Queries
+
+================================================================================
+CELL 98 — CODE
+================================================================================
+
+tables, figures  = run_query("what are the recommendations for SCT CD for grade 6010120 for week 18")
+
+================================================================================
+CELL 99 — CODE
+================================================================================
+
+tables, figures  = run_query("what are the recommendations for steam,  grade 6010120 and week 18")
+
+================================================================================
+CELL 100 — CODE
+================================================================================
+
+tables, figures  = run_query("maximize SCT CD for reel id 12602391")
+
+================================================================================
+CELL 101 — CODE
+================================================================================
+
+tables, figures  = run_query("minimize steam cost subject to SCT CD >= 2.1 for reel id 12602391")
+
+================================================================================
+CELL 102 — CODE
+================================================================================
+
+tables, figures = run_query("Minimizar el consumo de vapor manteniendo SCT CD por encima de 2.1 para el reel 12602391")
+
+================================================================================
+CELL 103 — MARKDOWN
+================================================================================
+
+## Contour curves
+
+================================================================================
+CELL 104 — CODE
+================================================================================
+
+import pandas as pd
+from utility import _process_data, _turnup_data, setpoint_df, _summary_cost_plot, make_model_cost, make_models_cost, DivideByFeatureRegressor, make_model_cost_batch, make_models_cost_batch
+from datetime import date, timedelta
+import plotly.io as pio
+from pathlib import Path
+import pickle
+from typing import Callable, Dict, List, Any, Optional
+
+
+steam_null = False
+turnup_data = _turnup_data(True, "", None, setpoint_df, steam_null)
+turnup_data["MBS_SCT_MD_L1"] = turnup_data.MBS_SCT_MD.shift(1)
+turnup_data["MBS_SCT_CD_L1"] = turnup_data.MBS_SCT_CD.shift(1)
+turnup_data["MBS_Burst_L1"] = turnup_data.MBS_Burst.shift(1)
+turnup_data["MBS_CMT30_L1"] = turnup_data.MBS_CMT30.shift(1)
+
+max_date = turnup_data["Wedge_Time"].max()
+min_date = turnup_data["Wedge_Time"].min()
+
+last_friday = max_date - pd.to_timedelta((max_date.weekday() - 4) % 7, unit="D")
+target_start = last_friday - pd.Timedelta(days=4)      # Monday
+target_end_exclusive = last_friday + pd.Timedelta(days=3)  # Saturday (exclusive end)
+target_range = (target_start.date(), target_end_exclusive.date())
+end_date=min(target_start.date() - timedelta(days=1),max_date.date())
+baseline_start = end_date - pd.Timedelta(weeks=4)
+baseline_end = end_date
+baseline_range = (baseline_start, baseline_end)
+
+period_md = f"{baseline_start.strftime('%B %d, %Y')} – {target_end_exclusive.strftime('%B %d, %Y')}"
+
+process_data =  _process_data(turnup_data, target_range, baseline_range, steam_null)
+
+plotly_theme = "plotly_white"
+
+grades_summary = ["3200115", "6010085", "6010100", "6010120"]
+
+
+def load_model(model_filename: str):
+    """
+    Load model locally in development and from S3 in pod deployment.
+    """
+    
+    path = Path("models") / model_filename
+
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Local model not found: {path.resolve()}"
+        )
+
+    
+
+    with path.open("rb") as f:
+        return pickle.load(f)
+
+electricity_model = load_model("model_electricity.pkl")
+steam_model = load_model("model_steam.pkl")
+model_starch_top = load_model("model_starch_top.pkl")
+model_starch_bottom = load_model("model_starch_bottom.pkl")
+model_SCTCD = load_model("model_SCTCD.pkl")
+model_SCTMD = load_model("model_SCTMD.pkl")
+model_Burst = load_model("model_Burst.pkl")
+model_CMT30 = load_model("model_CMT30.pkl")
+model_cost_starch_bottom = load_model("model_cost_starch_bottom.pkl")
+model_cost_starch_top = load_model("model_cost_starch_top.pkl")
+
+# -------------------------------------------------
+# Feature definitions
+# -------------------------------------------------
+ 
+def steam_features() -> List[str]:
+    return list(steam_model.best_estimator_.feature_names_in_)
+ 
+def electricity_features() -> List[str]:
+    return list(electricity_model.best_estimator_.feature_names_in_)
+ 
+def starch_uptake_features():
+    return list(set(list(model_starch_top.best_estimator_.feature_names_in_) + list(model_starch_bottom.best_estimator_.feature_names_in_)))
+ 
+def fibre_features() -> List[str]:
+    return [
+        "Current_basis_weight",
+        "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
+        "Starch_uptake_by_paper_Top_Roll__g/m2_",
+        "Current_reel_moisture_average(reel)",
+    ]
+
+def total_features():
+    return list(set(list(model_starch_top.best_estimator_.feature_names_in_) + 
+                    list(model_starch_bottom.best_estimator_.feature_names_in_) + 
+                    list(steam_model.best_estimator_.feature_names_in_) + 
+                    list(electricity_model.best_estimator_.feature_names_in_) +
+                    fibre_features()
+                    ))
+
+def SCTCD_features():
+    return list(model_SCTCD.best_estimator_.feature_names_in_)
+
+def SCTMD_features():
+    return list(model_SCTMD.best_estimator_.feature_names_in_)
+
+def Burst_features():
+    return list(model_Burst.best_estimator_.feature_names_in_)
+
+def CMT30_features():
+    return list(model_CMT30.best_estimator_.feature_names_in_)
+ 
+ 
+# -------------------------------------------------
+# Formula-based component
+# -------------------------------------------------
+ 
+def fibre_cost_from_row(row) -> float:    
+    #require_columns(row, fibre_features(), "fibre")    
+    if type(row) == pd.Series:
+        row = row.to_dict()
+    basis_weight = row["Current_basis_weight"]
+    starch_uptake = row["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] + row["Starch_uptake_by_paper_Top_Roll__g/m2_"]
+    moisture = row["Current_reel_moisture_average(reel)"]
+
+    return 146.46* (basis_weight * (1 - moisture / 100) - starch_uptake) / basis_weight
+
+
+def fibre_cost(X):
+    """
+    Behaves like the model-based cost functions:
+    - accepts one row: pd.Series / dict
+    - accepts a dataframe: pd.DataFrame
+    """    
+    if isinstance(X, list):
+        X = pd.DataFrame(X)
+    if isinstance(X, pd.DataFrame):
+        
+        missing = [c for c in fibre_features() if c not in X.columns]
+        if missing:
+            raise KeyError(f"Missing columns for 'fibre': {missing}")
+
+        basis_weight = X["Current_basis_weight"]
+        starch_uptake = X["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] + X["Starch_uptake_by_paper_Top_Roll__g/m2_"]
+        moisture = X["Current_reel_moisture_average(reel)"]
+
+        return 146.46  * (basis_weight * (1 - moisture / 100) - starch_uptake) / basis_weight    
+    return float(fibre_cost_from_row(X))
+
+def starch_features():
+    return ["Current_basis_weight", "Starch_uptake_by_paper_Bottom_Roll__g/m2_", "Starch_uptake_by_paper_Top_Roll__g/m2_"]
+
+def starch_from_row(X):
+    basis_weight = X["Current_basis_weight"]
+    starch_uptake = X["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] + X["Starch_uptake_by_paper_Top_Roll__g/m2_"]
+    return 434.22 * starch_uptake / basis_weight
+
+def starch(X):
+    """
+    Behaves like the model-based cost functions:
+    - accepts one row: pd.Series / dict
+    - accepts a dataframe: pd.DataFrame
+    """    
+    if isinstance(X, list):
+        X = pd.DataFrame(X)
+    if isinstance(X, pd.DataFrame):
+        
+        missing = [c for c in starch_features() if c not in X.columns]
+        if missing:
+            raise KeyError(f"Missing columns for 'starch': {missing}")
+
+        basis_weight = X["Current_basis_weight"]
+        starch_uptake = X["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] + X["Starch_uptake_by_paper_Top_Roll__g/m2_"]
+        
+        return 434.22 * starch_uptake / basis_weight
+    return float(starch_from_row(X))
+ 
+ 
+# -------------------------------------------------
+# Model-based components
+# -------------------------------------------------
+ 
+_, steam_cost = make_model_cost_batch(steam_model, steam_features, weight=89.03 / 1000)
+_, electricity_cost = make_model_cost_batch(electricity_model, electricity_features, weight=113.66 / 1000)
+_, starch_uptake = make_models_cost_batch(
+    models={
+        "bottom": model_starch_bottom,
+        "top": model_starch_top,
+    },
+    feature_fns={
+        "bottom": list(model_starch_bottom.best_estimator_.feature_names_in_),
+        "top": list(model_starch_top.best_estimator_.feature_names_in_),
+    },
+    agg="sum",
+    weights = {
+        "starch_bottom": 434.22,
+        "starch_top": 434.22,        
+    },
+) 
+
+_, total_cost = make_models_cost_batch(
+    models={        
+        "starch": starch,
+        "fibre": fibre_cost,
+        "steam": steam_model,
+        "electricity": electricity_model,
+    },
+    feature_fns={        
+        "starch": starch_features(),
+        "fibre": fibre_features(),
+        "steam": list(steam_model.best_estimator_.feature_names_in_),
+        "electricity": list(electricity_model.best_estimator_.feature_names_in_),
+    },
+    weights = {        
+        "starch": 1,
+        "fibre": 1,
+        "steam": 89.03 / 1000,
+        "electricity": 113.66 / 1000
+    },
+    agg="sum",
+)
+
+_, sctcd_strength = make_model_cost_batch(model_SCTCD, SCTCD_features)
+_, sctmd_strength = make_model_cost_batch(model_SCTMD, SCTMD_features)
+_, burst_strength = make_model_cost_batch(model_Burst, Burst_features)
+_, cmt30_strength = make_model_cost_batch(model_CMT30, CMT30_features)
+ 
+# -------------------------------------------------
+# Registry
+# -------------------------------------------------
+ 
+PREDICTORS: Dict[str, Dict[str, Any]] = {
+    "fibre": {
+        "kind": "formula",
+        "features_fn": fibre_features,
+        "predict_fn": fibre_cost,
+        "unit": "€/t",
+    },
+    "steam": {
+        "kind": "model",
+        "features_fn": steam_features,
+        "predict_fn": steam_cost,
+        "unit": "€/t",
+    },
+    "electricity": {
+        "kind": "model",
+        "features_fn": electricity_features,
+        "predict_fn": electricity_cost,
+        "unit": "€/t",
+    },
+    "starch uptake": {
+        "kind": "model",
+        "features_fn": starch_uptake_features,
+        "predict_fn": starch_uptake,
+        "unit": "g/m2",
+    },
+    "starch": {
+        "kind": "model",
+        "features_fn": starch_features,
+        "predict_fn": starch,
+        "unit": "€/t",
+    },
+    "total": {
+        "kind": "model",
+        "features_fn": total_features,
+        "predict_fn": total_cost,
+        "unit": "€/t",
+    },
+    "SCT CD": {
+        "kind": "model",
+        "features_fn": SCTCD_features,
+        "predict_fn": sctcd_strength,
+        "unit": "",
+    },
+    "SCT MD": {
+        "kind": "model",
+        "features_fn": SCTMD_features,
+        "predict_fn": sctmd_strength,
+        "unit": "",
+    },
+    "Burst": {
+        "kind": "model",
+        "features_fn": Burst_features,
+        "predict_fn": burst_strength,
+        "unit": "",
+    },
+    "CMT30": {
+        "kind": "model",
+        "features_fn": CMT30_features,
+        "predict_fn": cmt30_strength,
+        "unit": "",
+    },
+}
+
+
+================================================================================
+CELL 105 — CODE
+================================================================================
+
+BW_min=turnup_data[turnup_data.AB_Grade_ID=="3200115"]["Current_basis_weight"].quantile(0.05)
+BW_max=turnup_data[turnup_data.AB_Grade_ID=="3200115"]["Current_basis_weight"].quantile(0.95)
+
+
+SU_min=turnup_data[turnup_data.AB_Grade_ID=="3200115"]["Starch_uptake__g/m2_"].quantile(0.05)
+SU_max=turnup_data[turnup_data.AB_Grade_ID=="3200115"]["Starch_uptake__g/m2_"].quantile(0.95)
+
+
+================================================================================
+CELL 106 — CODE
+================================================================================
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Reference operating point
+base = turnup_data[turnup_data.MBS_Current_reel_ID==12604077].copy()
+
+# Ranges
+bw_grid = np.linspace(
+    BW_min - 2*(BW_max-BW_min),
+    BW_max + 2*(BW_max-BW_min),
+    100,
+)
+
+starch_grid = np.linspace(
+    SU_min - 2*(SU_max-SU_min),
+    SU_max + 2*(SU_max-SU_min),
+    100,
+)
+
+BW, STARCH = np.meshgrid(bw_grid, starch_grid)
+
+SCT = np.zeros_like(BW)
+BURST = np.zeros_like(BW)
+COST_T = np.zeros_like(BW)
+
+for i in range(BW.shape[0]):
+    for j in range(BW.shape[1]):
+
+        x = base.copy()
+
+        x["Current_basis_weight"] = BW[i, j]
+        x['Starch_uptake_by_paper_Bottom_Roll__g/m2_'] = STARCH[i, j]
+        x['Starch_uptake_by_paper_Top_Roll__g/m2_'] = 0
+
+        X = pd.DataFrame(x)
+
+        SCT[i, j] = float(sctcd_strength(X)[0])
+        BURST[i, j] = float(burst_strength(X)[0])
+        COST_T[i, j] = float(total_cost(X)[0])
+
+
+
+================================================================================
+CELL 107 — CODE
+================================================================================
+
+with open(f"COST_T.pkl", 'wb') as f:
+        pickle.dump(COST_T, f)
+
+================================================================================
+CELL 108 — CODE
+================================================================================
+
+print("SCT range:", np.nanmin(SCT), np.nanmax(SCT))
+print("Burst range:", np.nanmin(BURST), np.nanmax(BURST))
+print("Cost range:", np.nanmin(COST_T), np.nanmax(COST_T))
+
+================================================================================
+CELL 109 — CODE
+================================================================================
+
+plt.figure(figsize=(10, 8))
+
+# SCT CD = 1.95
+cs1 = plt.contour(
+    BW,
+    STARCH,
+    SCT,
+    levels=[1.95],
+    colors="blue",
+    linewidths=2,
+)
+
+# Burst = 255
+# cs2 = plt.contour(
+#     BW,
+#     STARCH,
+#     BURST,
+#     levels=[255],
+#     colors="green",
+#     linewidths=2,
+# )
+
+cs3 = plt.contour(
+    BW,
+    STARCH,
+    COST_T,
+    levels=np.arange(int(np.nanmin(COST_T)), int(np.nanmax(COST_T)),2),
+    colors="red",
+    linewidths=2,
+)
+
+plt.clabel(cs1, fmt="SCT CD = %.2f")
+#plt.clabel(cs2, fmt="Burst = %.0f")
+plt.clabel(cs3, fmt="Cost = %.0f")
+
+plt.xlabel("Basis Weight")
+plt.ylabel("Starch Uptake")
+plt.title("Strength constraint boundaries")
+
+plt.grid(True)
+
+from matplotlib.patches import Rectangle
+
+ax = plt.gca()
+
+rect = Rectangle(
+    (BW_min, SU_min),
+    BW_max - BW_min,
+    SU_max - SU_min,
+    fill=False,
+    linewidth=2,
+    linestyle="--",
+    label="Feasible region"
+)
+
+ax.add_patch(rect)
+
+plt.show()
+
+
+
+
+
+================================================================================
+CELL 110 — CODE
+================================================================================
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Reference operating point
+base = turnup_data[turnup_data.MBS_Current_reel_ID==12604077].copy()
+
+# Ranges
+bw_grid = np.linspace(
+    BW_min - 2*(BW_max-BW_min),
+    BW_max + 2*(BW_max-BW_min),
+    100,
+)
+
+starch_grid = np.linspace(
+    SU_min - 2*(SU_max-SU_min),
+    SU_max + 2*(SU_max-SU_min),
+    100,
+)
+
+BW, STARCH = np.meshgrid(bw_grid, starch_grid)
+
+SCT = np.zeros_like(BW)
+BURST = np.zeros_like(BW)
+COST_m2 = np.zeros_like(BW)
+
+for i in range(BW.shape[0]):
+    for j in range(BW.shape[1]):
+
+        x = base.copy()
+
+        x["Current_basis_weight"] = BW[i, j]
+        x['Starch_uptake_by_paper_Bottom_Roll__g/m2_'] = STARCH[i, j]
+        x['Starch_uptake_by_paper_Top_Roll__g/m2_'] = 0
+
+        bw_value = float(x["Current_basis_weight"].iloc[0])
+
+        X = pd.DataFrame(x)
+
+        SCT[i, j] = float(sctcd_strength(X)[0])
+        BURST[i, j] = float(burst_strength(X)[0])
+        COST_m2[i, j] = float(total_cost(X)[0] * bw_value)
+
+
+
+================================================================================
+CELL 111 — CODE
+================================================================================
+
+with open(f"COST_m2.pkl", 'wb') as f:
+        pickle.dump(COST_m2, f)
+
+================================================================================
+CELL 112 — CODE
+================================================================================
+
+print("SCT range:", np.nanmin(SCT), np.nanmax(SCT))
+print("Burst range:", np.nanmin(BURST), np.nanmax(BURST))
+print("Cost range:", np.nanmin(COST_m2), np.nanmax(COST_m2))
+
+================================================================================
+CELL 113 — CODE
+================================================================================
+
+plt.figure(figsize=(10, 8))
+
+# SCT CD = 1.95
+cs1 = plt.contour(
+    BW,
+    STARCH,
+    SCT,
+    levels=[1.95],
+    colors="blue",
+    linewidths=2,
+)
+
+# Burst = 255
+# cs2 = plt.contour(
+#     BW,
+#     STARCH,
+#     BURST,
+#     levels=[255],
+#     colors="green",
+#     linewidths=2,
+# )
+
+cs3 = plt.contour(
+    BW,
+    STARCH,
+    COST_m2,
+    levels=np.arange(int(np.nanmin(COST_m2)), int(np.nanmax(COST_m2)),500),
+    colors="red",
+    linewidths=2,
+)
+
+plt.clabel(cs1, fmt="SCT CD = %.2f")
+#plt.clabel(cs2, fmt="Burst = %.0f")
+plt.clabel(cs3, fmt="Cost = %.0f")
+
+plt.xlabel("Basis Weight")
+plt.ylabel("Starch Uptake")
+plt.title("Strength constraint boundaries")
+
+plt.grid(True)
+
+from matplotlib.patches import Rectangle
+
+ax = plt.gca()
+
+rect = Rectangle(
+    (BW_min, SU_min),
+    BW_max - BW_min,
+    SU_max - SU_min,
+    fill=False,
+    linewidth=2,
+    linestyle="--",
+    label="Feasible region"
+)
+
+ax.add_patch(rect)
+
+plt.show()
+
+
+================================================================================
+CELL 114 — MARKDOWN
+================================================================================
+
+# Knowledge
+
+================================================================================
+CELL 115 — CODE
+================================================================================
+
+_,_ = run_query("Que es la retencion en el proceso de fabricacion de papel")
+
+================================================================================
+CELL 116 — CODE
+================================================================================
+
+_,_ = run_query("A question about papermaking: If I want to reduce starch uptake to keep SCT CD and Burst just over some minimum values, it may happen that this reduction is limited by the strength property closer to the minimum. Does it make sense that, by increasing the basis weight I would have more room to more starch reduction?")

@@ -129,7 +129,7 @@ try:
       model_starch_bottom = pickle.load(f)
 
   def steam_features():
-      return list(steam_model.best_estimator_.feature_names_in_)
+      return list(steam_model.feature_names_in_)
 
   def electricity_features():
       return list(electricity_model.best_estimator_.feature_names_in_)
