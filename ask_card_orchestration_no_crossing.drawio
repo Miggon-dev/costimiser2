@@ -1,0 +1,399 @@
+<mxfile host="app.diagrams.net" agent="ChatGPT">
+  <diagram id="ask-card-no-crossing" name="Ask-Card Orchestration">
+    <mxGraphModel dx="4095" dy="1143" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1280" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="lane1" parent="1" style="swimlane;horizontal=1;startSize=32;rounded=0;whiteSpace=wrap;html=1;fillColor=#f7f7f7;strokeColor=#999999;fontStyle=1;" value="1. Request orchestration" vertex="1">
+          <mxGeometry height="180" width="2050" x="-170" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="lane2" parent="1" style="swimlane;horizontal=1;startSize=32;rounded=0;whiteSpace=wrap;html=1;fillColor=#f7f7f7;strokeColor=#999999;fontStyle=1;" value="2. Selected analytical path" vertex="1">
+          <mxGeometry height="650" width="2050" x="-170" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-2" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Prediction tool" vertex="1">
+          <mxGeometry height="65" width="205" x="25" y="195" as="geometry" />
+        </mxCell>
+        <mxCell id="process_card" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="Process data card" vertex="1">
+          <mxGeometry height="65" width="205" x="250" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-1" edge="1" parent="lane2" source="process_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="shap_exec">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="352.48" y="325" />
+              <mxPoint x="577.52" y="325" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-4" edge="1" parent="lane2" source="process_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;curved=0;" target="diagnosis_exec">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="352.48" y="325" />
+              <mxPoint x="802.48" y="325" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-6" edge="1" parent="lane2" source="process_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="drivers_exec">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="352.48" y="325" />
+              <mxPoint x="1027.52" y="325" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-7" edge="1" parent="lane2" source="process_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="scenario_exec">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="352.48" y="325" />
+              <mxPoint x="1252.48" y="325" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-12" edge="1" parent="lane2" source="process_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="optimize_exec">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="352.48" y="325" />
+              <mxPoint x="1702.48" y="325" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="process_tool" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Process-data tool" vertex="1">
+          <mxGeometry height="65" width="205" x="250" y="195" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-14" edge="1" parent="lane2" source="process_exec" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;curved=0;" target="collector">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="process_exec" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Process-data executor" vertex="1">
+          <mxGeometry height="65" width="205" x="250" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="process_card_tool" edge="1" parent="lane2" source="process_card" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="process_tool">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="process_tool_exec" edge="1" parent="lane2" source="process_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="process_exec">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="shap_card" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="SHAP card" vertex="1">
+          <mxGeometry height="65" width="205" x="475" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-9" edge="1" parent="lane2" source="shap_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="recommend_exec">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="577.52" y="355" />
+              <mxPoint x="1477.52" y="355" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="shap_tool" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;" value="SHAP tool" vertex="1">
+          <mxGeometry height="65" width="205" x="475" y="195" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-15" edge="1" parent="lane2" source="shap_exec" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="collector">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="shap_exec" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="SHAP executor" vertex="1">
+          <mxGeometry height="65" width="205" x="475" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="shap_card_tool" edge="1" parent="lane2" source="shap_card" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="shap_tool">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="shap_tool_exec" edge="1" parent="lane2" source="shap_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="shap_exec">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="diagnosis_card" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="Diagnosis card" vertex="1">
+          <mxGeometry height="65" width="205" x="700" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="diagnosis_tool" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Diagnosis tool" vertex="1">
+          <mxGeometry height="65" width="205" x="700" y="195" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-16" edge="1" parent="lane2" source="diagnosis_exec" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="collector">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="diagnosis_exec" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Diagnosis executor" vertex="1">
+          <mxGeometry height="65" width="205" x="700" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="diagnosis_card_tool" edge="1" parent="lane2" source="diagnosis_card" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="diagnosis_tool">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="diagnosis_tool_exec" edge="1" parent="lane2" source="diagnosis_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="diagnosis_exec">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="drivers_card" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="Cost drivers card" vertex="1">
+          <mxGeometry height="65" width="205" x="925" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-10" edge="1" parent="lane2" source="drivers_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="recommend_exec">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1027.52" y="385" />
+              <mxPoint x="1477.52" y="385" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="drivers_tool" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Cost-driver tool" vertex="1">
+          <mxGeometry height="65" width="205" x="925" y="195" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-17" edge="1" parent="lane2" source="drivers_exec" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="collector">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="drivers_exec" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Cost-driver executor" vertex="1">
+          <mxGeometry height="65" width="205" x="925" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="drivers_card_tool" edge="1" parent="lane2" source="drivers_card" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="drivers_tool">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="drivers_tool_exec" edge="1" parent="lane2" source="drivers_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="drivers_exec">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="scenario_card" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="Scenario card" vertex="1">
+          <mxGeometry height="65" width="205" x="1150" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="scenario_tool" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Scenario tool" vertex="1">
+          <mxGeometry height="65" width="205" x="1150" y="195" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-18" edge="1" parent="lane2" source="scenario_exec" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="collector">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="scenario_exec" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Scenario executor" vertex="1">
+          <mxGeometry height="65" width="205" x="1150" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="scenario_card_tool" edge="1" parent="lane2" source="scenario_card" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="scenario_tool">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="scenario_tool_exec" edge="1" parent="lane2" source="scenario_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="scenario_exec">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="recommend_card" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="Recommendations card" vertex="1">
+          <mxGeometry height="65" width="205" x="1375" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="recommend_tool" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Recommendation tool" vertex="1">
+          <mxGeometry height="65" width="205" x="1375" y="195" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-19" edge="1" parent="lane2" source="recommend_exec" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="collector">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="recommend_exec" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Recommendations executor" vertex="1">
+          <mxGeometry height="65" width="205" x="1375" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="recommend_card_tool" edge="1" parent="lane2" source="recommend_card" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="recommend_tool">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="recommend_tool_exec" edge="1" parent="lane2" source="recommend_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="recommend_exec">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="optimize_card" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="Optimisation card" vertex="1">
+          <mxGeometry height="65" width="205" x="1600" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="optimize_tool" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Optimisation tool" vertex="1">
+          <mxGeometry height="65" width="205" x="1600" y="195" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-20" edge="1" parent="lane2" source="optimize_exec" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="collector">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="optimize_exec" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Optimisation executor" vertex="1">
+          <mxGeometry height="65" width="205" x="1600" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="optimize_card_tool" edge="1" parent="lane2" source="optimize_card" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="optimize_tool">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="optimize_tool_exec" edge="1" parent="lane2" source="optimize_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="optimize_exec">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="knowledge_card" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="Knowledge / RAG card" vertex="1">
+          <mxGeometry height="65" width="205" x="1825" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-13" edge="1" parent="lane2" source="knowledge_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;curved=0;" target="recommend_exec">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1927.52" y="415" />
+              <mxPoint x="1477.52" y="415" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="knowledge_tool" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Knowledge tool" vertex="1">
+          <mxGeometry height="65" width="205" x="1825" y="195" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-21" edge="1" parent="lane2" source="knowledge_exec" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="collector">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="knowledge_exec" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Knowledge / RAG executor" vertex="1">
+          <mxGeometry height="65" width="205" x="1825" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="knowledge_card_tool" edge="1" parent="lane2" source="knowledge_card" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="knowledge_tool">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="knowledge_tool_exec" edge="1" parent="lane2" source="knowledge_tool" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="knowledge_exec">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="collector" parent="lane2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" value="Selected card result&#xa;Only the routed analytical path executes" vertex="1">
+          <mxGeometry height="55" width="1520" x="385" y="575" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-3" edge="1" parent="lane2" source="ftGXDf_Zb5IHrBjyi9ol-2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="shap_exec">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="127.51999999999998" y="295" />
+              <mxPoint x="577.52" y="295" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-5" edge="1" parent="lane2" source="ftGXDf_Zb5IHrBjyi9ol-2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;curved=0;" target="drivers_exec">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="127.51999999999998" y="295" />
+              <mxPoint x="1027.52" y="295" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-8" edge="1" parent="lane2" source="ftGXDf_Zb5IHrBjyi9ol-2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="scenario_exec">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="127.51999999999998" y="295" />
+              <mxPoint x="1252.48" y="295" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-11" edge="1" parent="lane2" source="ftGXDf_Zb5IHrBjyi9ol-2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="optimize_exec">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="127.51999999999998" y="295" />
+              <mxPoint x="1702.48" y="295" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-39" edge="1" parent="lane2" source="ftGXDf_Zb5IHrBjyi9ol-34" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;dashed=1;dashPattern=8 8;" target="process_tool">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-34" parent="lane2" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#00FFFF;strokeColor=#666666;fontColor=#333333;" value="Process Data" vertex="1">
+          <mxGeometry height="90" width="140" x="180" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-40" edge="1" parent="lane2" source="ftGXDf_Zb5IHrBjyi9ol-33" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;dashed=1;dashPattern=8 8;" target="ftGXDf_Zb5IHrBjyi9ol-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-33" parent="lane2" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#00FFFF;strokeColor=#6c8ebf;" value="ML Cost Models&lt;div&gt;ML Strength Models&lt;/div&gt;" vertex="1">
+          <mxGeometry height="90" width="140" x="55" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-41" edge="1" parent="lane2" source="ftGXDf_Zb5IHrBjyi9ol-35" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;dashed=1;dashPattern=8 8;" target="knowledge_tool">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-35" parent="lane2" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#00FFFF;strokeColor=#666666;fontColor=#333333;" value="Vector DB" vertex="1">
+          <mxGeometry height="90" width="140" x="1750" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="lane3" parent="1" style="swimlane;horizontal=1;startSize=32;rounded=0;whiteSpace=wrap;html=1;fillColor=#f7f7f7;strokeColor=#999999;fontStyle=1;" value="3. Response assembly" vertex="1">
+          <mxGeometry height="170" width="2050" x="-170" y="1060" as="geometry" />
+        </mxCell>
+        <mxCell id="user" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="User / Client&#xa;Natural-language query" vertex="1">
+          <mxGeometry height="75" width="220" x="70" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="askcard" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" value="POST /ask-card&#xa;query · response options" vertex="1">
+          <mxGeometry height="75" width="240" x="350" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="interpret" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Query interpretation&#xa;intent · dates · grade · reel · targets" vertex="1">
+          <mxGeometry height="95" width="270" x="650" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="resolve" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Friendly-name resolution&#xa;functions and variables → canonical parameters" vertex="1">
+          <mxGeometry height="95" width="300" x="980" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-23" edge="1" parent="1" source="router" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;curved=0;" target="process_card">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1510.08" y="350.08" />
+              <mxPoint x="182.54" y="350.08" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-24" edge="1" parent="1" source="router" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="shap_card">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1510.08" y="350.08" />
+              <mxPoint x="407.46" y="350.08" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-25" edge="1" parent="1" source="router" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;curved=0;" target="diagnosis_card">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1510.08" y="350.08" />
+              <mxPoint x="632.54" y="350.08" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-26" edge="1" parent="1" source="router" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;curved=0;" target="drivers_card">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1510.08" y="350.08" />
+              <mxPoint x="857.46" y="350.08" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-27" edge="1" parent="1" source="router" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;curved=0;" target="scenario_card">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1510.08" y="350.08" />
+              <mxPoint x="1082.54" y="350.08" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-28" edge="1" parent="1" source="router" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;curved=0;" target="recommend_card">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1510.08" y="350.08" />
+              <mxPoint x="1307.46" y="350.08" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-29" edge="1" parent="1" source="router" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;curved=0;" target="optimize_card">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1510.08" y="350.08" />
+              <mxPoint x="1532.54" y="350.08" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ftGXDf_Zb5IHrBjyi9ol-32" edge="1" parent="1" source="router" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;curved=0;" target="knowledge_card">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1510.08" y="350.08" />
+              <mxPoint x="1757.46" y="350.08" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="router" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" value="Intent / Card Router&#xa;Select one primary analytical card" vertex="1">
+          <mxGeometry height="75" width="300" x="1360" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="e_main_1" edge="1" parent="1" source="user" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="askcard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_main_2" edge="1" parent="1" source="askcard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="interpret">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_main_3" edge="1" parent="1" source="interpret" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="resolve">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_main_4" edge="1" parent="1" source="resolve" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="router">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="enrich" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Optional enrichment&#xa;Diagnosis summary and/or cost-driver summary" vertex="1">
+          <mxGeometry height="85" width="380" x="250" y="1130" as="geometry" />
+        </mxCell>
+        <mxCell id="response" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" value="Common card-response builder&#xa;Markdown text · tables · Plotly figures" vertex="1">
+          <mxGeometry height="85" width="390" x="750" y="1130" as="geometry" />
+        </mxCell>
+        <mxCell id="delivery" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" value="Response delivery&#xa;Inline content OR Parquet / Plotly artifact URLs" vertex="1">
+          <mxGeometry height="85" width="430" x="1260" y="1130" as="geometry" />
+        </mxCell>
+        <mxCell id="collector_enrich" edge="1" parent="1" source="collector" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;curved=0;" target="enrich">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="975" y="1110.08" />
+              <mxPoint x="440.08" y="1110.08" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="enrich_response" edge="1" parent="1" source="enrich" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="response">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="response_delivery" edge="1" parent="1" source="response" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" target="delivery">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

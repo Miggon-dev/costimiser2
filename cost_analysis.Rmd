@@ -1,6 +1,6 @@
 ---
-#title: "Cost Analysis"
-title: "Kostenanalyse"
+title: "Cost Analysis"
+#title: "Kostenanalyse"
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 output:
   pdf_document:
@@ -10,7 +10,7 @@ output:
 fontsize: 11pt
 geometry: margin=1in
 params:
-  lang: "de"
+  lang: "en"
   enableRAG: FALSE
 
 ---
@@ -609,7 +609,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, steam_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=True)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -657,7 +657,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, electricity_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=True)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -705,7 +705,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, starch_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=True)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -813,7 +813,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, steam_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=True)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -862,7 +862,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, electricity_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=True)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -911,7 +911,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, starch_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=True)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -1019,7 +1019,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, steam_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=True)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -1068,7 +1068,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, electricity_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=True)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -1117,7 +1117,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, starch_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=True)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -1226,7 +1226,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, steam_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=True)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -1276,7 +1276,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, electricity_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=True)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)
@@ -1326,7 +1326,7 @@ if current_enabled:
   process_data_clustered = _process_data_clustered("", process_data, cost_component_drilldown, grade_drilldown, starch_features())
   df1, df2 = _process_data_clustered_summary(process_data_clustered, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
 
-  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features)
+  shapley_contrib, contrib_full, diagnostics = _shapley_contrib_filtered("", turnup_data, df1, df2, cost_component_drilldown, grade_drilldown, fibre_cost, steam_cost, electricity_cost, starch_cost, steam_features, electricity_features, starch_features, fibre_features, conditional=True)
 
   shapley_md = build_shapley_text(shapley_contrib, top_frac=0.20, lang=LANG)
   descriptions.append(shapley_md)

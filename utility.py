@@ -682,11 +682,13 @@ def decompose_avg_cost_change(df_prev, df_curr, y_variable_cost):
         "detail": df  # optional, to inspect intermediate data
     }
 
-def get_process_grouped(process_data, y_variable_summary, x_variable_summary, color_variable_summary, agg_cost_label, costs_to_consider, overprocessing_vars, y_variable_summary_secondary=None):
+def get_process_grouped(process_data, y_variable_summary, x_variable_summary, color_variable_summary, agg_cost_label, costs_to_consider, overprocessing_vars, y_variable_summary_secondary=None, grades = None):
     import plotly.express as px
     import numpy as np
 
     df = process_data.sort_values(["grammage","paper_type"])
+    if grades is not None:
+        df = df[df["AB_Grade_ID"].isin(grades)]
 
     df["Wedge_Date"] = df["Wedge_Time"].dt.date
     df["Wedge_Week"] = df["Wedge_Time"].dt.isocalendar().week
@@ -1463,6 +1465,7 @@ def shapley_for_pair_mc_batch_conditional(
     bandwidths=None,
     max_background=500,
     min_background=30,
+    show_progress=True,
 ):
     import numpy as np
     import pandas as pd
@@ -1470,10 +1473,51 @@ def shapley_for_pair_mc_batch_conditional(
     rng = np.random.default_rng(random_state)
 
     features = list(features)
-    categorical_features = set(categorical_features or [])
-    bandwidths = bandwidths or {}
+    n_features = len(features)
 
-    hist = history[features].dropna().copy()
+    categorical_features = set(categorical_features or [])
+    bandwidths = dict(bandwidths or {})
+
+    # Prepare history once
+    hist = history.loc[:, features].dropna().reset_index(drop=True)
+
+    if len(hist) == 0:
+        raise ValueError("No complete rows are available in history.")
+
+    n_hist = len(hist)
+
+    numeric_features = [
+        f for f in features
+        if f not in categorical_features
+    ]
+
+    # Precompute arrays once
+    hist_arrays = {
+        f: hist[f].to_numpy(copy=False)
+        for f in features
+    }
+
+    numeric_arrays = {
+        f: hist[f].to_numpy(dtype=float, copy=False)
+        for f in numeric_features
+    }
+
+    # Precompute scales and bandwidths once
+    feature_std = {}
+
+    for f in numeric_features:
+        std = float(np.nanstd(numeric_arrays[f], ddof=1))
+
+        if not np.isfinite(std) or std <= 0:
+            std = 1.0
+
+        feature_std[f] = std
+
+        if f not in bandwidths:
+            bandwidths[f] = 0.25 * std
+
+        if not np.isfinite(bandwidths[f]) or bandwidths[f] <= 0:
+            bandwidths[f] = 1.0
 
     def _row_to_dict(row):
         return {f: row[f] for f in features}
@@ -1481,136 +1525,225 @@ def shapley_for_pair_mc_batch_conditional(
     x1 = _row_to_dict(row1)
     x2 = _row_to_dict(row2)
 
-    def _weighted_background(x, fixed_features):
+    def _weighted_background_indices(x, fixed_features):
         """
-        Estimate samples from:
+        Select historical row indices approximating:
+
             X_missing | X_fixed = x_fixed
-
-        using historical data.
         """
-        if len(fixed_features) == 0:
-            sample = hist.sample(
-                n=min(max_background, len(hist)),
-                replace=len(hist) < max_background,
-                random_state=int(rng.integers(0, 1_000_000_000)),
+
+        sample_size = min(max_background, n_hist)
+
+        if not fixed_features:
+            return rng.choice(
+                n_hist,
+                size=sample_size,
+                replace=n_hist < sample_size,
             )
-            return sample
 
-        df = hist.copy()
-        weights = np.ones(len(df), dtype=float)
+        valid_mask = np.ones(n_hist, dtype=bool)
 
+        # Exact conditioning for categorical variables
         for f in fixed_features:
             if f in categorical_features:
-                mask = df[f] == x[f]
-                df = df[mask]
-                weights = weights[mask.to_numpy()]
-            else:
-                bw = bandwidths.get(f)
+                valid_mask &= hist_arrays[f] == x[f]
 
-                if bw is None:
-                    std = hist[f].std()
-                    bw = std * 0.25 if std > 0 else 1.0
+        valid_idx = np.flatnonzero(valid_mask)
 
-                z = (df[f].to_numpy(dtype=float) - float(x[f])) / bw
+        if valid_idx.size == 0:
+            valid_idx = np.arange(n_hist)
+
+        # Calculate weights only for rows surviving categorical filtering
+        weights = np.ones(valid_idx.size, dtype=float)
+
+        for f in fixed_features:
+            if f not in categorical_features:
+                values = numeric_arrays[f][valid_idx]
+                z = (values - float(x[f])) / bandwidths[f]
+
+                # Accumulate Gaussian-kernel weights
                 weights *= np.exp(-0.5 * z * z)
 
-        if len(df) == 0 or weights.sum() <= 0:
-            # fallback: no conditioning
-            df = hist.copy()
-            weights = np.ones(len(df), dtype=float)
+        weight_sum = weights.sum()
 
-        # avoid collapse if too few effective samples
-        effective_n = (weights.sum() ** 2) / np.sum(weights ** 2)
+        if (
+            not np.isfinite(weight_sum)
+            or weight_sum <= 0
+        ):
+            weights = np.ones(valid_idx.size, dtype=float)
+            weight_sum = float(valid_idx.size)
+
+        squared_weight_sum = np.dot(weights, weights)
+
+        if squared_weight_sum > 0:
+            effective_n = weight_sum**2 / squared_weight_sum
+        else:
+            effective_n = 0.0
 
         if effective_n < min_background:
-            # softer fallback: use unweighted nearest rows for numeric fixed vars
-            if any(f not in categorical_features for f in fixed_features):
-                dist = np.zeros(len(hist), dtype=float)
-
-                for f in fixed_features:
-                    if f in categorical_features:
-                        dist += np.where(hist[f].to_numpy() == x[f], 0.0, 1e6)
-                    else:
-                        std = hist[f].std()
-                        scale = std if std > 0 else 1.0
-                        dist += ((hist[f].to_numpy(dtype=float) - float(x[f])) / scale) ** 2
-
-                idx = np.argsort(dist)[:max(min_background, min(max_background, len(hist)))]
-                df = hist.iloc[idx].copy()
-                weights = np.ones(len(df), dtype=float)
-
-        p = weights / weights.sum()
-
-        sample_size = min(max_background, len(df))
-
-        sampled_idx = rng.choice(
-            np.arange(len(df)),
-            size=sample_size,
-            replace=len(df) < sample_size,
-            p=p,
-        )
-
-        return df.iloc[sampled_idx].copy()
-
-    def _conditional_value(x, fixed_features):
-        """
-        Estimate:
-            E[cost(X) | X_fixed = x_fixed]
-        """
-        fixed_features = list(fixed_features)
-
-        if len(fixed_features) == len(features):
-            return float(cost([{f: x[f] for f in features}])[0])
-
-        bg = _weighted_background(x, fixed_features)
-
-        rows = []
-        for _, r in bg.iterrows():
-            d = {f: r[f] for f in features}
+            # Nearest-neighbour fallback
+            distance = np.zeros(n_hist, dtype=float)
 
             for f in fixed_features:
-                d[f] = x[f]
+                if f in categorical_features:
+                    distance += np.where(
+                        hist_arrays[f] == x[f],
+                        0.0,
+                        1e6,
+                    )
+                else:
+                    delta = (
+                        numeric_arrays[f] - float(x[f])
+                    ) / feature_std[f]
 
-            rows.append(d)
+                    distance += delta * delta
 
-        return float(np.mean(cost(rows)))
+            nearest_count = min(
+                n_hist,
+                max(min_background, max_background),
+            )
+
+            if nearest_count < n_hist:
+                # Faster than sorting the entire array
+                nearest_idx = np.argpartition(
+                    distance,
+                    nearest_count - 1,
+                )[:nearest_count]
+            else:
+                nearest_idx = np.arange(n_hist)
+
+            return rng.choice(
+                nearest_idx,
+                size=min(max_background, nearest_idx.size),
+                replace=nearest_idx.size < max_background,
+            )
+
+        probabilities = weights / weight_sum
+
+        return rng.choice(
+            valid_idx,
+            size=min(max_background, valid_idx.size),
+            replace=valid_idx.size < max_background,
+            p=probabilities,
+        )
 
     def _conditional_shap_for_row(x):
-        from tqdm.notebook import tqdm
-        contrib = {f: 0.0 for f in features}
+        """
+        Monte Carlo permutation SHAP with coalition caching.
+        """
 
-        for _ in tqdm(range(M)):
-            order = list(rng.permutation(features))
+        contributions = np.zeros(n_features, dtype=float)
 
-            fixed = []
-            prev_value = _conditional_value(x, fixed)
+        # Maps coalition tuples to estimated conditional values.
+        #
+        # A coalition is represented as a sorted tuple of feature indices.
+        value_cache = {}
 
-            for f in order:
-                fixed.append(f)
-                new_value = _conditional_value(x, fixed)
+        def conditional_value(fixed_indices):
+            key = tuple(sorted(fixed_indices))
 
-                contrib[f] += new_value - prev_value
-                prev_value = new_value
+            if key in value_cache:
+                return value_cache[key]
 
-        for f in features:
-            contrib[f] /= M
+            if len(key) == n_features:
+                model_input = pd.DataFrame(
+                    [{f: x[f] for f in features}],
+                    columns=features,
+                )
+                value = float(np.asarray(cost(model_input)).reshape(-1)[0])
+                value_cache[key] = value
+                return value
 
-        return contrib
+            fixed_names = [features[i] for i in key]
+
+            sampled_idx = _weighted_background_indices(
+                x=x,
+                fixed_features=fixed_names,
+            )
+
+            # Vectorized row construction: no iterrows()
+            model_input = hist.iloc[sampled_idx].copy()
+
+            for f in fixed_names:
+                model_input.loc[:, f] = x[f]
+
+            predictions = np.asarray(
+                cost(model_input)
+            ).reshape(-1)
+
+            value = float(np.mean(predictions))
+            value_cache[key] = value
+
+            return value
+
+        iterator = range(M)
+
+        if show_progress:
+            from tqdm.auto import tqdm
+
+            iterator = tqdm(
+                iterator,
+                desc="Conditional SHAP",
+                leave=False,
+            )
+
+        empty_value = conditional_value(())
+
+        for _ in iterator:
+            order = rng.permutation(n_features)
+
+            fixed_indices = []
+            previous_value = empty_value
+
+            for feature_idx in order:
+                fixed_indices.append(int(feature_idx))
+
+                new_value = conditional_value(fixed_indices)
+
+                contributions[feature_idx] += (
+                    new_value - previous_value
+                )
+
+                previous_value = new_value
+
+        contributions /= M
+
+        return {
+            feature: float(contributions[i])
+            for i, feature in enumerate(features)
+        }
 
     shap1 = _conditional_shap_for_row(x1)
     shap2 = _conditional_shap_for_row(x2)
 
-    contrib = {
+    contributions = {
         f: shap2[f] - shap1[f]
         for f in features
     }
 
     if add_unknown and cost_variable is not None:
-        model_delta = float(cost([x2, x1])[0] - cost([x2, x1])[1])
-        true_delta = float(row2[cost_variable]) - float(row1[cost_variable])
-        contrib[unknown_name] = true_delta - model_delta
+        pair_input = pd.DataFrame(
+            [x2, x1],
+            columns=features,
+        )
 
-    return contrib
+        pair_predictions = np.asarray(
+            cost(pair_input)
+        ).reshape(-1)
+
+        model_delta = float(
+            pair_predictions[0] - pair_predictions[1]
+        )
+
+        true_delta = (
+            float(row2[cost_variable])
+            - float(row1[cost_variable])
+        )
+
+        contributions[unknown_name] = true_delta - model_delta
+
+    return contributions
+
 
 
 def shapley_for_pair_filtered(
@@ -7635,23 +7768,31 @@ class DivideByFeatureRegressor(BaseEstimator, RegressorMixin):
 
         if self.create:
             missing = set(self.features_required_to_create).difference(X.columns)
-            if len(missing)>0:
+            if missing:
                 raise ValueError(
                     f"Missing divisor features: {missing}"
                 )
-        else:    
+        else:
             if self.divisor_feature not in X.columns:
                 raise ValueError(
                     f"Missing divisor feature: {self.divisor_feature}"
                 )
 
-        uptake_pred = self.base_model.predict(X)
+        uptake_pred = np.asarray(
+            self.base_model.predict(X),
+            dtype=float
+        ).reshape(-1)
 
         if self.create:
-            fc = FeatureCreator(features_to_create=[self.divisor_feature], features_to_keep= [self.divisor_feature])
+            fc = FeatureCreator(
+                features_to_create=[self.divisor_feature],
+                features_to_keep=[self.divisor_feature],
+            )
+
             divisor = (
-            fc.fit_transform(X[fc.features_required()])
-            .astype(float)
+                fc.fit_transform(X[fc.features_required()])
+                [self.divisor_feature]
+                .astype(float)
                 .to_numpy()
             )
 
@@ -7662,6 +7803,20 @@ class DivideByFeatureRegressor(BaseEstimator, RegressorMixin):
                 .to_numpy()
             )
 
-        return self.weight * uptake_pred / np.clip(divisor, self.epsilon, None)
+        divisor = np.asarray(divisor, dtype=float).reshape(-1)
+
+        if len(uptake_pred) != len(divisor):
+            raise ValueError(
+                f"Incompatible prediction and divisor lengths: "
+                f"{len(uptake_pred)} and {len(divisor)}"
+            )
+
+        prediction = (
+            self.weight
+            * uptake_pred
+            / np.clip(divisor, self.epsilon, None)
+        )
+
+        return prediction
 
         
