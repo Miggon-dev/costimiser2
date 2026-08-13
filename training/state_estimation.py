@@ -340,7 +340,8 @@ def iterative_backfit(
     train_idx: np.ndarray,
     test_idx: np.ndarray,
     feature_selection_fn,
-    n_iterations: int = 3,
+    n_iterations: int = 10,
+    patience: int = 2,
     state_estimator_kwargs: dict | None = None,
     splines: bool = False,
     verbose: bool = True,
@@ -366,7 +367,8 @@ def iterative_backfit(
     test_idx : integer indices for test rows
     feature_selection_fn : callable(X, y, iteration, splines) -> FeatureSelectionResult
         Receives the iteration number (0-based) and whether to use splines.
-    n_iterations : number of backfitting iterations
+    n_iterations : maximum number of backfitting iterations
+    patience : stop if best combined RMSE hasn't improved for this many iterations
     state_estimator_kwargs : dict of kwargs for ResidualStateEstimator
     splines : if True, use splines on iterations > 0 (first iteration is always linear)
     verbose : print progress
@@ -396,6 +398,12 @@ def iterative_backfit(
     history = []
     y_adjusted_full = y.copy()  # full-length target, modified on train portion
     level_train = pd.Series(0.0, index=y_train.index, name="level")
+
+    # Early stopping state
+    best_rmse_combined = np.inf
+    best_iteration = -1
+    best_state = None
+    no_improve_count = 0
 
     for iteration in range(n_iterations):
         if verbose:
@@ -461,22 +469,41 @@ def iterative_backfit(
         }
         history.append(iter_info)
 
+        # Track best iteration
+        if rmse_combined < best_rmse_combined:
+            best_rmse_combined = rmse_combined
+            best_iteration = iteration
+            no_improve_count = 0
+            best_state = {
+                "feature_selection_result": fs_result,
+                "selected_features": selected,
+                "state_estimator": state_est,
+                "state_result": state_result_full,
+                "y_train_pred": pd.Series(y_train_pred, index=y_train.index),
+                "y_test_pred": pd.Series(y_test_pred, index=y_test.index),
+                "level_train": level_train,
+                "level_test": level_test,
+                "y_test_combined": pd.Series(y_test_combined, index=y_test.index),
+            }
+        else:
+            no_improve_count += 1
+
         if verbose:
             print(f"\n  Results (iteration {iteration + 1}):")
             print(f"    Features: {len(selected)}")
             print(f"    Ridge RMSE: {rmse_ridge:.3f}, R2: {r2_ridge:.4f}")
             print(f"    Combined RMSE: {rmse_combined:.3f}, R2: {r2_combined:.4f}")
             print(f"    Level scale: {state_result_train.level_scale:.4f}")
+            if iteration == best_iteration:
+                print(f"    *** New best ***")
 
-    return {
-        "feature_selection_result": fs_result,
-        "selected_features": selected,
-        "state_estimator": state_est,
-        "state_result": state_result_full,
-        "y_train_pred": pd.Series(y_train_pred, index=y_train.index),
-        "y_test_pred": pd.Series(y_test_pred, index=y_test.index),
-        "level_train": level_train,
-        "level_test": level_test,
-        "y_test_combined": pd.Series(y_test_combined, index=y_test.index),
-        "iteration_history": history,
-    }
+        # Early stopping
+        if no_improve_count >= patience:
+            if verbose:
+                print(f"\n  Early stopping: no improvement for {patience} iterations.")
+                print(f"  Best iteration: {best_iteration + 1} (RMSE combined: {best_rmse_combined:.3f})")
+            break
+
+    # Return best state
+    best_state["iteration_history"] = history
+    return best_state

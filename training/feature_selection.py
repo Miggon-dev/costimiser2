@@ -585,3 +585,77 @@ def cmaes_feature_selection(
         n_cache_hits=cache_hits,
         final_estimator=final_est,
     )
+
+
+# =============================================================================
+# Skip feature selection: fit on all features
+# =============================================================================
+
+def fit_all_features(
+    X: "pd.DataFrame",
+    y: np.ndarray,
+    *,
+    cv_splits: list[tuple] | None = None,
+    alphas: np.ndarray | None = None,
+    splines: bool = False,
+    spline_n_knots: int = 4,
+    spline_degree: int = 2,
+) -> FeatureSelectionResult:
+    """
+    Fit Ridge on all features without any feature selection.
+
+    Drop-in replacement for cmaes_feature_selection when you want
+    to use all available features (e.g. for neural network baselines).
+
+    Parameters
+    ----------
+    X : DataFrame with all candidate features.
+    y : Target array.
+    cv_splits : List of (train_idx, test_idx) tuples. The final estimator
+                is fitted on the train portion of the first split only.
+                If None, fits on all data (no holdout).
+    alphas : Ridge alpha grid. None = default.
+    splines : Apply SplineTransformer to non-grammage columns.
+    spline_n_knots : Number of knots.
+    spline_degree : Polynomial degree.
+
+    Returns
+    -------
+    FeatureSelectionResult (with all features selected).
+    """
+    y = np.asarray(y, dtype=np.float64).ravel()
+    all_features = list(X.columns)
+    X_np = X.values.astype(np.float64)
+
+    if alphas is None:
+        alphas = _DEFAULT_ALPHAS
+
+    # Fit on train portion only (consistent with _evaluate_subset)
+    if cv_splits is not None and len(cv_splits) > 0:
+        train_idx = cv_splits[0][0]
+        X_fit = X_np[train_idx]
+        y_fit = y[train_idx]
+    else:
+        X_fit = X_np
+        y_fit = y
+
+    est = _fit_ridge(
+        X_fit, y_fit, alphas,
+        feature_names=all_features,
+        splines=splines,
+        spline_n_knots=spline_n_knots,
+        spline_degree=spline_degree,
+    )
+
+    return FeatureSelectionResult(
+        selected_features=all_features,
+        selected_idx=np.arange(len(all_features)),
+        selected_atoms=all_features,
+        best_rmse=0.0,  # not computed (no holdout eval)
+        best_loss=0.0,
+        best_alpha=float(est.alpha_),
+        best_k=len(all_features),
+        n_evals=0,
+        n_cache_hits=0,
+        final_estimator=est,
+    )
