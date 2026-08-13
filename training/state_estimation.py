@@ -470,8 +470,8 @@ def iterative_backfit(
         history.append(iter_info)
 
         # Track best iteration
-        if rmse_combined < best_rmse_combined:
-            best_rmse_combined = rmse_combined
+        if rmse_ridge < best_rmse_combined:
+            best_rmse_combined = rmse_ridge
             best_iteration = iteration
             no_improve_count = 0
             best_state = {

@@ -10,7 +10,7 @@ Contains target-to-feature mappings (control_vars) and variable group definition
 
 CONTROL_VARS = {
     "Steam__kWh/T_": [
-        "inv_Production_Rate__T/h_",
+        "Production_Rate__T/h_",
         "Water_Predryer",
         "dewatering",
         "Draw_PS-PD1",

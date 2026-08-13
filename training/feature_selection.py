@@ -564,9 +564,10 @@ def cmaes_feature_selection(
 
     pbar.close()
 
-    # --- Fit final model ---
+    # --- Fit final model (on train only) ---
+    train_idx = cv_splits[0][0]
     final_est = _fit_ridge(
-        X_np[:, best_selected], y, alphas,
+        X_np[train_idx][:, best_selected], y[train_idx], alphas,
         feature_names=[all_features[i] for i in best_selected],
         splines=splines, spline_n_knots=spline_n_knots, spline_degree=spline_degree,
     )
