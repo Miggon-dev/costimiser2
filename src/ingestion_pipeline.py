@@ -141,6 +141,8 @@ def steam(df: pd.DataFrame) -> pd.DataFrame:
  
  
 def flows(df: pd.DataFrame) -> pd.DataFrame:
+    import math 
+    
     pr = df['Production Rate [T/h]']
  
     df['Retention Aid mass flow [g/T]'] = (df['Retentionsmittel Menge l/h [0..9000 l/h] '] * 0.004 / pr) * 1000
@@ -277,6 +279,8 @@ def flows(df: pd.DataFrame) -> pd.DataFrame:
  
     cond_col = df['Condensate energy from paper plant to power plant']
     cond_med = cond_col[(cond_col >= 0) & (cond_col <= 10)].median()
+    if  math.isnan(cond_med) :
+        cond_med = 5.11
     cond = cond_col.where((cond_col >= 0) & (cond_col <= 10), cond_med)
  
     pr_safe = pr.where(pr > 45, 45)

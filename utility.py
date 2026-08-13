@@ -1783,6 +1783,7 @@ def shapley_for_pair_filtered(
             cost_variable=cost_variable,
             add_unknown=add_unknown,
             unknown_name=unknown_name,
+            show_progress=False
         )
     else:
         contrib_all = shapley_for_pair_mc_batch(

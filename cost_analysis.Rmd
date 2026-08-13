@@ -1,6 +1,6 @@
 ---
-title: "Cost Analysis"
-#title: "Kostenanalyse"
+#title: "Cost Analysis"
+title: "Kostenanalyse"
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 output:
   pdf_document:
@@ -10,7 +10,7 @@ output:
 fontsize: 11pt
 geometry: margin=1in
 params:
-  lang: "en"
+  lang: "de"
   enableRAG: FALSE
 
 ---
@@ -84,6 +84,7 @@ log.info(f"Working directory: {os.getcwd()}")
 try:
   steam_null = False
   turnup_data = _turnup_data(True, "", None, setpoint_df, steam_null)
+  turnup_data["Steam__kWh/T__L1"] = turnup_data["Steam__kWh/T_"].shift(1)
 
   max_date = turnup_data["Wedge_Time"].max()
   min_date = turnup_data["Wedge_Time"].min()
