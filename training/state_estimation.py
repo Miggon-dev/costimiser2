@@ -508,3 +508,438 @@ def iterative_backfit(
     # Return best state
     best_state["iteration_history"] = history
     return best_state
+
+
+# =============================================================================
+# Orthogonal backfitting: ElasticNet + projected Local Level
+# =============================================================================
+
+def _orthogonal_projection(X_active: np.ndarray, s: np.ndarray) -> np.ndarray:
+    """
+    Project s onto the orthogonal complement of the column space of X_active.
+
+    Returns s_perp = (I - P_A) s where P_A = X_A (X_A'X_A)^+ X_A'.
+    """
+    if X_active.shape[1] == 0:
+        return s.copy()
+    # Use pseudoinverse for numerical stability (handles collinearity)
+    pinv = np.linalg.pinv(X_active)  # shape: (n_features, n_samples)
+    projection = X_active @ pinv @ s  # P_A @ s
+    return s - projection
+
+
+def iterative_backfit_orthogonal(
+    X: pd.DataFrame,
+    y: pd.Series,
+    *,
+    train_idx: np.ndarray,
+    test_idx: np.ndarray,
+    model_fn=None,
+    n_iterations: int = 10,
+    patience: int = 2,
+    tau: float = 0.0,
+    state_estimator_kwargs: dict | None = None,
+    verbose: bool = True,
+) -> dict:
+    """
+    Elastic Net + Orthogonal Local-Level Backfitting.
+
+    The level estimate is projected onto the orthogonal complement of
+    the active regression features, ensuring no signal theft between
+    the regression and state components.
+
+    Algorithm:
+    ----------
+    β̂^(k) → r^(k) = y - Xβ̂^(k) → s̃^(k) = LocalLevel(r^(k))
+    → s_perp^(k) = (I - P_A^(k)) s̃^(k) → z^(k+1) = y - s_perp^(k)
+    → β̂^(k+1) = ElasticNet(X, z^(k+1))
+
+    Parameters
+    ----------
+    X : full design matrix (train + test rows)
+    y : full target (pd.Series with DatetimeIndex)
+    train_idx : integer indices for training rows
+    test_idx : integer indices for test rows
+    model_fn : callable() -> unfitted sklearn estimator with .fit/.predict/.coef_
+               Default: GridSearchCV(ElasticNet, TimeSeriesSplit)
+    n_iterations : maximum iterations
+    patience : early stopping patience (based on test RMSE of regression)
+    tau : threshold for active set (|β_j| > tau). Use 0 for ElasticNet.
+    state_estimator_kwargs : kwargs for ResidualStateEstimator
+    verbose : print progress
+
+    Returns
+    -------
+    dict with results from the best iteration.
+    """
+    if state_estimator_kwargs is None:
+        state_estimator_kwargs = {}
+
+    if model_fn is None:
+        from sklearn.linear_model import ElasticNet
+        from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
+
+        def model_fn():
+            return GridSearchCV(
+                ElasticNet(max_iter=10000),
+                param_grid={
+                    "alpha": np.logspace(-3, 2, 30),
+                    "l1_ratio": [0.1, 0.3, 0.5, 0.7, 0.9, 0.95, 0.99],
+                },
+                cv=TimeSeriesSplit(n_splits=5),
+                scoring="neg_root_mean_squared_error",
+                n_jobs=1,
+                refit=True,
+            )
+
+    y_full = np.asarray(y, dtype=np.float64).ravel()
+    X_np = X.values.astype(np.float64)
+    all_features = list(X.columns)
+
+    y_train = y_full[train_idx]
+    y_test = y_full[test_idx]
+    X_train = X_np[train_idx]
+    X_test = X_np[test_idx]
+
+    train_index = y.index[train_idx]
+    test_index = y.index[test_idx]
+
+    history = []
+    s_perp_train = np.zeros(len(train_idx))
+    z_train = y_train.copy()  # initial adjusted target = y
+
+    # Early stopping
+    best_rmse = np.inf
+    best_iteration = -1
+    best_state = None
+    no_improve_count = 0
+
+    for iteration in range(n_iterations):
+        if verbose:
+            print(f"\n{'='*60}")
+            print(f"ITERATION {iteration + 1}/{n_iterations}")
+            print(f"{'='*60}")
+
+        # --- Step 1: Fit ElasticNet on (X_train, z_train) ---
+        if verbose:
+            print(f"  Fitting ElasticNet...")
+        est = model_fn()
+        est.fit(X_train, z_train)
+
+        # Get coefficients (handle GridSearchCV wrapper)
+        if hasattr(est, 'best_estimator_'):
+            coef = est.best_estimator_.coef_
+        else:
+            coef = est.coef_
+
+        # Predictions
+        y_train_pred = est.predict(X_train)
+        y_test_pred = est.predict(X_test)
+
+        # --- Step 2: Residuals from ORIGINAL target ---
+        r_train = y_train - y_train_pred
+
+        # --- Step 3: Fit LocalLevel on residuals ---
+        if verbose:
+            print(f"  Fitting LocalLevel on residuals...")
+        residuals_series = pd.Series(r_train, index=train_index)
+        state_est = ResidualStateEstimator(**state_estimator_kwargs)
+        state_result = state_est.fit(residuals_series)
+        s_tilde_train = state_result.level.values
+
+        # --- Step 4: Active set and orthogonal projection ---
+        active_mask = np.abs(coef) > tau
+        n_active = active_mask.sum()
+        X_active_train = X_train[:, active_mask]
+
+        s_perp_train = _orthogonal_projection(X_active_train, s_tilde_train)
+
+        if verbose:
+            print(f"  Active features: {n_active}/{len(coef)}")
+            print(f"  ||s_tilde||={np.std(s_tilde_train):.3f}, "
+                  f"||s_perp||={np.std(s_perp_train):.3f}")
+
+        # --- Step 5: Corrected target for next iteration ---
+        z_train = y_train - s_perp_train
+
+        # --- Evaluate on test ---
+        # Project level onto test using the state estimator
+        r_test = y_test - y_test_pred
+        residuals_test_series = pd.Series(r_test, index=test_index)
+        state_result_full = state_est.update(residuals_test_series)
+        n_test = len(test_idx)
+        s_tilde_test = state_result_full.level.iloc[-n_test:].values
+
+        # Project test level orthogonally
+        X_active_test = X_test[:, active_mask]
+        s_perp_test = _orthogonal_projection(X_active_test, s_tilde_test)
+
+        y_test_combined = y_test_pred + s_perp_test
+
+        # Metrics
+        from sklearn.metrics import mean_squared_error, r2_score
+        rmse_reg = float(np.sqrt(mean_squared_error(y_test, y_test_pred)))
+        rmse_combined = float(np.sqrt(mean_squared_error(y_test, y_test_combined)))
+        r2_reg = float(r2_score(y_test, y_test_pred))
+        r2_combined = float(r2_score(y_test, y_test_combined))
+
+        iter_info = {
+            "iteration": iteration + 1,
+            "n_active": int(n_active),
+            "active_features": [all_features[i] for i, m in enumerate(active_mask) if m],
+            "rmse_regression": rmse_reg,
+            "rmse_combined": rmse_combined,
+            "r2_regression": r2_reg,
+            "r2_combined": r2_combined,
+            "level_std": float(np.std(s_tilde_train)),
+            "level_perp_std": float(np.std(s_perp_train)),
+        }
+        history.append(iter_info)
+
+        # Track best
+        if rmse_reg < best_rmse:
+            best_rmse = rmse_reg
+            best_iteration = iteration
+            no_improve_count = 0
+            best_state = {
+                "estimator": est,
+                "selected_features": all_features,
+                "active_features": iter_info["active_features"],
+                "active_mask": active_mask.copy(),
+                "state_estimator": state_est,
+                "state_result": state_result_full,
+                "s_perp_train": s_perp_train.copy(),
+                "s_perp_test": s_perp_test.copy(),
+                "y_train_pred": pd.Series(y_train_pred, index=train_index),
+                "y_test_pred": pd.Series(y_test_pred, index=test_index),
+                "y_test_combined": pd.Series(y_test_combined, index=test_index),
+                "coef": coef.copy(),
+            }
+        else:
+            no_improve_count += 1
+
+        if verbose:
+            print(f"\n  Results (iteration {iteration + 1}):")
+            print(f"    Regression RMSE: {rmse_reg:.3f}, R2: {r2_reg:.4f}")
+            print(f"    Combined RMSE:   {rmse_combined:.3f}, R2: {r2_combined:.4f}")
+            if iteration == best_iteration:
+                print(f"    *** New best ***")
+
+        if no_improve_count >= patience:
+            if verbose:
+                print(f"\n  Early stopping at iteration {iteration + 1}.")
+                print(f"  Best: iteration {best_iteration + 1} (RMSE={best_rmse:.3f})")
+            break
+
+    best_state["iteration_history"] = history
+    return best_state
+
+
+# =============================================================================
+# Orthogonal backfitting with CMA-ES + Ridge
+# =============================================================================
+
+def _ridge_projection(X_active: np.ndarray, s: np.ndarray, alpha: float) -> np.ndarray:
+    """
+    Project s onto the orthogonal complement of the Ridge smoother space.
+
+    P_lambda = X_A (X_A'X_A + lambda*I)^{-1} X_A'
+    s_perp = (I - P_lambda) s
+    """
+    if X_active.shape[1] == 0:
+        return s.copy()
+    n_features = X_active.shape[1]
+    XtX = X_active.T @ X_active
+    XtX_reg = XtX + alpha * np.eye(n_features)
+    # P_lambda @ s = X_A @ inv(X_A'X_A + lambda*I) @ X_A' @ s
+    Xts = X_active.T @ s
+    proj_coef = np.linalg.solve(XtX_reg, Xts)
+    projection = X_active @ proj_coef
+    return s - projection
+
+
+def iterative_backfit_orthogonal_ridge(
+    X: pd.DataFrame,
+    y: pd.Series,
+    *,
+    train_idx: np.ndarray,
+    test_idx: np.ndarray,
+    feature_selection_fn,
+    n_iterations: int = 10,
+    patience: int = 2,
+    state_estimator_kwargs: dict | None = None,
+    splines: bool = False,
+    verbose: bool = True,
+) -> dict:
+    """
+    CMA-ES/Ridge + Orthogonal Local-Level Backfitting with Ridge projection.
+
+    Uses P_lambda = X_A (X_A'X_A + lambda*I)^{-1} X_A' as the projection
+    matrix, where lambda is the Ridge alpha from the fitted model.
+
+    Algorithm:
+    ----------
+    β̂^(k) → r^(k) = y - Xβ̂^(k) → s̃^(k) = LocalLevel(r^(k))
+    → s_perp^(k) = (I - P_λ^(k)) s̃^(k) → z^(k+1) = y - s_perp^(k)
+    → β̂^(k+1) = Ridge/CMA-ES(X, z^(k+1))
+
+    Parameters
+    ----------
+    X : full design matrix (train + test rows)
+    y : full target (pd.Series with DatetimeIndex)
+    train_idx : integer indices for training rows
+    test_idx : integer indices for test rows
+    feature_selection_fn : callable(X, y, iteration, splines) -> FeatureSelectionResult
+    n_iterations : maximum iterations
+    patience : early stopping patience
+    state_estimator_kwargs : kwargs for ResidualStateEstimator
+    splines : passed to feature_selection_fn for iterations > 0
+    verbose : print progress
+
+    Returns
+    -------
+    dict with results from the best iteration.
+    """
+    if state_estimator_kwargs is None:
+        state_estimator_kwargs = {}
+
+    y_full = np.asarray(y, dtype=np.float64).ravel()
+    X_np = X.values.astype(np.float64)
+    all_features = list(X.columns)
+
+    y_train = y_full[train_idx]
+    y_test = y_full[test_idx]
+    X_train = X_np[train_idx]
+    X_test = X_np[test_idx]
+
+    train_index = y.index[train_idx]
+    test_index = y.index[test_idx]
+
+    history = []
+    s_perp_train = np.zeros(len(train_idx))
+
+    # Initial adjusted target = y (no level subtracted yet)
+    y_adjusted_full = y_full.copy()
+
+    # Early stopping
+    best_rmse = np.inf
+    best_iteration = -1
+    best_state = None
+    no_improve_count = 0
+
+    for iteration in range(n_iterations):
+        if verbose:
+            print(f"\n{'='*60}")
+            print(f"ITERATION {iteration + 1}/{n_iterations}")
+            print(f"{'='*60}")
+
+        # --- Step 1: Feature selection + Ridge ---
+        if verbose:
+            print(f"  Feature selection + Ridge...")
+
+        fs_result = feature_selection_fn(
+            X, y_adjusted_full, iteration,
+            splines=(splines and iteration > 0),
+        )
+
+        selected = fs_result.selected_features
+        selected_idx = [all_features.index(f) for f in selected]
+        estimator = fs_result.final_estimator
+        ridge_alpha = fs_result.best_alpha
+
+        # Predictions
+        y_train_pred = estimator.predict(X_train[:, selected_idx])
+        y_test_pred = estimator.predict(X_test[:, selected_idx])
+
+        # --- Step 2: Residuals from ORIGINAL target ---
+        r_train = y_train - y_train_pred
+
+        # --- Step 3: Fit LocalLevel on residuals ---
+        if verbose:
+            print(f"  Fitting LocalLevel on residuals...")
+        residuals_series = pd.Series(r_train, index=train_index)
+        state_est = ResidualStateEstimator(**state_estimator_kwargs)
+        state_result = state_est.fit(residuals_series)
+        s_tilde_train = state_result.level.values
+
+        # --- Step 4: Ridge projection ---
+        X_active_train = X_train[:, selected_idx]
+        s_perp_train = _ridge_projection(X_active_train, s_tilde_train, ridge_alpha)
+
+        if verbose:
+            print(f"  Selected features: {len(selected)}, alpha: {ridge_alpha:.2f}")
+            print(f"  ||s_tilde||={np.std(s_tilde_train):.3f}, "
+                  f"||s_perp||={np.std(s_perp_train):.3f}")
+
+        # --- Step 5: Corrected target for next iteration ---
+        y_adjusted_full = y_full.copy()
+        y_adjusted_full[train_idx] = y_train - s_perp_train
+
+        # --- Evaluate on test ---
+        r_test = y_test - y_test_pred
+        residuals_test_series = pd.Series(r_test, index=test_index)
+        state_result_full = state_est.update(residuals_test_series)
+        n_test = len(test_idx)
+        s_tilde_test = state_result_full.level.iloc[-n_test:].values
+
+        X_active_test = X_test[:, selected_idx]
+        s_perp_test = _ridge_projection(X_active_test, s_tilde_test, ridge_alpha)
+
+        y_test_combined = y_test_pred + s_perp_test
+
+        # Metrics
+        from sklearn.metrics import mean_squared_error, r2_score
+        rmse_reg = float(np.sqrt(mean_squared_error(y_test, y_test_pred)))
+        rmse_combined = float(np.sqrt(mean_squared_error(y_test, y_test_combined)))
+        r2_reg = float(r2_score(y_test, y_test_pred))
+        r2_combined = float(r2_score(y_test, y_test_combined))
+
+        iter_info = {
+            "iteration": iteration + 1,
+            "n_features": len(selected),
+            "selected_features": selected,
+            "ridge_alpha": ridge_alpha,
+            "rmse_regression": rmse_reg,
+            "rmse_combined": rmse_combined,
+            "r2_regression": r2_reg,
+            "r2_combined": r2_combined,
+            "level_std": float(np.std(s_tilde_train)),
+            "level_perp_std": float(np.std(s_perp_train)),
+        }
+        history.append(iter_info)
+
+        # Track best
+        if rmse_reg < best_rmse:
+            best_rmse = rmse_reg
+            best_iteration = iteration
+            no_improve_count = 0
+            best_state = {
+                "feature_selection_result": fs_result,
+                "selected_features": selected,
+                "state_estimator": state_est,
+                "state_result": state_result_full,
+                "s_perp_train": s_perp_train.copy(),
+                "s_perp_test": s_perp_test.copy(),
+                "y_train_pred": pd.Series(y_train_pred, index=train_index),
+                "y_test_pred": pd.Series(y_test_pred, index=test_index),
+                "y_test_combined": pd.Series(y_test_combined, index=test_index),
+                "ridge_alpha": ridge_alpha,
+            }
+        else:
+            no_improve_count += 1
+
+        if verbose:
+            print(f"\n  Results (iteration {iteration + 1}):")
+            print(f"    Regression RMSE: {rmse_reg:.3f}, R2: {r2_reg:.4f}")
+            print(f"    Combined RMSE:   {rmse_combined:.3f}, R2: {r2_combined:.4f}")
+            if iteration == best_iteration:
+                print(f"    *** New best ***")
+
+        if no_improve_count >= patience:
+            if verbose:
+                print(f"\n  Early stopping at iteration {iteration + 1}.")
+                print(f"  Best: iteration {best_iteration + 1} (RMSE={best_rmse:.3f})")
+            break
+
+    best_state["iteration_history"] = history
+    return best_state

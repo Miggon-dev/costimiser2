@@ -597,16 +597,17 @@ def fit_all_features(
     y: np.ndarray,
     *,
     cv_splits: list[tuple] | None = None,
+    model=None,
     alphas: np.ndarray | None = None,
     splines: bool = False,
     spline_n_knots: int = 4,
     spline_degree: int = 2,
 ) -> FeatureSelectionResult:
     """
-    Fit Ridge on all features without any feature selection.
+    Fit a model on all features without any feature selection.
 
     Drop-in replacement for cmaes_feature_selection when you want
-    to use all available features (e.g. for neural network baselines).
+    to use all available features.
 
     Parameters
     ----------
@@ -615,10 +616,13 @@ def fit_all_features(
     cv_splits : List of (train_idx, test_idx) tuples. The final estimator
                 is fitted on the train portion of the first split only.
                 If None, fits on all data (no holdout).
+    model : Optional sklearn-compatible estimator. If provided, uses this
+            instead of Ridge (ignores alphas/splines params).
+            Must implement fit(X, y) and predict(X).
     alphas : Ridge alpha grid. None = default.
-    splines : Apply SplineTransformer to non-grammage columns.
-    spline_n_knots : Number of knots.
-    spline_degree : Polynomial degree.
+    splines : Apply SplineTransformer to non-grammage columns (Ridge only).
+    spline_n_knots : Number of knots (Ridge only).
+    spline_degree : Polynomial degree (Ridge only).
 
     Returns
     -------
@@ -640,13 +644,21 @@ def fit_all_features(
         X_fit = X_np
         y_fit = y
 
-    est = _fit_ridge(
-        X_fit, y_fit, alphas,
-        feature_names=all_features,
-        splines=splines,
-        spline_n_knots=spline_n_knots,
-        spline_degree=spline_degree,
-    )
+    if model is not None:
+        # Use the provided model directly
+        from sklearn.base import clone
+        est = clone(model)
+        est.fit(X_fit, y_fit)
+        est.alpha_ = 0.0  # dummy for interface compatibility
+    else:
+        # Default: Ridge with alpha CV + optional splines
+        est = _fit_ridge(
+            X_fit, y_fit, alphas,
+            feature_names=all_features,
+            splines=splines,
+            spline_n_knots=spline_n_knots,
+            spline_degree=spline_degree,
+        )
 
     return FeatureSelectionResult(
         selected_features=all_features,
