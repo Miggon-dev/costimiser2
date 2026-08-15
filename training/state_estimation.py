@@ -344,6 +344,7 @@ def iterative_backfit(
     patience: int = 2,
     state_estimator_kwargs: dict | None = None,
     splines: bool = False,
+    gamma: float = 1.0,
     verbose: bool = True,
 ) -> dict:
     """
@@ -439,7 +440,7 @@ def iterative_backfit(
 
         # --- Step D: Adjust target for next iteration (train portion only) ---
         y_adjusted_full = y.astype(np.float64).copy()
-        y_adjusted_full.iloc[train_idx] = (y_train - level_train.values).astype(np.float64)
+        y_adjusted_full.iloc[train_idx] = (y_train - gamma * level_train.values).astype(np.float64)
 
         # --- Evaluate on test ---
         residuals_test = y_test - y_test_pred
