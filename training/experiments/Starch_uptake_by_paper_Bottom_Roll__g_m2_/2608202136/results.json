@@ -1,0 +1,59 @@
+{
+  "start_time": "2026-08-20T21:36:05.341373",
+  "end_time": "2026-08-20T23:05:22.875727",
+  "duration_seconds": 5357.534354,
+  "data_start": "2026-03-01 01:19:30",
+  "data_end": "2026-08-06 00:55:30",
+  "train_start": "2026-03-01 01:19:30",
+  "train_end": "2026-06-22 07:46:30",
+  "test_start": "2026-06-22 08:56:30",
+  "test_end": "2026-08-06 00:55:30",
+  "parameters": {
+    "y_column": "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
+    "data_path": "../data/costimier_turnup.parquet",
+    "apply_ewm_filter": false,
+    "apply_ewm_filter_y": false,
+    "n_iterations": 10,
+    "gamma": 1.0,
+    "splines": true,
+    "fixed_features": [
+      "grammage",
+      "Temperature_starch_working_tank_1",
+      "starch1_1",
+      "starch1_2",
+      "starch1_3"
+    ],
+    "best_iteration": 7
+  },
+  "metrics": {
+    "ridge_only": {
+      "rmse": 0.21546487066496653,
+      "mae": 0.15473511185319824,
+      "r2": 0.6999627268586364
+    },
+    "ridge_level": {
+      "rmse": 0.06918209016931649,
+      "mae": 0.04606953172130777,
+      "r2": 0.9690678845960934
+    }
+  },
+  "selected_features": [
+    "Temperature_starch_working_tank_1",
+    "Speed_Size_Press",
+    "retention",
+    "Retention_Aid_mass_flow__g/T_",
+    "Jet/wire_ratio",
+    "Top_wire_tenstion",
+    "Act_Deaerator_mass_flow__g/T_",
+    "speedsizer_linepressure_1",
+    "linepressure_1",
+    "starch1_1",
+    "starch1_2",
+    "starch1_3",
+    "grammage_90",
+    "grammage_100",
+    "grammage_110",
+    "grammage_115",
+    "grammage_120"
+  ]
+}

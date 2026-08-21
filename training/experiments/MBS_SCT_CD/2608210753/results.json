@@ -1,0 +1,55 @@
+{
+  "start_time": "2026-08-21T07:53:03.690870",
+  "end_time": "2026-08-21T08:20:57.286012",
+  "duration_seconds": 1673.595142,
+  "data_start": "2026-02-01 00:34:30",
+  "data_end": "2026-08-06 00:55:30",
+  "train_start": "2026-02-01 00:34:30",
+  "train_end": "2026-06-14 03:49:30",
+  "test_start": "2026-06-14 04:38:30",
+  "test_end": "2026-08-06 00:55:30",
+  "parameters": {
+    "y_column": "MBS_SCT_CD",
+    "data_path": "../data/costimier_turnup.parquet",
+    "apply_ewm_filter": false,
+    "apply_ewm_filter_y": false,
+    "n_iterations": 10,
+    "gamma": 1.0,
+    "splines": true,
+    "fixed_features": [
+      "grammage",
+      "conc_starch_1",
+      "delta_basis_weight",
+      "Jet/wire_ratio"
+    ],
+    "best_iteration": 3
+  },
+  "metrics": {
+    "ridge_only": {
+      "rmse": 0.05812677758701038,
+      "mae": 0.046408449149700215,
+      "r2": 0.8969427339663256
+    },
+    "ridge_level": {
+      "rmse": 0.0436307428174618,
+      "mae": 0.03444339067093306,
+      "r2": 0.9419354136811976
+    }
+  },
+  "selected_features": [
+    "delta_basis_weight",
+    "Jet/wire_ratio",
+    "retention",
+    "Speed",
+    "Moisture_after_SpeedSizer",
+    "Consistency_starch_main_line",
+    "Headbox_consistency",
+    "speedsizer_linepressure_1",
+    "conc_starch_1",
+    "grammage_90",
+    "grammage_100",
+    "grammage_110",
+    "grammage_115",
+    "grammage_120"
+  ]
+}

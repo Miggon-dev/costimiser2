@@ -1,0 +1,63 @@
+{
+  "start_time": "2026-08-21T07:41:28.000885",
+  "end_time": "2026-08-21T07:49:22.089995",
+  "duration_seconds": 474.08911,
+  "data_start": "2026-02-01 00:34:30",
+  "data_end": "2026-08-06 00:55:30",
+  "train_start": "2026-02-01 00:34:30",
+  "train_end": "2026-06-14 03:49:30",
+  "test_start": "2026-06-14 04:38:30",
+  "test_end": "2026-08-06 00:55:30",
+  "parameters": {
+    "y_column": "MBS_SCT_CD",
+    "data_path": "../data/costimier_turnup.parquet",
+    "apply_ewm_filter": false,
+    "apply_ewm_filter_y": false,
+    "n_iterations": 10,
+    "gamma": 1.0,
+    "splines": false,
+    "fixed_features": [
+      "grammage",
+      "conc_starch_1",
+      "delta_basis_weight",
+      "Jet/wire_ratio"
+    ],
+    "best_iteration": 6
+  },
+  "metrics": {
+    "ridge_only": {
+      "rmse": 0.057444270511126105,
+      "mae": 0.04556596948092422,
+      "r2": 0.8993486603376792
+    },
+    "ridge_level": {
+      "rmse": 0.042702222380267316,
+      "mae": 0.03335365725956883,
+      "r2": 0.94438050028952
+    }
+  },
+  "selected_features": [
+    "delta_basis_weight",
+    "Jet/wire_ratio",
+    "retention",
+    "Speed",
+    "Moisture_after_SpeedSizer",
+    "Consistency_starch_main_line",
+    "Headbox_consistency",
+    "Lip_settings",
+    "Retention_Aid_mass_flow__g/T_",
+    "White_water_temperature",
+    "Current_reel_width",
+    "fibre_short/long",
+    "draw_1",
+    "draw_2",
+    "speedsizer_linepressure_1",
+    "linepressure_1",
+    "conc_starch_1",
+    "grammage_90",
+    "grammage_100",
+    "grammage_110",
+    "grammage_115",
+    "grammage_120"
+  ]
+}

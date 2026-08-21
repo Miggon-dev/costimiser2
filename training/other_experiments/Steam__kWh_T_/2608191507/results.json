@@ -1,0 +1,56 @@
+{
+  "start_time": "2026-08-19T15:07:36.287342",
+  "end_time": "2026-08-19T15:31:02.970075",
+  "duration_seconds": 1406.682733,
+  "data_start": "2026-03-01 01:19:30",
+  "data_end": "2026-07-04 23:27:30",
+  "train_start": "2026-03-01 01:19:30",
+  "train_end": "2026-06-10 12:04:30",
+  "test_start": "2026-06-10 12:54:30",
+  "test_end": "2026-07-04 23:27:30",
+  "parameters": {
+    "y_column": "Steam__kWh/T_",
+    "data_path": "../data/costimier_turnup.parquet",
+    "apply_ewm_filter": false,
+    "apply_ewm_filter_y": false,
+    "n_iterations": 10,
+    "gamma": 1.0,
+    "splines": false,
+    "fixed_features": [
+      "linepressure_1",
+      "Starch_uptake__g/m2_",
+      "grammage"
+    ],
+    "best_iteration": 1,
+    "level_estimation": "run-level"
+  },
+  "metrics": {
+    "ridge_only": {
+      "rmse": 24.778865197642183,
+      "mae": 18.75368248487374,
+      "r2": 0.4672796347760153
+    },
+    "ridge_level": {
+      "rmse": 28.33471545372981,
+      "mae": 21.84973429476881,
+      "r2": 0.3034148931238556
+    }
+  },
+  "selected_features": [
+    "Starch_uptake__g/m2_",
+    "Moisture_out_of_PreDryer",
+    "Stock_deculator_pressure",
+    "Inlet_Air_2_Temperature",
+    "Inlet_Air_1_Temperature",
+    "retention",
+    "Natriumhydroxide_mass_flow__g/T_",
+    "Water_Predryer",
+    "Water_Afterdryer_output",
+    "linepressure_1",
+    "grammage_90",
+    "grammage_100",
+    "grammage_110",
+    "grammage_115",
+    "grammage_120"
+  ]
+}

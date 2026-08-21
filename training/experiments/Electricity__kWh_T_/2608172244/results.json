@@ -1,0 +1,52 @@
+{
+  "start_time": "2026-08-17T22:44:35.630166",
+  "end_time": "2026-08-17T23:07:48.771004",
+  "duration_seconds": 1393.140838,
+  "data_start": "2025-11-16 10:38:30",
+  "data_end": "2026-08-06 00:55:30",
+  "train_start": "2025-11-16 10:38:30",
+  "train_end": "2026-05-31 19:13:30",
+  "test_start": "2026-05-31 19:54:30",
+  "test_end": "2026-08-06 00:55:30",
+  "parameters": {
+    "y_column": "Electricity__kWh/T_",
+    "data_path": "../data/costimier_turnup.parquet",
+    "apply_ewm_filter": true,
+    "filter_y": false,
+    "n_iterations": 10,
+    "gamma": 1.0,
+    "splines": false,
+    "fixed_features": [
+      "Speed",
+      "grammage"
+    ],
+    "best_iteration": 6
+  },
+  "metrics": {
+    "ridge_only": {
+      "rmse": 9.2752803616527,
+      "mae": 7.1246809444910815,
+      "r2": 0.8432764366250642
+    },
+    "ridge_level": {
+      "rmse": 8.495507951769593,
+      "mae": 6.4391695665012065,
+      "r2": 0.8685202385763189
+    }
+  },
+  "selected_features": [
+    "Speed",
+    "Current_reel_moisture_average(reel)",
+    "Consistency_starch_main_line",
+    "Moisture_out_of_PreDryer",
+    "PickUp_Tension",
+    "Retention_Aid_mass_flow__g/T_",
+    "Thick_Stock_Consistency__%_",
+    "Act_Deaerator_mass_flow__g/T_",
+    "grammage_90.0",
+    "grammage_100.0",
+    "grammage_110.0",
+    "grammage_115.0",
+    "grammage_120.0"
+  ]
+}

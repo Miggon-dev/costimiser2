@@ -6464,6 +6464,10 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
                 "Long_fibre_flow",
                 "Long_fibre_consistency_B07",
             ],
+            "temperature_starch_working_tank": [
+                "Temperature_starch_working_tank_1",
+                "Temperature_starch_working_tank_2"
+            ],
         }
 
     def _expand_with_deps(self, requested):
@@ -6511,6 +6515,12 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             * (1 - df["Current_reel_moisture_average(reel)"] / 100)
             - df["Starch_uptake__g/m2_"]
         )
+
+    @staticmethod
+    def _add_temperature_starch_working_tank(df):
+        df["temperature_starch_working_tank"] = (
+            df["Temperature_starch_working_tank_1"] + df["Temperature_starch_working_tank_2"]
+        )/2
 
     # @staticmethod
     # def _add_water_flow_predryer(df):
@@ -6677,6 +6687,7 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             "dewatering": cls._add_dewatering,
             "fibre_short/long": cls._add_fibre_short_long_ratio,
             "delta_basis_weight": cls._add_delta_basis_weight,
+            "temperature_starch_working_tank": cls._add_temperature_starch_working_tank,
         }
     
     
@@ -6795,8 +6806,28 @@ def calculate_manual_shap(model, X_sample, grade_id=None, X_reference=None, grad
             if pd.api.types.is_numeric_dtype(Xb[c]):
                 Xb[c] = pd.to_numeric(Xb[c], errors="coerce").fillna(0.0)
                 Xe[c] = pd.to_numeric(Xe[c], errors="coerce").fillna(0.0)
- 
-        explainer = shap.Explainer(model.predict, Xb)
+
+        # Wrap model to inject grade_col (pipeline may need it, but SHAP shouldn't attribute to it)
+        all_model_cols = list(X_sample.columns)
+        original_index = Xe.index  # preserve DatetimeIndex for EWM
+
+        def _predict_for_shap(X_feat):
+            if isinstance(X_feat, pd.DataFrame):
+                X_full = X_feat.copy()
+            else:
+                X_full = pd.DataFrame(X_feat, columns=feature_names)
+            if grade_col not in X_full.columns:
+                X_full[grade_col] = g
+            # Restore DatetimeIndex (SHAP may strip it)
+            if not isinstance(X_full.index, pd.DatetimeIndex):
+                if len(X_full) == len(original_index):
+                    X_full.index = original_index
+                else:
+                    # Background data — use a synthetic datetime index
+                    X_full.index = pd.date_range("2025-01-01", periods=len(X_full), freq="h")
+            return model.predict(X_full[all_model_cols])
+
+        explainer = shap.Explainer(_predict_for_shap, Xb)
         sv = explainer(Xe)
  
         shap_values = np.asarray(sv.values, dtype=float)
