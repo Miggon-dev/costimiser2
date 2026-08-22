@@ -1,0 +1,44 @@
+{
+  "parameters": {
+    "y_column": "Steam__kWh/T_",
+    "data_path": "../data/costimier_turnup.parquet",
+    "apply_ewm_filter": true,
+    "apply_ewm_filter_y": true,
+    "exclude_mediators": false,
+    "end_date": "2026-06-01",
+    "lag_days": 1.0,
+    "bandwidth_days": 2.0,
+    "n_folds": 5,
+    "zoom_days": 30.0
+  },
+  "n_rows": 3530,
+  "window": [
+    "2025-11-16 10:38:30",
+    "2026-05-31 23:54:30"
+  ],
+  "summary": {
+    "differencing": {
+      "lag_days": 1.0,
+      "n_contrasts": 3284,
+      "target_for_fitting": "EWM-filtered",
+      "r2_dy": 0.25399673262967704,
+      "r2_ewm_persistence": 0.19447970316287866,
+      "r2_ewm_model": 0.40201189223976375,
+      "rmse_ewm_persistence": 53.496473385331555,
+      "rmse_ewm_model": 46.09280975242758,
+      "r2_gain_over_persistence_ewm": 0.2075321890768851,
+      "r2_raw_persistence": 0.07631135619116514,
+      "r2_raw_model": 0.35698733970969276,
+      "rmse_raw_persistence": 60.89654761489199,
+      "rmse_raw_model": 50.80888118519885,
+      "r2_gain_over_persistence_raw": 0.2806759835185276
+    },
+    "partialling": {
+      "bandwidth_days": 2.0,
+      "r2_y_tilde": 0.2681410817746869,
+      "r2_raw_trend_only": 0.6035484723710814,
+      "r2_raw_reconstructed": 0.709912495868285,
+      "rmse_raw_reconstructed": 31.425088841789574
+    }
+  }
+}

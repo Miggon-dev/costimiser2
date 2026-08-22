@@ -1,0 +1,66 @@
+{
+  "start_time": "2026-08-21T09:31:43.167832",
+  "end_time": "2026-08-21T10:29:52.003941",
+  "duration_seconds": 3488.836109,
+  "data_start": "2025-11-16 10:38:30",
+  "data_end": "2026-08-04 19:26:30",
+  "train_start": "2025-11-16 10:38:30",
+  "train_end": "2026-06-03 03:22:30",
+  "test_start": "2026-06-03 04:32:30",
+  "test_end": "2026-08-04 19:26:30",
+  "parameters": {
+    "y_column": "Steam__kWh/T_",
+    "data_path": "../data/costimier_turnup.parquet",
+    "apply_ewm_filter": true,
+    "apply_ewm_filter_y": true,
+    "n_iterations": 10,
+    "gamma": 1.0,
+    "splines": false,
+    "fixed_features": [
+      "linepressure_1",
+      "Starch_uptake__g/m2_",
+      "grammage"
+    ],
+    "best_iteration": 6
+  },
+  "metrics": {
+    "ridge_only": {
+      "rmse": 50.09306385083663,
+      "mae": 36.11578242839909,
+      "r2": 0.38593274419746426
+    },
+    "ridge_level": {
+      "rmse": 17.9516109133837,
+      "mae": 12.033461990395221,
+      "r2": 0.9211380334611993
+    }
+  },
+  "selected_features": [
+    "Starch_uptake__g/m2_",
+    "Draw_PS-PD1",
+    "Draw_WS-PS",
+    "ambient_temp_C",
+    "White_water_temperature",
+    "Bottom_Felt_Tension",
+    "Airturn_pillow_pressure",
+    "Dewatering_Shoe_press",
+    "Stock_deculator_pressure",
+    "DG3_Ventilator_Revolution_Output",
+    "retention",
+    "Natriumhydroxide_mass_flow__g/T_",
+    "Production_Rate__T/h_",
+    "exha_mois_1",
+    "exha_mois_2",
+    "inlet_temp_1",
+    "inlet_temp_2",
+    "linepressure_1",
+    "gas_decu_1",
+    "gas_decu_2",
+    "gas_decu_3",
+    "grammage_90.0",
+    "grammage_100.0",
+    "grammage_110.0",
+    "grammage_115.0",
+    "grammage_120.0"
+  ]
+}

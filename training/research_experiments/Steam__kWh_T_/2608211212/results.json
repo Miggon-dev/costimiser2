@@ -1,0 +1,831 @@
+{
+  "approach": "time-partialling (Robinson/DML): remove E[.|t] from y and X with the same fixed smoother, then fit f",
+  "start_time": "2026-08-21T12:12:59.333331",
+  "end_time": "2026-08-21T12:13:12.443275",
+  "duration_seconds": 13.109944,
+  "data_start": "2025-11-16 10:38:30",
+  "data_end": "2026-08-04 19:26:30",
+  "n_rows": 4482,
+  "span_days": 261.3666666666667,
+  "parameters": {
+    "y_column": "Steam__kWh/T_",
+    "data_path": "../data/costimier_turnup.parquet",
+    "apply_ewm_filter": true,
+    "apply_ewm_filter_y": true,
+    "exclude_mediators": false,
+    "fixed_features": [
+      "linepressure_1",
+      "Starch_uptake__g/m2_",
+      "grammage",
+      "ambient_temp_C"
+    ],
+    "bandwidths_days": [
+      0.5,
+      1,
+      2,
+      4,
+      7,
+      14,
+      30,
+      60
+    ],
+    "n_folds": 5,
+    "learners": [
+      "ridge"
+    ],
+    "variant_b": false,
+    "time_basis_columns": 5,
+    "pls_fit_fraction": 0.8,
+    "pls_fit_rows": 3585
+  },
+  "caveats": [
+    "The supervised PLS projection is fitted on the leading 80% of rows, so folds inside that block see a basis built with their own targets. It is a fixed low-dimensional projection, not the model under study.",
+    "R2 is measured on the partialled target y~, which CHANGES with bandwidth. Compare learners at fixed bandwidth; read the sweep as 'at which timescale is X informative', not as a model contest."
+  ],
+  "variance_decomposition": {
+    "var_y_raw": 4363.965956683367,
+    "std_y_raw": 66.06032059173924,
+    "var_noise_band": 274.1027603640377,
+    "share_noise_band": 0.06281047173254234,
+    "by_bandwidth": [
+      {
+        "bandwidth_days": 0.5,
+        "var_slow": 3097.670855009143,
+        "var_mid": 435.9014371184969,
+        "share_slow": 0.7098292896316236,
+        "share_mid": 0.09988653473589054,
+        "std_mid": 20.87825273145473
+      },
+      {
+        "bandwidth_days": 1,
+        "var_slow": 2591.8116399090045,
+        "var_mid": 806.6009454598882,
+        "share_slow": 0.593911974940976,
+        "share_mid": 0.18483208931192222,
+        "std_mid": 28.400720861624063
+      },
+      {
+        "bandwidth_days": 2,
+        "var_slow": 2163.9370806527154,
+        "var_mid": 1375.1771992710364,
+        "share_slow": 0.49586479411890666,
+        "share_mid": 0.31512097319754917,
+        "std_mid": 37.08338171298616
+      },
+      {
+        "bandwidth_days": 4,
+        "var_slow": 1818.5365746056655,
+        "var_mid": 1806.0639103307285,
+        "share_slow": 0.41671648969227093,
+        "share_mid": 0.4138583866734251,
+        "std_mid": 42.49781065338223
+      },
+      {
+        "bandwidth_days": 7,
+        "var_slow": 1608.227648993679,
+        "var_mid": 2071.9916710726848,
+        "share_slow": 0.3685243342768739,
+        "share_mid": 0.47479556248587407,
+        "std_mid": 45.51913521885807
+      },
+      {
+        "bandwidth_days": 14,
+        "var_slow": 1276.27651768675,
+        "var_mid": 2338.66890484551,
+        "share_slow": 0.2924579454457352,
+        "share_mid": 0.5359044795626473,
+        "std_mid": 48.35978602977385
+      },
+      {
+        "bandwidth_days": 30,
+        "var_slow": 836.9385952749053,
+        "var_mid": 2757.5995832073027,
+        "share_slow": 0.19178394230897763,
+        "share_mid": 0.6319021758141968,
+        "std_mid": 52.5128516004159
+      },
+      {
+        "bandwidth_days": 60,
+        "var_slow": 354.86662932014946,
+        "var_mid": 3217.8319787686914,
+        "share_slow": 0.08131746050325507,
+        "share_mid": 0.7373641340718106,
+        "std_mid": 56.725937442837306
+      }
+    ]
+  },
+  "best_bandwidth_days": 1.0,
+  "best_bandwidth_smoother_dof": 90.17636407742293,
+  "sweep": [
+    {
+      "bandwidth_hours": 12.0,
+      "bandwidth_days": 0.5,
+      "learner": "ridge",
+      "variant": "A",
+      "r2_mean": 0.21245083990297542,
+      "r2_std": 0.11975986795738286,
+      "rmse_mean": 18.509608008586923,
+      "share_of_y_removed": 0.8766400115572472,
+      "smoother_dof": 172.81720067027283
+    },
+    {
+      "bandwidth_hours": 24.0,
+      "bandwidth_days": 1.0,
+      "learner": "ridge",
+      "variant": "A",
+      "r2_mean": 0.22300209751038133,
+      "r2_std": 0.1425754524118259,
+      "rmse_mean": 24.94724621757181,
+      "share_of_y_removed": 0.7626536139453671,
+      "smoother_dof": 90.17636407742293
+    },
+    {
+      "bandwidth_hours": 48.0,
+      "bandwidth_days": 2.0,
+      "learner": "ridge",
+      "variant": "A",
+      "r2_mean": 0.21213375935137319,
+      "r2_std": 0.1703411987391177,
+      "rmse_mean": 32.45341699035976,
+      "share_of_y_removed": 0.6114346442351491,
+      "smoother_dof": 47.894487731650656
+    },
+    {
+      "bandwidth_hours": 96.0,
+      "bandwidth_days": 4.0,
+      "learner": "ridge",
+      "variant": "A",
+      "r2_mean": 0.14272094022732584,
+      "r2_std": 0.16015352424377374,
+      "rmse_mean": 38.67911650537928,
+      "share_of_y_removed": 0.5017205571106075,
+      "smoother_dof": 25.24077233944626
+    },
+    {
+      "bandwidth_hours": 168.0,
+      "bandwidth_days": 7.0,
+      "learner": "ridge",
+      "variant": "A",
+      "r2_mean": 0.07708604445639862,
+      "r2_std": 0.16532078166777295,
+      "rmse_mean": 42.86860284550475,
+      "share_of_y_removed": 0.43699233907741086,
+      "smoother_dof": 15.05001785326507
+    },
+    {
+      "bandwidth_hours": 336.0,
+      "bandwidth_days": 14.0,
+      "learner": "ridge",
+      "variant": "A",
+      "r2_mean": 0.05035949202715027,
+      "r2_std": 0.172478618795227,
+      "rmse_mean": 46.13584959677073,
+      "share_of_y_removed": 0.3530555426180464,
+      "smoother_dof": 7.771399029766746
+    },
+    {
+      "bandwidth_hours": 720.0,
+      "bandwidth_days": 30.0,
+      "learner": "ridge",
+      "variant": "A",
+      "r2_mean": -0.010972373542619951,
+      "r2_std": 0.1332587020455265,
+      "rmse_mean": 49.96617739573963,
+      "share_of_y_removed": 0.23283619583873838,
+      "smoother_dof": 3.861318362824061
+    },
+    {
+      "bandwidth_hours": 1440.0,
+      "bandwidth_days": 60.0,
+      "learner": "ridge",
+      "variant": "A",
+      "r2_mean": -0.24812937023428921,
+      "r2_std": 0.24099306539777618,
+      "rmse_mean": 55.892975549707515,
+      "share_of_y_removed": 0.09932733438995006,
+      "smoother_dof": 2.1724669556856377
+    }
+  ],
+  "learner_comparison": [
+    {
+      "bandwidth_hours": 24.0,
+      "bandwidth_days": 1.0,
+      "learner": "ridge",
+      "variant": "A",
+      "r2_mean": 0.22300209751038133,
+      "r2_std": 0.1425754524118259,
+      "rmse_mean": 24.94724621757181,
+      "share_of_y_removed": 0.7626536139453671,
+      "smoother_dof": 90.17636407742293
+    }
+  ],
+  "coefficients": [
+    {
+      "feature": "inlet_temp_1",
+      "coef_mean": 20.192828927019217,
+      "coef_std": 1.4321325925292385,
+      "coef_min": 18.705966797197924,
+      "coef_max": 22.321592246110193,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 14.099831979493867
+    },
+    {
+      "feature": "DG3_Ventilator_Revolution_Output",
+      "coef_mean": 9.234431159798074,
+      "coef_std": 0.9113990732627719,
+      "coef_min": 8.168210183179456,
+      "coef_max": 10.506019557598755,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 10.132148946277928
+    },
+    {
+      "feature": "ambient_temp_C",
+      "coef_mean": -6.419898731371075,
+      "coef_std": 0.7282660567565616,
+      "coef_min": -7.6430162448001795,
+      "coef_max": -5.377427202697618,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 8.815320543652719
+    },
+    {
+      "feature": "fibre_short/long",
+      "coef_mean": -1.812014294798307,
+      "coef_std": 0.289327122464559,
+      "coef_min": -2.2038223242761665,
+      "coef_max": -1.3623170083895477,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 6.262856656379558
+    },
+    {
+      "feature": "DG2_Ventilator_Revolution_Output",
+      "coef_mean": 5.305382710631208,
+      "coef_std": 1.170223492232495,
+      "coef_min": 3.310362346198163,
+      "coef_max": 6.432299091005473,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 4.533649124159915
+    },
+    {
+      "feature": "Production_Rate__T/h_",
+      "coef_mean": -21.769886215039882,
+      "coef_std": 5.314263862050746,
+      "coef_min": -29.36328018771555,
+      "coef_max": -13.449628478388671,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 4.096500809923842
+    },
+    {
+      "feature": "inlet_temp_2",
+      "coef_mean": 3.0343908462525873,
+      "coef_std": 0.775148793426484,
+      "coef_min": 1.7360988676476814,
+      "coef_max": 3.9820488136918075,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 3.9145914590659454
+    },
+    {
+      "feature": "Top_Felt_Tension",
+      "coef_mean": -2.583637668779456,
+      "coef_std": 0.7014266624284229,
+      "coef_min": -3.6612268778340926,
+      "coef_max": -1.4468227509270126,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 3.683403849854515
+    },
+    {
+      "feature": "Draw_PS-PD1",
+      "coef_mean": 0.673849420637768,
+      "coef_std": 0.21192877441661043,
+      "coef_min": 0.42387983301562526,
+      "coef_max": 0.9982244702337635,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 3.1796032534643555
+    },
+    {
+      "feature": "dewatering",
+      "coef_mean": -2.0093723421257783,
+      "coef_std": 0.6638587212873034,
+      "coef_min": -3.099984374010443,
+      "coef_max": -1.1284248035483788,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 3.026807177029111
+    },
+    {
+      "feature": "Steam_pressure_for_PM",
+      "coef_mean": 1.2371734772468266,
+      "coef_std": 0.46724654405684685,
+      "coef_min": 0.7017151835539615,
+      "coef_max": 1.7805495082326066,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 2.647795886311163
+    },
+    {
+      "feature": "Water_Afterdryer_output",
+      "coef_mean": 18.15867715084771,
+      "coef_std": 7.752883358251401,
+      "coef_min": 10.104870728756865,
+      "coef_max": 32.40022954562519,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 2.3421837156264464
+    },
+    {
+      "feature": "Air_pressure_of_rod_clamping_hose_Top_Roll",
+      "coef_mean": 1.9521433342334285,
+      "coef_std": 0.835120114333306,
+      "coef_min": 0.3837913020100192,
+      "coef_max": 2.77149662567567,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 2.3375599518302415
+    },
+    {
+      "feature": "Fixative_2_mass_flow__g/T_",
+      "coef_mean": -1.5492017720797757,
+      "coef_std": 0.7214364111623854,
+      "coef_min": -2.446116317443387,
+      "coef_max": -0.7929980192798318,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 2.1473850613995022
+    },
+    {
+      "feature": "Water_Predryer",
+      "coef_mean": -28.070949691024754,
+      "coef_std": 13.471514953210518,
+      "coef_min": -53.456764707365195,
+      "coef_max": -14.241409098210788,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 2.0837262764077558
+    },
+    {
+      "feature": "grammage_100.0",
+      "coef_mean": -7.024648399796723,
+      "coef_std": 3.3836013422898827,
+      "coef_min": -11.177352041320228,
+      "coef_max": -1.340576779457166,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 2.0760863024846565
+    },
+    {
+      "feature": "Stock_deculator_pressure",
+      "coef_mean": -1.839795152061678,
+      "coef_std": 0.8972371248251605,
+      "coef_min": -3.0503797101321206,
+      "coef_max": -0.46713507902078266,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 2.0505116219084094
+    },
+    {
+      "feature": "Moisture_out_of_PreDryer",
+      "coef_mean": -11.837571516409879,
+      "coef_std": 5.801654398038844,
+      "coef_min": -22.653968823681588,
+      "coef_max": -6.247644482554389,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 2.040378606559429
+    },
+    {
+      "feature": "retention",
+      "coef_mean": 1.5143002914908674,
+      "coef_std": 0.7581210597281027,
+      "coef_min": 0.35663780118605715,
+      "coef_max": 2.6411257716021765,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 1.997438630756367
+    },
+    {
+      "feature": "Inlet_Air_2_Temperature",
+      "coef_mean": 1.7978042972974688,
+      "coef_std": 0.9020730877596822,
+      "coef_min": 1.053852590523558,
+      "coef_max": 3.536066046084633,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 1.9929696625384914
+    },
+    {
+      "feature": "White_water_temperature",
+      "coef_mean": -2.0523964764273694,
+      "coef_std": 1.1051676630451521,
+      "coef_min": -4.032957911628067,
+      "coef_max": -0.739760504007969,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 1.857090598156162
+    },
+    {
+      "feature": "exha_mois_2",
+      "coef_mean": 1.3505245765628051,
+      "coef_std": 0.7454792929893097,
+      "coef_min": 0.21065011584576832,
+      "coef_max": 2.265893040400291,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 1.8116191680486715
+    },
+    {
+      "feature": "Dewatering_Shoe_press",
+      "coef_mean": 1.791283187120385,
+      "coef_std": 0.9978585992967466,
+      "coef_min": 0.20431992711743296,
+      "coef_max": 3.0388094171814486,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 1.795127273927202
+    },
+    {
+      "feature": "Starch_uptake__g/m2_",
+      "coef_mean": -20.125843627315078,
+      "coef_std": 11.270594086622713,
+      "coef_min": -40.79501347452549,
+      "coef_max": -8.448838362885315,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 1.7856950106297265
+    },
+    {
+      "feature": "gas_decu_2",
+      "coef_mean": 1.4137045424610768,
+      "coef_std": 0.810898402430943,
+      "coef_min": 0.2627073455995905,
+      "coef_max": 2.530718071617976,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 1.7433805988802271
+    },
+    {
+      "feature": "exha_mois_1",
+      "coef_mean": -2.536973476949609,
+      "coef_std": 1.4933015323794083,
+      "coef_min": -4.626824990885673,
+      "coef_max": -0.843905497801952,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 1.6989023462041364
+    },
+    {
+      "feature": "Steam_temperature_for_PM",
+      "coef_mean": -0.6830335805318187,
+      "coef_std": 0.40227156619699106,
+      "coef_min": -1.1471837616344445,
+      "coef_max": -0.09447872363533882,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 1.6979414851243537
+    },
+    {
+      "feature": "Web_tension_AD6",
+      "coef_mean": 12.074861931051709,
+      "coef_std": 8.019218495139826,
+      "coef_min": 1.0635586582745327,
+      "coef_max": 20.93239627049152,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 1.505740483111898
+    },
+    {
+      "feature": "Airturn_pillow_pressure",
+      "coef_mean": -11.383738427801969,
+      "coef_std": 7.827009066476416,
+      "coef_min": -20.15089441552293,
+      "coef_max": -0.7745165217623018,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 1.4544174321401075
+    },
+    {
+      "feature": "PickUp_Tension",
+      "coef_mean": 0.7353949288157448,
+      "coef_std": 0.5656242055424385,
+      "coef_min": 0.21472240922526709,
+      "coef_max": 1.7107667568577192,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 1.300147556645838
+    },
+    {
+      "feature": "Top_wire_tenstion",
+      "coef_mean": -0.30150874625383234,
+      "coef_std": 0.237995504243358,
+      "coef_min": -0.6692706506311303,
+      "coef_max": -0.015133110948201273,
+      "sign_flips": 0,
+      "n_folds": 5,
+      "stability_ratio": 1.266867402442737
+    },
+    {
+      "feature": "Draw_WS-PS",
+      "coef_mean": -1.041726118191714,
+      "coef_std": 0.9577458353791055,
+      "coef_min": -2.698363485926138,
+      "coef_max": 0.014874225601785085,
+      "sign_flips": 1,
+      "n_folds": 5,
+      "stability_ratio": 1.087685354203985
+    },
+    {
+      "feature": "Bottom_wire_tension",
+      "coef_mean": 0.4104711017408366,
+      "coef_std": 0.4066147816719504,
+      "coef_min": -0.28727239202504506,
+      "coef_max": 0.8980539442267208,
+      "sign_flips": 1,
+      "n_folds": 5,
+      "stability_ratio": 1.0094839642893194
+    },
+    {
+      "feature": "grammage_110.0",
+      "coef_mean": -4.619781097137417,
+      "coef_std": 4.6971609240686885,
+      "coef_min": -9.388304876942838,
+      "coef_max": 3.4348977843625974,
+      "sign_flips": 1,
+      "n_folds": 5,
+      "stability_ratio": 0.9835262559273262
+    },
+    {
+      "feature": "Dewatering_top_wire_suction_box_zone_2",
+      "coef_mean": -0.8599974052859707,
+      "coef_std": 0.8887652510016852,
+      "coef_min": -2.42983244026148,
+      "coef_max": 0.28413456333810894,
+      "sign_flips": 1,
+      "n_folds": 5,
+      "stability_ratio": 0.967631671374087
+    },
+    {
+      "feature": "grammage_120.0",
+      "coef_mean": -8.645188760660664,
+      "coef_std": 9.799926461280153,
+      "coef_min": -18.200243931246618,
+      "coef_max": 9.331992389334696,
+      "sign_flips": 1,
+      "n_folds": 5,
+      "stability_ratio": 0.882168738185751
+    },
+    {
+      "feature": "Retention_Aid_mass_flow__g/T_",
+      "coef_mean": -1.018881544716356,
+      "coef_std": 1.2509517910371708,
+      "coef_min": -2.1808926091342027,
+      "coef_max": 1.1912540734635364,
+      "sign_flips": 1,
+      "n_folds": 5,
+      "stability_ratio": 0.8144850601089878
+    },
+    {
+      "feature": "Natriumhydroxide_mass_flow__g/T_",
+      "coef_mean": 0.415460055538645,
+      "coef_std": 0.5178769008183578,
+      "coef_min": -0.18847551333385582,
+      "coef_max": 1.1821016948392042,
+      "sign_flips": 2,
+      "n_folds": 5,
+      "stability_ratio": 0.8022370854582006
+    },
+    {
+      "feature": "grammage_115.0",
+      "coef_mean": -5.277521322563556,
+      "coef_std": 6.735090531418145,
+      "coef_min": -11.852210088725355,
+      "coef_max": 6.72301036858584,
+      "sign_flips": 1,
+      "n_folds": 5,
+      "stability_ratio": 0.7835858030333437
+    },
+    {
+      "feature": "gas_decu_1",
+      "coef_mean": -1.360874288979925,
+      "coef_std": 1.7385244889201297,
+      "coef_min": -3.4115563604927264,
+      "coef_max": 0.9659454467961197,
+      "sign_flips": 2,
+      "n_folds": 5,
+      "stability_ratio": 0.7827754499018998
+    },
+    {
+      "feature": "Total_Dewatering_Press",
+      "coef_mean": -1.151684946327833,
+      "coef_std": 1.5791054871592645,
+      "coef_min": -2.452298061232927,
+      "coef_max": 1.9259194779913145,
+      "sign_flips": 1,
+      "n_folds": 5,
+      "stability_ratio": 0.7293274297967638
+    },
+    {
+      "feature": "Inlet_Air_1_Temperature",
+      "coef_mean": -0.5417083196709355,
+      "coef_std": 0.7813825262015435,
+      "coef_min": -1.8920336447495023,
+      "coef_max": 0.5145623193817102,
+      "sign_flips": 1,
+      "n_folds": 5,
+      "stability_ratio": 0.6932690474975014
+    },
+    {
+      "feature": "Dewatering_Suction_Press_Roll",
+      "coef_mean": -1.174881012998151,
+      "coef_std": 1.7168258745485128,
+      "coef_min": -4.014926276590465,
+      "coef_max": 0.7345755277415442,
+      "sign_flips": 2,
+      "n_folds": 5,
+      "stability_ratio": 0.6843332398558583
+    },
+    {
+      "feature": "DG1_Ventilator_Revolution_Output",
+      "coef_mean": 0.8981646036293158,
+      "coef_std": 1.3537039484593347,
+      "coef_min": -0.8362035070262301,
+      "coef_max": 3.1554373563688936,
+      "sign_flips": 2,
+      "n_folds": 5,
+      "stability_ratio": 0.6634867281369216
+    },
+    {
+      "feature": "Dewatering_First_Press_Roll",
+      "coef_mean": -0.5954415561069875,
+      "coef_std": 0.9612715863357625,
+      "coef_min": -2.2460189274674214,
+      "coef_max": 0.665269666342599,
+      "sign_flips": 1,
+      "n_folds": 5,
+      "stability_ratio": 0.6194311415951972
+    },
+    {
+      "feature": "Jet/wire_ratio",
+      "coef_mean": 0.6312992030418905,
+      "coef_std": 1.0256935931657303,
+      "coef_min": -0.615305515417349,
+      "coef_max": 2.477644219348769,
+      "sign_flips": 1,
+      "n_folds": 5,
+      "stability_ratio": 0.6154851772968869
+    },
+    {
+      "feature": "fabric_tension_1",
+      "coef_mean": -0.6310182657164604,
+      "coef_std": 1.0298979432242876,
+      "coef_min": -2.044554386370425,
+      "coef_max": 0.6371513274212468,
+      "sign_flips": 2,
+      "n_folds": 5,
+      "stability_ratio": 0.6126998018278782
+    },
+    {
+      "feature": "Bottom_Felt_Tension",
+      "coef_mean": 0.3383396560882373,
+      "coef_std": 0.5874320106279945,
+      "coef_min": -0.34412339521702684,
+      "coef_max": 1.397332722280181,
+      "sign_flips": 1,
+      "n_folds": 5,
+      "stability_ratio": 0.5759639413019646
+    },
+    {
+      "feature": "Stock_deculator_temperature",
+      "coef_mean": -0.240189528778817,
+      "coef_std": 0.7986569306722927,
+      "coef_min": -1.41878289913394,
+      "coef_max": 0.7069860445182705,
+      "sign_flips": 2,
+      "n_folds": 5,
+      "stability_ratio": 0.3007418073447763
+    },
+    {
+      "feature": "AD7_fabric_tension_bottom",
+      "coef_mean": 0.29112997694879855,
+      "coef_std": 1.0138670712028757,
+      "coef_min": -1.4917031581460733,
+      "coef_max": 1.6303244247748836,
+      "sign_flips": 1,
+      "n_folds": 5,
+      "stability_ratio": 0.2871480741586716
+    },
+    {
+      "feature": "grammage_90.0",
+      "coef_mean": -0.14695065587519407,
+      "coef_std": 1.100165126333232,
+      "coef_min": -2.0795079961909333,
+      "coef_max": 1.0099625662634786,
+      "sign_flips": 2,
+      "n_folds": 5,
+      "stability_ratio": 0.13357145428247633
+    },
+    {
+      "feature": "Act_Deaerator_mass_flow__g/T_",
+      "coef_mean": 0.10930799717997793,
+      "coef_std": 0.8249531389022726,
+      "coef_min": -0.8846120029939035,
+      "coef_max": 1.6152989910868234,
+      "sign_flips": 3,
+      "n_folds": 5,
+      "stability_ratio": 0.13250206833012246
+    },
+    {
+      "feature": "Uhle_box_1_flow___l/min_",
+      "coef_mean": 0.18374055435989134,
+      "coef_std": 1.7083423439198533,
+      "coef_min": -2.805694502533118,
+      "coef_max": 1.8385196000280455,
+      "sign_flips": 2,
+      "n_folds": 5,
+      "stability_ratio": 0.10755487915747144
+    },
+    {
+      "feature": "gas_decu_3",
+      "coef_mean": 0.05499363871878704,
+      "coef_std": 0.5113807311810887,
+      "coef_min": -0.7437694924128486,
+      "coef_max": 0.8092205760742495,
+      "sign_flips": 2,
+      "n_folds": 5,
+      "stability_ratio": 0.10753952068505461
+    },
+    {
+      "feature": "linepressure_1",
+      "coef_mean": -0.06747578389911468,
+      "coef_std": 0.6328696017526546,
+      "coef_min": -1.1570448045935535,
+      "coef_max": 0.7633173100211177,
+      "sign_flips": 2,
+      "n_folds": 5,
+      "stability_ratio": 0.10661877851653609
+    }
+  ],
+  "all_features": [
+    "Starch_uptake__g/m2_",
+    "ambient_temp_C",
+    "Draw_PS-PD1",
+    "Moisture_out_of_PreDryer",
+    "Draw_WS-PS",
+    "PickUp_Tension",
+    "Dewatering_top_wire_suction_box_zone_2",
+    "White_water_temperature",
+    "Top_wire_tenstion",
+    "Jet/wire_ratio",
+    "Top_Felt_Tension",
+    "Bottom_wire_tension",
+    "Bottom_Felt_Tension",
+    "Air_pressure_of_rod_clamping_hose_Top_Roll",
+    "Airturn_pillow_pressure",
+    "Dewatering_Suction_Press_Roll",
+    "Dewatering_First_Press_Roll",
+    "Steam_temperature_for_PM",
+    "Steam_pressure_for_PM",
+    "Dewatering_Shoe_press",
+    "Total_Dewatering_Press",
+    "Uhle_box_1_flow___l/min_",
+    "Stock_deculator_temperature",
+    "Stock_deculator_pressure",
+    "Inlet_Air_2_Temperature",
+    "Inlet_Air_1_Temperature",
+    "DG1_Ventilator_Revolution_Output",
+    "DG2_Ventilator_Revolution_Output",
+    "DG3_Ventilator_Revolution_Output",
+    "retention",
+    "Web_tension_AD6",
+    "AD7_fabric_tension_bottom",
+    "Act_Deaerator_mass_flow__g/T_",
+    "Retention_Aid_mass_flow__g/T_",
+    "Natriumhydroxide_mass_flow__g/T_",
+    "Fixative_2_mass_flow__g/T_",
+    "Water_Predryer",
+    "Water_Afterdryer_output",
+    "dewatering",
+    "Production_Rate__T/h_",
+    "fibre_short/long",
+    "exha_mois_1",
+    "exha_mois_2",
+    "inlet_temp_1",
+    "inlet_temp_2",
+    "linepressure_1",
+    "fabric_tension_1",
+    "gas_decu_1",
+    "gas_decu_2",
+    "gas_decu_3",
+    "grammage_90.0",
+    "grammage_100.0",
+    "grammage_110.0",
+    "grammage_115.0",
+    "grammage_120.0"
+  ]
+}

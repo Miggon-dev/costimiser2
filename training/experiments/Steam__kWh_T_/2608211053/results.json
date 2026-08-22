@@ -1,0 +1,64 @@
+{
+  "start_time": "2026-08-21T10:53:33.094756",
+  "end_time": "2026-08-21T15:27:20.381479",
+  "duration_seconds": 16427.286723,
+  "data_start": "2025-11-16 10:38:30",
+  "data_end": "2026-08-04 19:26:30",
+  "train_start": "2025-11-16 10:38:30",
+  "train_end": "2026-06-03 03:22:30",
+  "test_start": "2026-06-03 04:32:30",
+  "test_end": "2026-08-04 19:26:30",
+  "parameters": {
+    "y_column": "Steam__kWh/T_",
+    "data_path": "../data/costimier_turnup.parquet",
+    "apply_ewm_filter": true,
+    "apply_ewm_filter_y": true,
+    "n_iterations": 10,
+    "gamma": 1.0,
+    "splines": true,
+    "fixed_features": [
+      "linepressure_1",
+      "Starch_uptake__g/m2_",
+      "grammage"
+    ],
+    "best_iteration": 5
+  },
+  "metrics": {
+    "ridge_only": {
+      "rmse": 47.52896012952889,
+      "mae": 34.67467433245894,
+      "r2": 0.4471881111391135
+    },
+    "ridge_level": {
+      "rmse": 17.124640959571735,
+      "mae": 11.566488858354958,
+      "r2": 0.9282364856234282
+    }
+  },
+  "selected_features": [
+    "Starch_uptake__g/m2_",
+    "Draw_WS-PS",
+    "ambient_temp_C",
+    "Dewatering_top_wire_suction_box_zone_2",
+    "Bottom_Felt_Tension",
+    "Dewatering_Shoe_press",
+    "Stock_deculator_temperature",
+    "Stock_deculator_pressure",
+    "Inlet_Air_2_Temperature",
+    "DG1_Ventilator_Revolution_Output",
+    "DG3_Ventilator_Revolution_Output",
+    "AD7_fabric_tension_bottom",
+    "Act_Deaerator_mass_flow__g/T_",
+    "Retention_Aid_mass_flow__g/T_",
+    "Water_Predryer",
+    "linepressure_1",
+    "gas_decu_1",
+    "gas_decu_2",
+    "gas_decu_3",
+    "grammage_90.0",
+    "grammage_100.0",
+    "grammage_110.0",
+    "grammage_115.0",
+    "grammage_120.0"
+  ]
+}

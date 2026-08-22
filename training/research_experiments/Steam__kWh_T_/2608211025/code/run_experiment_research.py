@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import argparse
 import json
 import os
+import re
 from datetime import datetime
 
 import cloudpickle
@@ -32,6 +33,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+from sklearn.linear_model import RidgeCV
+from sklearn.preprocessing import StandardScaler
 
 from config import CONTROL_VARS
 from data_cleaning import (
@@ -143,6 +146,23 @@ BLACK_LIST = {
      ],
 }
 
+# All four MBS strength targets share the same blacklist, PLS prefixes and
+# fixed features, so they share the same created-variable candidates.
+_MBS_CREATED_VARS = [
+    "delta_basis_weight",
+    "Starch_uptake__g/m2_",
+    "Water_flow_Predryer",
+    "Water_flow_Afterdryer",
+    "Water_flow",
+    "flow_diluted_starch",
+    "Fibre__g/m2_",
+    "Water_flow_Afterdryer_input",
+    "Water_flow_Afterdryer_output",
+    "dewatering",
+    "fibre_short/long",
+    "temperature_starch_working_tank",
+]
+
 CREATED_VARIABLE_CANDIDATES = {
     "Steam__kWh/T_": [
         "Water_Predryer", "diluted_starch", "Fibre__g/m2_",
@@ -168,21 +188,10 @@ CREATED_VARIABLE_CANDIDATES = {
         "inv_Rod_Pressure_Bottom_Roll",
         "square_Rod_Pressure_Bottom_Roll",
      ],
-     "MBS_SCT_CD": [
-        "delta_basis_weight",
-        "Starch_uptake__g/m2_",
-        "Water_flow_Predryer",
-        "Water_flow_Afterdryer",
-        "Water_flow",
-        "flow_diluted_starch",
-        "Fibre__g/m2_",
-        "Water_flow_Afterdryer_input", 
-        "Water_flow_Afterdryer_output",
-        "dewatering",
-        "fibre_short/long",
-        "temperature_starch_working_tank"
-
-     ],
+     "MBS_SCT_CD": _MBS_CREATED_VARS,
+     "MBS_SCT_MD": _MBS_CREATED_VARS,
+     "MBS_Burst": _MBS_CREATED_VARS,
+     "MBS_CMT30": _MBS_CREATED_VARS,
 }
 
 DEFAULT_FIXED_FEATURES = {
@@ -190,6 +199,10 @@ DEFAULT_FIXED_FEATURES = {
         "linepressure_1",
         "Starch_uptake__g/m2_",
         "grammage",
+        # Forced in: the Steam window spans winter->summer, so a large part of
+        # what the latent level was absorbing is very likely ambient air heating
+        # load. It was selectable before but not guaranteed to be picked.
+        "ambient_temp_C",
     ],
     "Electricity__kWh/T_": [
         "Speed",
@@ -223,8 +236,59 @@ DEFAULT_FIXED_FEATURES = {
      ],
 }
 
+# =============================================================================
+# Mediator / tautological variables (setpoint-optimisation mode)
+# =============================================================================
+# These are NOT operator levers. They are either downstream consequences of the
+# process being modelled, or near-restatements of the target:
+#
+#   * water/dewatering/moisture families  -> outcomes of forming, pressing and
+#     drying, so "reduce water to evaporate" is true but not a setpoint
+#   * exhaust air humidity                -> the direct signature of evaporation
+#   * Steam_*_for_PM                      -> essentially the drying energy input
+#   * Production_Rate                     -> derived from speed x width x weight
+#
+# Including them inflates fit while producing recommendations that cannot be
+# acted on. Enable exclusion with --exclude_mediators.
+#
+# Matched as case-insensitive regex against feature names.
+MEDIATOR_PATTERNS = {
+    "Steam__kWh/T_": [
+        r"^Water_Predryer",
+        r"^Water_Afterdryer",
+        r"^Water_flow",
+        r"Moisture_out_of_PreDryer",
+        r"Dewatering",
+        r"Moisture_content_Outlet_Air",
+        r"^Uhle_box_\d+_flow",
+        r"^Starch_uptake",
+        r"^Production_Rate",
+        r"^Steam_(pressure|temperature)_for_PM$",
+    ],
+    # Not characterised yet for the other targets: the flag is a deliberate
+    # no-op there rather than a guess. For the starch targets in particular the
+    # target itself is a starch-uptake variable, so the Steam list would be
+    # actively wrong.
+}
+
+# PLS groups that are built entirely from mediator source columns. Dropping the
+# sources without dropping the prefix would leave a degenerate PLS step.
+MEDIATOR_PLS_PREFIXES = {
+    "Steam__kWh/T_": ["exha_mois"],
+}
+
 TEST_SIZE = 0.20
+# Fraction of the TRAIN block reserved for feature selection scoring, so the
+# real test block is never used to choose features.
+VAL_SIZE = 0.25
 LAGS = 0
+# Contiguous train blocks used for the coefficient-stability sweep.
+COEF_STABILITY_BLOCKS = 5
+
+
+def _is_mediator(name: str, patterns: list[str]) -> bool:
+    """True if `name` matches any mediator pattern (case-insensitive)."""
+    return any(re.search(p, name, re.I) for p in patterns)
 
 
 # =============================================================================
@@ -242,6 +306,11 @@ def main():
     parser.add_argument("--splines", action="store_true", help="Enable splines after first iteration")
     parser.add_argument("--fixed_features", type=str, default=None,
                         help="Comma-separated fixed feature names")
+    parser.add_argument("--exclude_mediators", action="store_true",
+                        help="Drop downstream/tautological variables (water, dewatering, "
+                             "exhaust humidity, Steam_*_for_PM, ...) so the model only "
+                             "uses actual operator levers. Required for setpoint "
+                             "optimisation; will lower R2.")
     args = parser.parse_args()
 
     Y_COLUMN = args.y_column
@@ -252,10 +321,46 @@ def main():
     GAMMA = args.gamma
     SPLINES = args.splines
 
+    EXCLUDE_MEDIATORS = args.exclude_mediators
+
+    # Fail fast with a readable message rather than a KeyError deep in the run.
+    _required = {
+        "PIPELINE_PREFIXES": PIPELINE_PREFIXES,
+        "BLACK_LIST": BLACK_LIST,
+        "CREATED_VARIABLE_CANDIDATES": CREATED_VARIABLE_CANDIDATES,
+        "DEFAULT_FIXED_FEATURES": DEFAULT_FIXED_FEATURES,
+        "CONTROL_VARS (config.py)": CONTROL_VARS,
+    }
+    _missing = [name for name, d in _required.items() if Y_COLUMN not in d]
+    if _missing:
+        raise KeyError(
+            f"Target '{Y_COLUMN}' is not configured in: {', '.join(_missing)}. "
+            f"Add an entry for it before running."
+        )
+
     if args.fixed_features:
         fixed_features = [f.strip() for f in args.fixed_features.split(",")]
     else:
         fixed_features = DEFAULT_FIXED_FEATURES[Y_COLUMN]
+
+    # Resolve mediator config for this target
+    mediator_patterns = MEDIATOR_PATTERNS.get(Y_COLUMN, []) if EXCLUDE_MEDIATORS else []
+    mediator_pls_prefixes = (
+        MEDIATOR_PLS_PREFIXES.get(Y_COLUMN, []) if EXCLUDE_MEDIATORS else []
+    )
+    if EXCLUDE_MEDIATORS and not mediator_patterns:
+        print(f"WARNING: --exclude_mediators set but no patterns configured for "
+              f"'{Y_COLUMN}'. No variables will be excluded.")
+
+    # Fixed features are forced into every candidate subset, so a mediator left
+    # in here would defeat the exclusion entirely.
+    if mediator_patterns:
+        dropped_fixed = [f for f in fixed_features if _is_mediator(f, mediator_patterns)]
+        if dropped_fixed:
+            print(f"Dropping mediators from fixed_features: {dropped_fixed}")
+            fixed_features = [
+                f for f in fixed_features if not _is_mediator(f, mediator_patterns)
+            ]
 
     # Timing
     start_time = datetime.now()
@@ -271,13 +376,30 @@ def main():
     # =========================================================================
     print("\n--- Data Loading & Filtering ---")
 
-    prep_pip, prep_s_vars = make_prep_pip(prefixes=PIPELINE_PREFIXES[Y_COLUMN])
+    pipeline_prefixes = [
+        p for p in PIPELINE_PREFIXES[Y_COLUMN] if p not in mediator_pls_prefixes
+    ]
+    if mediator_pls_prefixes:
+        removed = [p for p in PIPELINE_PREFIXES[Y_COLUMN] if p in mediator_pls_prefixes]
+        if removed:
+            print(f"Dropping mediator PLS groups: {removed}")
+    prep_pip, prep_s_vars = make_prep_pip(prefixes=pipeline_prefixes)
 
     turnup_data = pd.read_parquet(DATA_PATH)
 
     ctl_vars = unique_in_order(
         v for v in CONTROL_VARS[Y_COLUMN] if "vacuum" not in v.lower()
     )
+
+    if mediator_patterns:
+        n_before_med = len(ctl_vars)
+        mediators_found = [v for v in ctl_vars if _is_mediator(v, mediator_patterns)]
+        ctl_vars = [v for v in ctl_vars if not _is_mediator(v, mediator_patterns)]
+        print(f"Mediator exclusion: {n_before_med} -> {len(ctl_vars)} control vars")
+        print(f"  Excluded ({len(mediators_found)}): {mediators_found}")
+
+    # created_vars is intersected with the already-filtered ctl_vars, so it
+    # inherits the mediator exclusion.
     created_vars = ordered_intersection(CREATED_VARIABLE_CANDIDATES[Y_COLUMN], ctl_vars)
 
     turnup_data = _feature_engineering(turnup_data, setpoint_df, steam_null=False, clip=False)
@@ -345,7 +467,6 @@ def main():
     # Build Preprocessing Pipeline
     # =========================================================================
     print("\n--- Build Preprocessing Pipeline ---")
-    import re
 
     steam_pressure = [v for v in turnup_data.columns if re.search(r"cylinder.*steam_pressure", v, re.I)]
     steam_diff_pressure = [v for v in turnup_data.columns if re.search(r"cylinder.*differential_pressure", v, re.I)]
@@ -381,16 +502,25 @@ def main():
     print("\n--- Transform & Build Design Matrix ---")
 
     turnup_ts = turnup_data.copy().sort_index()
-    turnup_ts = turnup_ts.dropna(subset=[Y_COLUMN])
 
+    # IMPORTANT: drop every row we are going to drop BEFORE computing the split.
+    # Computing `split` first and applying it after a dropna makes `split` a
+    # larger-than-intended fraction of the surviving rows (and can exceed the
+    # frame length entirely), which fits the supervised PLS inside
+    # `pre_estimator` on test-period targets. That is target leakage.
+    print("feat_list", feat_list)
+    n_before = len(turnup_ts)
+    turnup_ts = turnup_ts.dropna(subset=[Y_COLUMN])
+    n_after_y = len(turnup_ts)
+    turnup_ts = turnup_ts.dropna(subset=feat_list)
+    n_after_feat = len(turnup_ts)
+    print(f"Rows: {n_before} -> {n_after_y} (target NaN) -> {n_after_feat} (feature NaN)")
+
+    # Split is derived from the FINAL row count only.
     n_samples = len(turnup_ts)
     split = int(n_samples * (1.0 - TEST_SIZE))
 
-    print("feat_list",feat_list)
-    turnup_ts = turnup_ts.dropna(subset=feat_list)
     ts_raw = turnup_ts.loc[:, feat_list]
-
-
 
     pre_estimator.fit(ts_raw.iloc[:split], turnup_ts[Y_COLUMN].iloc[:split])
     ts_transformed = pre_estimator.transform(ts_raw)
@@ -422,17 +552,37 @@ def main():
     # Train/Test Split
     # =========================================================================
     n_samples = len(X)
-    split = int(n_samples * (1.0 - TEST_SIZE))
+    split_design = int(n_samples * (1.0 - TEST_SIZE))
+
+    # The preprocessing pipeline was fitted on rows [:split] of ts_transformed.
+    # If make_design dropped rows (lags), the design-matrix boundary would no
+    # longer coincide with it and the pipeline would have seen test rows.
+    if split_design != split:
+        raise RuntimeError(
+            f"Split mismatch: pipeline fitted on {split} rows but design matrix "
+            f"split is {split_design} (X has {n_samples} rows vs "
+            f"{len(ts_transformed)} transformed). Rows were dropped after the "
+            f"pipeline was fitted - this would leak test data into the PLS fit."
+        )
+    split = split_design
 
     Xtr, Xte = X.iloc[:split].copy(), X.iloc[split:].copy()
     ytr, yte = y.iloc[:split].copy(), y.iloc[split:].copy()
-    outer_cv = [(np.arange(split), np.arange(split, n_samples))]
+
+    # Feature selection must NOT see the test block. Carve an inner validation
+    # split out of the training block instead. `outer_cv` previously pointed at
+    # the real test set, so every candidate subset was ranked by test RMSE and
+    # the reported metrics were optimistically biased.
+    inner_split = int(split * (1.0 - VAL_SIZE))
+    inner_cv = [(np.arange(inner_split), np.arange(inner_split, split))]
 
     # Raw y for metrics (unfiltered, aligned with design matrix index)
     y_raw_series = pd.Series(y_raw, index=ts_transformed.index, name=Y_COLUMN)
     y_raw_aligned = y_raw_series.loc[X.index]
     yte_raw = y_raw_aligned.iloc[split:].values
     print(f"Train: {Xtr.shape}, Test: {Xte.shape}")
+    print(f"Inner selection split: fit[:{inner_split}] / score[{inner_split}:{split}] "
+          f"(test block {split}: held out)")
 
     # =========================================================================
     # Feature Selection Setup
@@ -454,7 +604,7 @@ def main():
             k_range=(3, 15),
             fixed_features=fixed_features_resolved,
             feature_groups=feature_groups,
-            cv_splits=outer_cv,
+            cv_splits=inner_cv,
             selection="topk",
             max_evals=3000,
             sigma0=1.0,
@@ -531,6 +681,142 @@ def main():
     print(f"Ridge+Level: RMSE={metrics_combined['rmse']:.2f}, MAE={metrics_combined['mae']:.2f}, R2={metrics_combined['r2']:.4f}")
 
     # =========================================================================
+    # Diagnostics for setpoint optimisation
+    # =========================================================================
+    # For optimisation the deliverable is the GRADIENT of f, not RMSE. These
+    # diagnostics ask whether each lever's coefficient is a real effect or an
+    # artefact of the latent trend.
+    print("\n--- Diagnostics ---")
+
+    selected = backfit_result["selected_features"]
+    level_train_vals = backfit_result["level_train"].values
+    level_test_vals = backfit_result["level_test"].values
+    y_train_pred_vals = backfit_result["y_train_pred"].values
+    y_raw_train = y_raw_aligned.iloc[:split].values
+
+    # --- (a) Component attribution -----------------------------------------
+    # If the regression component and the level component are strongly
+    # correlated, the level is absorbing regression signal (or vice versa).
+    # That correlation is the most direct evidence of the identifiability
+    # problem, and it should be near zero if the split is clean.
+    corr_train = float(np.corrcoef(y_train_pred_vals, level_train_vals)[0, 1])
+    corr_test = float(np.corrcoef(y_pred_ridge, level_test_vals)[0, 1])
+
+    component_attribution = {
+        "std_target_test": float(np.std(y_actual)),
+        "std_regression_test": float(np.std(y_pred_ridge)),
+        "std_level_test": float(np.std(level_test_vals)),
+        "std_residual_test": float(np.std(y_actual - y_pred_combined)),
+        "corr_regression_level_train": corr_train,
+        "corr_regression_level_test": corr_test,
+        "r2_regression_only": metrics_ridge["r2"],
+        "r2_with_level": metrics_combined["r2"],
+        "r2_gain_from_level": metrics_combined["r2"] - metrics_ridge["r2"],
+    }
+    print(f"  Component std (test): target={component_attribution['std_target_test']:.2f}, "
+          f"regression={component_attribution['std_regression_test']:.2f}, "
+          f"level={component_attribution['std_level_test']:.2f}, "
+          f"residual={component_attribution['std_residual_test']:.2f}")
+    print(f"  corr(regression, level): train={corr_train:+.3f}, test={corr_test:+.3f}"
+          f"   <- large |corr| means the components are competing")
+
+    # --- (b) Interpretable linear coefficients ------------------------------
+    # Fitted on standardised features against the DE-TRENDED train target, i.e.
+    # exactly the target the regression component is responsible for. This is a
+    # plain linear proxy even when the main model used splines, because spline
+    # basis coefficients do not map one-to-one onto levers.
+    y_detrended_train = y_raw_train - level_train_vals
+
+    scaler_diag = StandardScaler()
+    Xtr_sel_std = scaler_diag.fit_transform(Xtr[selected].values)
+    ridge_diag = RidgeCV(alphas=np.logspace(0, 3, 20))
+    ridge_diag.fit(Xtr_sel_std, y_detrended_train)
+    coefs_full = ridge_diag.coef_
+
+    # --- (c) Coefficient stability across contiguous train blocks ----------
+    # Refit on each block. A coefficient that changes sign or swings widely is
+    # not identified: it is picking up whatever the trend was doing locally.
+    n_blocks = COEF_STABILITY_BLOCKS
+    block_edges = np.linspace(0, split, n_blocks + 1).astype(int)
+    block_coefs = []
+    for b in range(n_blocks):
+        lo, hi = block_edges[b], block_edges[b + 1]
+        if hi - lo < max(10, 2 * len(selected)):
+            continue  # block too small to fit meaningfully
+        sc_b = StandardScaler()
+        Xb = sc_b.fit_transform(Xtr[selected].values[lo:hi])
+        rb = RidgeCV(alphas=np.logspace(0, 3, 20))
+        rb.fit(Xb, y_detrended_train[lo:hi])
+        block_coefs.append(rb.coef_)
+
+    coef_table = []
+    if block_coefs:
+        block_coefs_arr = np.vstack(block_coefs)
+        for i, feat in enumerate(selected):
+            per_block = block_coefs_arr[:, i]
+            full = float(coefs_full[i])
+            sign_flips = int(np.sum(np.sign(per_block) != np.sign(full)))
+            coef_table.append({
+                "feature": feat,
+                "coef_full_train": full,
+                "coef_block_mean": float(np.mean(per_block)),
+                "coef_block_std": float(np.std(per_block)),
+                "coef_block_min": float(np.min(per_block)),
+                "coef_block_max": float(np.max(per_block)),
+                "sign_flips": sign_flips,
+                "n_blocks": int(len(block_coefs)),
+                # |mean| / std across blocks: high = stable, <1 = unreliable
+                "stability_ratio": (
+                    float(abs(np.mean(per_block)) / np.std(per_block))
+                    if np.std(per_block) > 0 else float("inf")
+                ),
+            })
+    else:
+        for i, feat in enumerate(selected):
+            coef_table.append({
+                "feature": feat,
+                "coef_full_train": float(coefs_full[i]),
+                "n_blocks": 0,
+            })
+
+    # --- (d) Collinearity of each lever with the estimated trend ------------
+    # High |corr| with the level means this coefficient is the one most at risk
+    # of having been absorbed, and the one to distrust most.
+    for row in coef_table:
+        col = Xtr[row["feature"]].values
+        if np.std(col) > 0 and np.std(level_train_vals) > 0:
+            row["corr_with_level"] = float(
+                np.corrcoef(col, level_train_vals)[0, 1]
+            )
+        else:
+            row["corr_with_level"] = 0.0
+
+    coef_df = pd.DataFrame(coef_table)
+    if "stability_ratio" in coef_df.columns:
+        coef_df = coef_df.sort_values("stability_ratio", ascending=False)
+
+    print(f"\n  Coefficient stability across {len(block_coefs)} contiguous train blocks")
+    print(f"  (standardised units, target = y - level; sorted most to least stable)")
+    with pd.option_context("display.width", 200, "display.max_columns", 20):
+        print(coef_df.to_string(index=False, float_format=lambda v: f"{v:+.3f}"))
+
+    if "sign_flips" in coef_df.columns:
+        unstable = coef_df[coef_df["sign_flips"] > 0]["feature"].tolist()
+        if unstable:
+            print(f"\n  NOT SAFE to optimise over (sign flips across blocks): {unstable}")
+        else:
+            print("\n  No sign flips across blocks.")
+
+    coef_df.to_csv(out_dir / "coefficient_stability.csv", index=False)
+
+    diagnostics = {
+        "component_attribution": component_attribution,
+        "coefficient_stability": coef_table,
+        "n_stability_blocks": int(len(block_coefs)),
+        "diagnostic_alpha": float(ridge_diag.alpha_),
+    }
+
+    # =========================================================================
     # Plots
     # =========================================================================
     iters = [h["iteration"] for h in history]
@@ -542,9 +828,11 @@ def main():
     axes[0].set_xlabel("Iteration"); axes[0].set_ylabel("RMSE")
     axes[0].set_title("Test RMSE per Iteration"); axes[0].legend(); axes[0].grid(alpha=0.3)
 
-    axes[1].plot(iters, [mean_absolute_error(y_actual, backfit_result["y_test_pred"].values)] * len(iters), "o-", label="Ridge")
-    axes[1].set_xlabel("Iteration"); axes[1].set_ylabel("MAE")
-    axes[1].set_title("Test MAE (best iteration)"); axes[1].grid(alpha=0.3)
+    axes[1].plot(iters, [h["level_scale"] for h in history], "o-", color="C2",
+                 label="level scale")
+    axes[1].set_xlabel("Iteration"); axes[1].set_ylabel("Level scale")
+    axes[1].set_title("Latent Level Flexibility per Iteration")
+    axes[1].legend(); axes[1].grid(alpha=0.3)
 
     axes[2].plot(iters, [h["r2_ridge"] for h in history], "o-", label="Ridge")
     axes[2].plot(iters, [h["r2_combined"] for h in history], "s-", label="Ridge+Level")
@@ -616,7 +904,7 @@ def main():
     code_dir = out_dir / "code"
     code_dir.mkdir(exist_ok=True)
     source_files = [
-        "run_experiment.py", "config.py", "data_cleaning.py",
+        Path(__file__).name, "config.py", "data_cleaning.py",
         "feature_selection.py", "preprocessing.py", "state_estimation.py",
     ]
     for src_file in source_files:
@@ -645,11 +933,16 @@ def main():
             "splines": SPLINES,
             "fixed_features": fixed_features,
             "best_iteration": history[-1]["iteration"] if history else 0,
+            "exclude_mediators": EXCLUDE_MEDIATORS,
+            "test_size": TEST_SIZE,
+            "val_size": VAL_SIZE,
+            "inner_selection_split": int(inner_split),
         },
         "metrics": {
             "ridge_only": metrics_ridge,
             "ridge_level": metrics_combined,
         },
+        "diagnostics": diagnostics,
         "selected_features": backfit_result["selected_features"],
     }
     with open(out_dir / "results.json", "w") as f:
