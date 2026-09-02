@@ -1,0 +1,76 @@
+{
+  "start_time": "2026-08-24T23:10:11.706286",
+  "end_time": "2026-08-24T23:10:24.609052",
+  "duration_seconds": 12.902766,
+  "parameters": {
+    "y_column": "MBS_CMT30",
+    "data_path": "../data/costimier_turnup.parquet",
+    "model": "fs_ridge",
+    "lag_days": 0.25,
+    "apply_ewm_filter": true,
+    "apply_ewm_filter_y": true,
+    "ewm_halflife": "6h",
+    "spline_knots": null,
+    "spline_degree": null,
+    "ridge_alpha": 26.366508987303583,
+    "fs_k_features": 30,
+    "realmlp_params": null
+  },
+  "data": {
+    "n_samples": 1567,
+    "split": 1253,
+    "n_features": 19,
+    "feature_cols": [
+      "retention",
+      "Speed",
+      "Moisture_after_SpeedSizer",
+      "Consistency_starch_main_line",
+      "Headbox_consistency",
+      "Lip_settings",
+      "Jet/wire_ratio",
+      "Retention_Aid_mass_flow__g/T_",
+      "White_water_temperature",
+      "Current_reel_width",
+      "delta_basis_weight",
+      "fibre_short/long",
+      "draw_1",
+      "draw_2",
+      "speedsizer_linepressure_1",
+      "linepressure_1",
+      "linepressure_2",
+      "conc_starch_1",
+      "grammage_120.0"
+    ],
+    "n_train_contrasts": 1111,
+    "n_test_contrasts": 263
+  },
+  "metrics": {
+    "dy": {
+      "rmse": 1.5742492029068351,
+      "mae": 1.2036190111478287,
+      "r2": 0.9795822859228785
+    },
+    "ewm_persistence": {
+      "rmse": 11.093942994656125,
+      "mae": 4.147939532991347,
+      "r2": 0.42833524693990777
+    },
+    "ewm_model": {
+      "rmse": 1.574249202906836,
+      "mae": 1.203619011147829,
+      "r2": 0.9884889081276456
+    },
+    "raw_persistence": {
+      "rmse": 12.07015511123116,
+      "mae": 6.158321380615234,
+      "r2": 0.3464817404747009
+    },
+    "raw_model": {
+      "rmse": 3.44236252599998,
+      "mae": 2.5641433971222414,
+      "r2": 0.9468448587618931
+    },
+    "gain_over_persistence_ewm": 0.5601536611877378,
+    "gain_over_persistence_raw": 0.6003631182871921
+  }
+}

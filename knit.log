@@ -6511,3 +6511,35 @@ AttributeError: 'DivideByFeatureRegressor' object has no attribute 'best_estimat
 2026-08-17 09:29:48,597 INFO: Steam__€/T_
 2026-08-17 09:31:49,455 INFO: Electricity__€/T_
 2026-08-17 09:32:19,779 INFO: Starch__€/T_
+2026-08-24 09:46:56,492 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-08-24 09:46:56,503 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-08-24 09:46:56,511 INFO: Working directory: c:\workspace\costimiser
+2026-08-24 09:47:52,956 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-08-24 09:47:52,961 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-08-24 09:47:52,967 INFO: Working directory: c:\workspace\costimiser
+2026-08-24 09:48:05,896 INFO: Fibre_cost__€/T_
+2026-08-24 09:48:17,478 INFO: Steam__€/T_
+2026-08-24 09:49:56,879 INFO: Electricity__€/T_
+2026-08-24 09:50:18,944 INFO: Starch__€/T_
+2026-08-24 13:31:19,012 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-08-24 13:31:19,016 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-08-24 13:31:19,018 INFO: Working directory: c:\workspace\costimiser
+2026-08-24 13:32:17,036 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-08-24 13:32:17,038 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-08-24 13:32:17,042 INFO: Working directory: c:\workspace\costimiser
+2026-08-24 13:32:30,184 INFO: Fibre_cost__€/T_
+2026-08-24 13:32:43,280 INFO: Steam__€/T_
+2026-08-24 13:34:33,121 INFO: Electricity__€/T_
+2026-08-24 13:35:01,772 INFO: Starch__€/T_
+2026-08-31 14:13:25,069 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-08-31 14:13:25,080 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-08-31 14:13:25,087 INFO: Working directory: c:\workspace\costimiser
+2026-08-31 14:14:17,759 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-08-31 14:14:17,765 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-08-31 14:14:17,771 INFO: Working directory: c:\workspace\costimiser
+2026-09-01 08:27:19,814 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-09-01 08:27:19,818 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-09-01 08:27:19,820 INFO: Working directory: c:\workspace\costimiser
+2026-09-01 08:28:05,086 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-09-01 08:28:05,089 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-09-01 08:28:05,092 INFO: Working directory: c:\workspace\costimiser

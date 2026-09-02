@@ -2808,6 +2808,7 @@ def impute(
 def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
     from datetime import datetime
     import numpy as np
+    import math
 
     for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
         turnup[v]=turnup[v].astype("float32")
@@ -2867,6 +2868,7 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
         for v in [v for v in turnup.columns if "speedsizer" not in v.lower() and "speed" in v.lower()]:
             impute_outside_limits_with_grade_median(turnup, v, 950, 1400, inplace=True)
 
+        impute_outside_limits_with_grade_median(turnup, 'Draw_WS-PS', -0.005, 0.005, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Current_reel_moisture_average(reel)', 7, 10, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Top_Roll', 0.35, 0.55, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Bottom_Roll~^0', 0.14, 0.35, inplace=True)
@@ -3096,7 +3098,65 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
     # END TO ADD
 
 
+
     turnup = turnup.copy()
+
+    cond_col = turnup['Condensate_energy_from_paper_plant_to_power_plant']
+    cond_med = cond_col[(cond_col >= 0) & (cond_col <= 10)].median()
+    if  math.isnan(cond_med) :
+        cond_med = 5.11
+    cond = cond_col.where((cond_col >= 0) & (cond_col <= 10), cond_med)
+    turnup["Steam_power"] = turnup['Steam_flow_to_PM'] + turnup['Waste_steam_flow'] 
+    turnup["Steam_power_corrected"] = (((turnup["Steam_power"] * 0.788 - cond) * 1.02 - (0.5938 / 24))) * 1000
+    turnup["Steam__kWh/T_"]  = turnup["Steam_power_corrected"] / turnup["Production_Rate__T/h_"]
+
+
+    turnup["Electrical_power_MW"] = (
+        turnup['Summe_Energieverbrauch_APA_in_kW'] + 
+        turnup['Mehrmotorenantrieb_Former__-1..10_MW_']*1000 +
+        turnup['Mehrmotorenantrieb_Presse__-1..10_MW_']*1000 +
+        turnup['VariSTEP_div._Hauben+Lueftung_Ventilatoren']*1000 +
+        turnup['VariSTEP_div._Hauben+Lueftung_Ventilatoren']*1000 +
+        turnup['Varisprint_660V__-10..10_MW_']*1000 +
+        turnup['Varisprint_400V__-10..10_MW_']*1000 +
+        turnup['Mehrmotorenantrieb_Trockenpartie__-1..10_MW_']*1000 +
+        turnup['PM_400V__-1..10_MW_']*1000 +
+        turnup['PM_660V_Festantriebe_Verteiler2__-1..10_MW_']*1000 +
+        turnup['PM_660V_Festantriebe_Verteiler3__-1..10_MW_']*1000 +
+        turnup['PM_660V_Festantriebe_Verteiler3__-1..10_MW_~^0']*1000 +
+        turnup['PM_660V_Festantriebe_Verteiler2__-1..10_MW_~^1']*1000 +
+        turnup['PM_660V_Festantriebe_Verteiler1__-1..10_MW_~^0']*1000 +
+        turnup['PM_660V_Festantriebe_Verteiler1__-1..10_MW_~^1']*1000 +
+        turnup['MCC_Einzel-FU_660V__-10..10_MW_~^0']*1000 +
+        turnup['MCC_Einzel-FU_660V__-10..10_MW_~^1']*1000 +
+        turnup['Last_Antrieb_10_1.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_11_1.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_12_2.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_13_2.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_14_2.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_15_3.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_16_3.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_17_3.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_18_4.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_19_4.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_20_4.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_21_4.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_22_5.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_23_5.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_24_5.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_25_5.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_31_6.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_32_6.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_33_6.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_34_6.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_35_6.TG__0..100_kW_'] +
+        turnup['Last_Antrieb_36_7.TG__0..200_kW_'] +
+        turnup['Last_Antrieb_37_7.TG__0..200_kW_'] +
+        turnup['Last_Antrieb_38_7.TG__0..200_kW_'] +
+        turnup['Last_Antrieb_39_7.TG__0..200_kW_'] 
+        
+    )/1000
+
     turnup["Starch_uptake__g/m2_"]=turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]+turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"]
     turnup["concentration_starch_working_tank_1"]=21.5 * turnup["Flow_starch_main_line_to_working_tank_1~^0"]/(turnup["Dilution_water_working_tank_1"]+turnup["Flow_starch_main_line_to_working_tank_1~^0"])
     turnup["concentration_starch_working_tank_2"]=21.5 * turnup["Flow_starch_main_line_to_working_tank_2~^0"]/(turnup["Dilution_water_working_tank_2"]+turnup["Flow_starch_main_line_to_working_tank_2~^0"])
@@ -6384,7 +6444,9 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
                 "Speed",
                 "Current_reel_width",
                 "Moisture_after_SpeedSizer",
-                "Actual_moisture",
+                "Current_reel_moisture_average(reel)",
+                "Starch_uptake_by_paper_Top_Roll__g/m2_",
+                "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
             ],
             "Water_flow": [
                 "grammage",
@@ -6551,13 +6613,15 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
 
     @staticmethod
     def _add_water_flow_afterdryer(df):
-        df["Water_flow_Afterdryer"] = (
-            df["grammage"]
-            * df["Speed"]
-            * df["Current_reel_width"]
-            * (df["Moisture_after_SpeedSizer"] - df["Actual_moisture"])
-            * 60
-            / 1e10
+        prod = df["Speed"] * df["grammage"] * df["Current_reel_width"] * 60 / 1e8
+        starch_uptake = df["Starch_uptake_by_paper_Top_Roll__g/m2_"] + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]
+        fibre_fraction = 1 - df["Actual_moisture"] / 100 - starch_uptake / df["grammage"]
+
+        M_in = df["Moisture_after_SpeedSizer"]
+        M_out = df["Current_reel_moisture_average(reel)"]
+
+        df["Water_flow_Afterdryer"] = prod * fibre_fraction * (
+            M_in / (100 - M_in) - M_out / (100 - M_out)
         )
 
     @staticmethod
@@ -6592,19 +6656,31 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
         prod = df["Speed"]*df["grammage"]*df["Current_reel_width"]*60/1e8
 
         df["Water_flow_Afterdryer_input"] = prod * (
-            df["Starch_uptake_by_paper_Top_Roll__g/m2_"] * (1 - df["concentration_starch_working_tank_2"])
+            df["Starch_uptake_by_paper_Top_Roll__g/m2_"] * (100 - df["concentration_starch_working_tank_2"])
             / df["concentration_starch_working_tank_2"]
-            + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] * (1 - df["concentration_starch_working_tank_1"])
+            + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] * (100 - df["concentration_starch_working_tank_1"])
             / df["concentration_starch_working_tank_1"]
         )
 
     @staticmethod
     def _add_water_afterdryer_output(df):
-        prod = 1 
-        starch_uptake = df["Starch_uptake_by_paper_Top_Roll__g/m2_"] + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]
+        starch_uptake = (
+            df["Starch_uptake_by_paper_Top_Roll__g/m2_"]
+            + df["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]
+        )
+        # Dry fibre fraction (same as pre-dryer formula)
+        fibre_fraction = 1 - df["Current_reel_moisture_average(reel)"] / 100 - starch_uptake / df["grammage"]
 
-        df["Water_Afterdryer_output"] = prod * ((1 -  df["Current_reel_moisture_average(reel)"] / 100 - starch_uptake/df["grammage"]) * df["Moisture_out_of_PreDryer"]/(100-df["Moisture_out_of_PreDryer"]) - df["Current_reel_moisture_average(reel)"] / 100)
-        
+        # Moisture entering the after-dryer = moisture leaving the pre-dryer
+        M_in = df["Moisture_out_of_PreDryer"]
+        # Moisture leaving the after-dryer = final reel moisture
+        M_out = df["Current_reel_moisture_average(reel)"]
+
+        # Water evaporated = dry_mass * [M_in/(100-M_in) - M_out/(100-M_out)]
+        # Using fibre_fraction as proxy for dry mass per unit of grammage
+        df["Water_Afterdryer_output"] = fibre_fraction * (
+            M_in / (100 - M_in) - M_out / (100 - M_out)
+        )    
 
     @staticmethod
     def _add_water_flow_afterdryer_output(df):

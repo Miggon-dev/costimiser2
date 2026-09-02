@@ -1,0 +1,80 @@
+{
+  "start_time": "2026-08-27T16:39:22.689443",
+  "end_time": "2026-08-27T16:39:43.187652",
+  "duration_seconds": 20.498209,
+  "parameters": {
+    "y_column": "Electrical_power_MW",
+    "data_path": "../data/costimier_turnup.parquet",
+    "model": "fs_ridge",
+    "lag_days": 0.25,
+    "apply_ewm_filter": true,
+    "apply_ewm_filter_y": true,
+    "ewm_halflife": "6h",
+    "spline_knots": null,
+    "spline_degree": null,
+    "ridge_alpha": 335.9818286283781,
+    "fs_k_features": 10,
+    "realmlp_params": null
+  },
+  "data": {
+    "n_samples": 4721,
+    "split": 3776,
+    "n_features": 23,
+    "feature_cols": [
+      "retention",
+      "Speed",
+      "Current_reel_moisture_average(reel)",
+      "Consistency_starch_main_line",
+      "Moisture_out_of_PreDryer",
+      "PickUp_Tension",
+      "Dewatering_top_wire_suction_box_zone_2",
+      "White_water_temperature",
+      "Top_wire_tenstion",
+      "Jet/wire_ratio",
+      "Retention_Aid_mass_flow__g/T_",
+      "Thick_Stock_Consistency__%_",
+      "Act_Deaerator_mass_flow__g/T_",
+      "Natriumhydroxide_mass_flow__g/T_",
+      "dewatering",
+      "speedsizer_linepressure_1",
+      "linepressure_1",
+      "linepressure_2",
+      "grammage_90.0",
+      "grammage_100.0",
+      "grammage_110.0",
+      "grammage_115.0",
+      "grammage_120.0"
+    ],
+    "n_train_contrasts": 3670,
+    "n_test_contrasts": 912
+  },
+  "metrics": {
+    "dy": {
+      "rmse": 0.306987942153585,
+      "mae": 0.21493942854892062,
+      "r2": 0.2683243542289916
+    },
+    "ewm_persistence": {
+      "rmse": 0.3592323467479295,
+      "mae": 0.23134060794229483,
+      "r2": 0.6576786876299868
+    },
+    "ewm_model": {
+      "rmse": 0.30698794215358505,
+      "mae": 0.21493942854892067,
+      "r2": 0.7500082349285984
+    },
+    "raw_persistence": {
+      "rmse": 0.6906267071180692,
+      "mae": 0.5285454988479614,
+      "r2": 0.10841459035873413
+    },
+    "raw_model": {
+      "rmse": 0.5375174446558725,
+      "mae": 0.40991346398025036,
+      "r2": 0.45991596771644816
+    },
+    "gain_over_persistence_ewm": 0.09232954729861154,
+    "gain_over_persistence_raw": 0.35150137735771403
+  }
+}

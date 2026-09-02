@@ -1,0 +1,113 @@
+{
+  "start_time": "2026-08-25T12:04:41.671569",
+  "end_time": "2026-08-25T12:05:21.342121",
+  "duration_seconds": 39.670552,
+  "parameters": {
+    "y_column": "Steam__kWh/T_",
+    "data_path": "../data/costimier_turnup.parquet",
+    "model": "fs_ridge",
+    "lag_days": 0.25,
+    "apply_ewm_filter": true,
+    "apply_ewm_filter_y": true,
+    "ewm_halflife": "2h",
+    "spline_knots": null,
+    "spline_degree": null,
+    "ridge_alpha": 54.55594781168517,
+    "fs_k_features": 5,
+    "realmlp_params": null
+  },
+  "data": {
+    "n_samples": 3214,
+    "split": 2571,
+    "n_features": 56,
+    "feature_cols": [
+      "Production_Rate__T/h_",
+      "Draw_PS-PD1",
+      "Moisture_out_of_PreDryer",
+      "Draw_WS-PS",
+      "PickUp_Tension",
+      "ambient_temp_C",
+      "Dewatering_top_wire_suction_box_zone_2",
+      "White_water_temperature",
+      "Top_wire_tenstion",
+      "Jet/wire_ratio",
+      "Top_Felt_Tension",
+      "Bottom_wire_tension",
+      "Bottom_Felt_Tension",
+      "Air_pressure_of_rod_clamping_hose_Top_Roll",
+      "Airturn_pillow_pressure",
+      "Dewatering_Suction_Press_Roll",
+      "Dewatering_First_Press_Roll",
+      "Steam_temperature_for_PM",
+      "Steam_pressure_for_PM",
+      "Dewatering_Shoe_press",
+      "Total_Dewatering_Press",
+      "Uhle_box_1_flow___l/min_",
+      "Stock_deculator_temperature",
+      "Stock_deculator_pressure",
+      "Inlet_Air_2_Temperature",
+      "Inlet_Air_1_Temperature",
+      "DG1_Ventilator_Revolution_Output",
+      "DG2_Ventilator_Revolution_Output",
+      "DG3_Ventilator_Revolution_Output",
+      "retention",
+      "Starch_uptake__g/m2_",
+      "Web_tension_AD6",
+      "AD7_fabric_tension_bottom",
+      "Act_Deaerator_mass_flow__g/T_",
+      "Retention_Aid_mass_flow__g/T_",
+      "Natriumhydroxide_mass_flow__g/T_",
+      "Fixative_2_mass_flow__g/T_",
+      "Water_Predryer",
+      "Water_Afterdryer_output",
+      "dewatering",
+      "fibre_short/long",
+      "exha_mois_1",
+      "exha_mois_2",
+      "inlet_temp_1",
+      "inlet_temp_2",
+      "linepressure_1",
+      "linepressure_2",
+      "fabric_tension_1",
+      "gas_decu_1",
+      "gas_decu_2",
+      "gas_decu_3",
+      "grammage_90.0",
+      "grammage_100.0",
+      "grammage_110.0",
+      "grammage_115.0",
+      "grammage_120.0"
+    ],
+    "n_train_contrasts": 2438,
+    "n_test_contrasts": 620
+  },
+  "metrics": {
+    "dy": {
+      "rmse": 17.374495393017025,
+      "mae": 12.666860880599714,
+      "r2": 0.24509640784754538
+    },
+    "ewm_persistence": {
+      "rmse": 20.043475280756418,
+      "mae": 14.280296488533091,
+      "r2": 0.4329876996126373
+    },
+    "ewm_model": {
+      "rmse": 17.37449539301703,
+      "mae": 12.666860880599714,
+      "r2": 0.5739399331484663
+    },
+    "raw_persistence": {
+      "rmse": 29.514059563436245,
+      "mae": 22.176002502441406,
+      "r2": 0.03831970691680908
+    },
+    "raw_model": {
+      "rmse": 23.643006655152252,
+      "mae": 17.767047401691233,
+      "r2": 0.38286782705492806
+    },
+    "gain_over_persistence_ewm": 0.14095223353582897,
+    "gain_over_persistence_raw": 0.344548120138119
+  }
+}

@@ -1,6 +1,6 @@
 ---
-#title: "Cost Analysis"
-title: "Kostenanalyse"
+title: "Cost Analysis"
+#title: "Kostenanalyse"
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 output:
   pdf_document:
@@ -10,7 +10,7 @@ output:
 fontsize: 11pt
 geometry: margin=1in
 params:
-  lang: "de"
+  lang: "en"
   enableRAG: FALSE
 
 ---

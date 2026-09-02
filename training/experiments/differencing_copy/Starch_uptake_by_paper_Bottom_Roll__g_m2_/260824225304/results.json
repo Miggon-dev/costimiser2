@@ -1,0 +1,81 @@
+{
+  "start_time": "2026-08-24T22:53:04.776927",
+  "end_time": "2026-08-24T22:53:22.167655",
+  "duration_seconds": 17.390728,
+  "parameters": {
+    "y_column": "Starch_uptake_by_paper_Bottom_Roll__g/m2_",
+    "data_path": "../data/costimier_turnup.parquet",
+    "model": "fs_ridge",
+    "lag_days": 0.25,
+    "apply_ewm_filter": true,
+    "apply_ewm_filter_y": true,
+    "ewm_halflife": "8h",
+    "spline_knots": null,
+    "spline_degree": null,
+    "ridge_alpha": 37.926901907322495,
+    "fs_k_features": 5,
+    "realmlp_params": null
+  },
+  "data": {
+    "n_samples": 2569,
+    "split": 2055,
+    "n_features": 24,
+    "feature_cols": [
+      "Speed_Size_Press",
+      "Temperature_starch_working_tank_1",
+      "Moisture_after_SpeedSizer",
+      "retention",
+      "Retention_Aid_mass_flow__g/T_",
+      "Moisture_out_of_PreDryer",
+      "Jet/wire_ratio",
+      "White_water_temperature",
+      "Top_wire_tenstion",
+      "Thick_Stock_Consistency__%_",
+      "Act_Deaerator_mass_flow__g/T_",
+      "Natriumhydroxide_mass_flow__g/T_",
+      "delta_basis_weight",
+      "speedsizer_linepressure_1",
+      "linepressure_1",
+      "linepressure_2",
+      "starch1_1",
+      "starch1_2",
+      "starch1_3",
+      "grammage_90.0",
+      "grammage_100.0",
+      "grammage_110.0",
+      "grammage_115.0",
+      "grammage_120.0"
+    ],
+    "n_train_contrasts": 1992,
+    "n_test_contrasts": 491
+  },
+  "metrics": {
+    "dy": {
+      "rmse": 0.1656116612749022,
+      "mae": 0.10089547372649287,
+      "r2": 0.7237229544260221
+    },
+    "ewm_persistence": {
+      "rmse": 0.31509953714556876,
+      "mae": 0.16415875318782466,
+      "r2": 0.5556741556361438
+    },
+    "ewm_model": {
+      "rmse": 0.1656116612749022,
+      "mae": 0.10089547372649287,
+      "r2": 0.8772595046312526
+    },
+    "raw_persistence": {
+      "rmse": 0.3587983106855134,
+      "mae": 0.21871234476566315,
+      "r2": 0.4619401693344116
+    },
+    "raw_model": {
+      "rmse": 0.19970878978283815,
+      "mae": 0.12988625322476047,
+      "r2": 0.833304392226988
+    },
+    "gain_over_persistence_ewm": 0.3215853489951088,
+    "gain_over_persistence_raw": 0.3713642228925764
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "start_time": "2026-08-27T17:03:02.692543",
+  "end_time": "2026-08-27T17:03:17.088687",
+  "duration_seconds": 14.396144,
+  "parameters": {
+    "y_column": "Starch_uptake_by_paper_Top_Roll__g/m2_",
+    "data_path": "../data/costimier_turnup.parquet",
+    "model": "ridge",
+    "lag_days": 0.25,
+    "apply_ewm_filter": true,
+    "apply_ewm_filter_y": true,
+    "ewm_halflife": "2h",
+    "spline_knots": null,
+    "spline_degree": null,
+    "ridge_alpha": 54.55594781168517,
+    "fs_k_features": null,
+    "realmlp_params": null
+  },
+  "data": {
+    "n_samples": 2570,
+    "split": 2056,
+    "n_features": 24,
+    "feature_cols": [
+      "Speed_Size_Press",
+      "Temperature_starch_working_tank_2",
+      "Moisture_after_SpeedSizer",
+      "retention",
+      "Retention_Aid_mass_flow__g/T_",
+      "Moisture_out_of_PreDryer",
+      "Jet/wire_ratio",
+      "White_water_temperature",
+      "Top_wire_tenstion",
+      "Thick_Stock_Consistency__%_",
+      "Act_Deaerator_mass_flow__g/T_",
+      "Natriumhydroxide_mass_flow__g/T_",
+      "delta_basis_weight",
+      "speedsizer_linepressure_1",
+      "linepressure_1",
+      "linepressure_2",
+      "starch2_1",
+      "starch2_2",
+      "starch2_3",
+      "grammage_90.0",
+      "grammage_100.0",
+      "grammage_110.0",
+      "grammage_115.0",
+      "grammage_120.0"
+    ],
+    "n_train_contrasts": 1993,
+    "n_test_contrasts": 491
+  },
+  "metrics": {
+    "dy": {
+      "rmse": 0.10989953865011473,
+      "mae": 0.06394034198542907,
+      "r2": 0.6904877597167971
+    },
+    "ewm_persistence": {
+      "rmse": 0.19785350628138856,
+      "mae": 0.10469647062129613,
+      "r2": 0.36752957686998244
+    },
+    "ewm_model": {
+      "rmse": 0.10989953865011476,
+      "mae": 0.06394034198542906,
+      "r2": 0.8048608282145427
+    },
+    "raw_persistence": {
+      "rmse": 0.21148521148047408,
+      "mae": 0.12290197890062196,
+      "r2": 0.30359337860232505
+    },
+    "raw_model": {
+      "rmse": 0.1239642335328237,
+      "mae": 0.07924620934276115,
+      "r2": 0.7607259046080932
+    },
+    "gain_over_persistence_ewm": 0.4373312513445603,
+    "gain_over_persistence_raw": 0.45713252600576815
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "start_time": "2026-08-24T22:58:59.959594",
+  "end_time": "2026-08-24T22:59:21.558873",
+  "duration_seconds": 21.599279,
+  "parameters": {
+    "y_column": "MBS_Burst",
+    "data_path": "../data/costimier_turnup.parquet",
+    "model": "fs_ridge",
+    "lag_days": 0.25,
+    "apply_ewm_filter": true,
+    "apply_ewm_filter_y": true,
+    "ewm_halflife": "4h",
+    "spline_knots": null,
+    "spline_degree": null,
+    "ridge_alpha": 1.0,
+    "fs_k_features": 10,
+    "realmlp_params": null
+  },
+  "data": {
+    "n_samples": 3225,
+    "split": 2580,
+    "n_features": 23,
+    "feature_cols": [
+      "retention",
+      "Speed",
+      "Moisture_after_SpeedSizer",
+      "Consistency_starch_main_line",
+      "Headbox_consistency",
+      "Lip_settings",
+      "Jet/wire_ratio",
+      "Retention_Aid_mass_flow__g/T_",
+      "White_water_temperature",
+      "Current_reel_width",
+      "delta_basis_weight",
+      "fibre_short/long",
+      "draw_1",
+      "draw_2",
+      "speedsizer_linepressure_1",
+      "linepressure_1",
+      "linepressure_2",
+      "conc_starch_1",
+      "grammage_90.0",
+      "grammage_100.0",
+      "grammage_110.0",
+      "grammage_115.0",
+      "grammage_120.0"
+    ],
+    "n_train_contrasts": 2503,
+    "n_test_contrasts": 622
+  },
+  "metrics": {
+    "dy": {
+      "rmse": 7.6426936896926865,
+      "mae": 5.390210221211362,
+      "r2": 0.8056287652877194
+    },
+    "ewm_persistence": {
+      "rmse": 17.34143848070404,
+      "mae": 10.838245437642037,
+      "r2": 0.4334525127633255
+    },
+    "ewm_model": {
+      "rmse": 7.642693689692687,
+      "mae": 5.390210221211362,
+      "r2": 0.8899578704356239
+    },
+    "raw_persistence": {
+      "rmse": 19.70530878560236,
+      "mae": 14.158953666687012,
+      "r2": 0.3490903377532959
+    },
+    "raw_model": {
+      "rmse": 10.513605250187686,
+      "mae": 7.933188567099254,
+      "r2": 0.8147076102844294
+    },
+    "gain_over_persistence_ewm": 0.4565053576722984,
+    "gain_over_persistence_raw": 0.4656172725311335
+  }
+}

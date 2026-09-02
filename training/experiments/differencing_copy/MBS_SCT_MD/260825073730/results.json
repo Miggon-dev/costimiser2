@@ -1,0 +1,80 @@
+{
+  "start_time": "2026-08-25T07:37:30.289741",
+  "end_time": "2026-08-25T07:37:51.390431",
+  "duration_seconds": 21.10069,
+  "parameters": {
+    "y_column": "MBS_SCT_MD",
+    "data_path": "../data/costimier_turnup.parquet",
+    "model": "fs_ridge",
+    "lag_days": 0.25,
+    "apply_ewm_filter": true,
+    "apply_ewm_filter_y": true,
+    "ewm_halflife": "6h",
+    "spline_knots": null,
+    "spline_degree": null,
+    "ridge_alpha": 1.0,
+    "fs_k_features": 15,
+    "realmlp_params": null
+  },
+  "data": {
+    "n_samples": 3225,
+    "split": 2580,
+    "n_features": 23,
+    "feature_cols": [
+      "retention",
+      "Speed",
+      "Moisture_after_SpeedSizer",
+      "Consistency_starch_main_line",
+      "Headbox_consistency",
+      "Lip_settings",
+      "Jet/wire_ratio",
+      "Retention_Aid_mass_flow__g/T_",
+      "White_water_temperature",
+      "Current_reel_width",
+      "delta_basis_weight",
+      "fibre_short/long",
+      "draw_1",
+      "draw_2",
+      "speedsizer_linepressure_1",
+      "linepressure_1",
+      "linepressure_2",
+      "conc_starch_1",
+      "grammage_90.0",
+      "grammage_100.0",
+      "grammage_110.0",
+      "grammage_115.0",
+      "grammage_120.0"
+    ],
+    "n_train_contrasts": 2503,
+    "n_test_contrasts": 622
+  },
+  "metrics": {
+    "dy": {
+      "rmse": 0.08564455351286104,
+      "mae": 0.06394470117785589,
+      "r2": 0.8476377236206809
+    },
+    "ewm_persistence": {
+      "rmse": 0.21959339075030962,
+      "mae": 0.13605663259495104,
+      "r2": 0.5220035180226421
+    },
+    "ewm_model": {
+      "rmse": 0.08564455351286103,
+      "mae": 0.06394470117785589,
+      "r2": 0.9272914188127578
+    },
+    "raw_persistence": {
+      "rmse": 0.2616912628087339,
+      "mae": 0.19282957911491394,
+      "r2": 0.41377365589141846
+    },
+    "raw_model": {
+      "rmse": 0.13895949637878557,
+      "mae": 0.1071187653962707,
+      "r2": 0.8347036019365464
+    },
+    "gain_over_persistence_ewm": 0.4052879007901157,
+    "gain_over_persistence_raw": 0.4209299460451279
+  }
+}
