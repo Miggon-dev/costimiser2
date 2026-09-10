@@ -2805,25 +2805,24 @@ def impute(
         return result
 
 
-def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
+def _feature_engineering(turnup, setpoint_df, steam_null, clip=True):
     from datetime import datetime
     import numpy as np
     import math
 
-    for v in turnup.drop(['MBS_Current_reel_ID',"AB_Grade_ID","Wedge_Time"],axis=1).columns.to_list():
-        turnup[v]=turnup[v].astype("float32")
+    for v in turnup.drop(['MBS_Current_reel_ID', "AB_Grade_ID", "Wedge_Time"], axis=1).columns.to_list():
+        turnup[v] = turnup[v].astype("float32")
 
-    turnup['MBS_Current_reel_ID']=turnup['MBS_Current_reel_ID'].astype(int)
-    turnup['AB_Grade_ID']=turnup['AB_Grade_ID'].astype(int)
-    turnup['Wedge_Time']=pd.to_datetime(turnup['Wedge_Time'])
+    turnup['MBS_Current_reel_ID'] = turnup['MBS_Current_reel_ID'].astype(int)
+    turnup['AB_Grade_ID'] = turnup['AB_Grade_ID'].astype(int)
+    turnup['Wedge_Time'] = pd.to_datetime(turnup['Wedge_Time'])
 
-    
     turnup = turnup.assign(
-        grammage = turnup["AB_Grade_ID"].mod(1000),
-        paper_type = (turnup["AB_Grade_ID"] // 1000).astype("string")
+        grammage=turnup["AB_Grade_ID"].mod(1000),
+        paper_type=(turnup["AB_Grade_ID"] // 1000).astype("string"),
     )
 
-    turnup = turnup[turnup.grammage.isin([85,90,95,100,110,115,120,125,130,135])]
+    turnup = turnup[turnup.grammage.isin([85, 90, 95, 100, 110, 115, 120, 125, 130, 135])]
     turnup = turnup[turnup.paper_type.isin(["3200", "6010", "3300"])]
 
     update_turnup_grammage(turnup)
@@ -2831,18 +2830,20 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
     paper_type = pd.get_dummies(turnup["paper_type"])
     turnup = pd.concat([turnup, paper_type], axis=1)
 
-    
-    cost_dict={}
-    cost_dict["Natriumhydroxide_mass_flow__g/T_"] = {"unitary_cost": 0.30 / 1000, "cost_name":"Natriumhydroxide__€/T_"}
-    cost_dict["Defoamer_mass_flow__g/T_"] = {"unitary_cost": 4.22 / 1000, "cost_name":"Defoamer__€/T_"}
-    cost_dict["Act_Deaerator_mass_flow__g/T_"] = {"unitary_cost": 1.53 / 1000, "cost_name":"Deaerator__€/T_"}
-    cost_dict["Sizing_Agent__g/T_"] = {"unitary_cost":  0.84 / 1000, "cost_name":"Sizing_Agent__€/T_"}
-    cost_dict["Dry_Strength_Agent_mass_flow__kg/T_"] = {"unitary_cost":  0.30, "cost_name":"Dry_Strength_Agent__€/T_"}
-    cost_dict["Steam__kWh/T_"] = {"unitary_cost": 89.03 / 1000, "cost_name":"Steam__€/T_"}
-    cost_dict["Electricity__kWh/T_"] = {"unitary_cost": 113.66 / 1000, "cost_name":"Electricity__€/T_"}
-    cost_dict["Fibre_usage__T/T_"] = {"unitary_cost": 146.46, "cost_name":"Fibre_cost__€/T_"}
-    cost_dict["Starch_mass_flow__kg/T_"] = {"unitary_cost": 434.22 / 1000, "cost_name":"Starch__€/T_"}
-    
+    cost_dict = {}
+    cost_dict["Natriumhydroxide_mass_flow__g/T_"] = {"unitary_cost": 0.30 / 1000, "cost_name": "Natriumhydroxide__€/T_"}
+    cost_dict["Defoamer_mass_flow__g/T_"] = {"unitary_cost": 4.22 / 1000, "cost_name": "Defoamer__€/T_"}
+    cost_dict["Act_Deaerator_mass_flow__g/T_"] = {"unitary_cost": 1.53 / 1000, "cost_name": "Deaerator__€/T_"}
+    cost_dict["Sizing_Agent__g/T_"] = {"unitary_cost": 0.84 / 1000, "cost_name": "Sizing_Agent__€/T_"}
+    cost_dict["Dry_Strength_Agent_mass_flow__kg/T_"] = {"unitary_cost": 0.30, "cost_name": "Dry_Strength_Agent__€/T_"}
+    cost_dict["Steam__kWh/T_"] = {"unitary_cost": 89.03 / 1000, "cost_name": "Steam__€/T_"}
+    cost_dict["Electricity__kWh/T_"] = {"unitary_cost": 113.66 / 1000, "cost_name": "Electricity__€/T_"}
+    cost_dict["Fibre_usage__T/T_"] = {"unitary_cost": 146.46, "cost_name": "Fibre_cost__€/T_"}
+    cost_dict["Starch_mass_flow__kg/T_"] = {"unitary_cost": 434.22 / 1000, "cost_name": "Starch__€/T_"}
+    cost_dict["Retention_Aid_mass_flow__g/T_"] = {"unitary_cost": 4.08 / 1000, "cost_name": "Retention_Aid__€/T_"}
+    cost_dict["Bentonite_1_mass_flow__g/T_"] = {"unitary_cost": 0.28 / 1000, "cost_name": "Bentonite_1__€/T_"}
+    cost_dict["Bentonite_2_mass_flow__g/T_"] = {"unitary_cost": 0.28 / 1000, "cost_name": "Bentonite_2__€/T_"}
+    cost_dict["Fixative_2_mass_flow__g/T_"] = {"unitary_cost": 3.58 / 1000, "cost_name": "Fixative_2__€/T_"}
 
     impute_outside_limits_with_grade_median(turnup, "Natriumhydroxide_mass_flow__g/T_", 1000, 2000, inplace=True)
     impute_outside_limits_with_grade_median(turnup, "Defoamer_mass_flow__g/T_", 50, 200, inplace=True)
@@ -2852,9 +2853,14 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
     impute_outside_limits_with_grade_median(turnup, "Steam__kWh/T_", 850, 1200, inplace=True)
     impute_outside_limits_with_grade_median(turnup, "Electricity__kWh/T_", 250, 400, inplace=True)
     impute_outside_limits_with_grade_median(turnup, "Starch_mass_flow__kg/T_", 35, 80, inplace=True)
-    turnup["Fibre_usage__T/T_"]=(turnup["Current_basis_weight"]*(1-turnup["Current_reel_moisture_average(reel)"]/100)-turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]-turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"])/turnup["Current_basis_weight"]
+    impute_outside_limits_with_grade_median(turnup, "Retention_Aid_mass_flow__g/T_", 100, 400, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Bentonite_1_mass_flow__g/T_", 0, 3000, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Bentonite_2_mass_flow__g/T_", 0, 3000, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Fixative_2_mass_flow__g/T_", 0, 2000, inplace=True)
 
-    turnup[_chemical_names()]=turnup[_chemical_names()].fillna(value=0)
+    turnup["Fibre_usage__T/T_"] = (turnup["Current_basis_weight"] * (1 - turnup["Current_reel_moisture_average(reel)"] / 100) - turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] - turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"]) / turnup["Current_basis_weight"]
+
+    turnup[_chemical_names()] = turnup[_chemical_names()].fillna(value=0)
 
     for c in cost_dict.keys():
         turnup[cost_dict[c]["cost_name"]] = turnup[c] * cost_dict[c]["unitary_cost"]
@@ -2868,8 +2874,21 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
         for v in [v for v in turnup.columns if "speedsizer" not in v.lower() and "speed" in v.lower()]:
             impute_outside_limits_with_grade_median(turnup, v, 950, 1400, inplace=True)
 
+        for v in [v for v in turnup.columns if "speedsizer_linepressure" in v.lower()]:
+            impute_outside_limits_with_grade_median(turnup, v, 50, 80, inplace=True)
+
+        # Draw variables (explicit per-variable bounds)
+        impute_outside_limits_with_grade_median(turnup, 'Draw_AD7-PR', 0, 0.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Draw_SS-AD6', -0.3, 0.3, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Draw_AD6-AD7', 0, 0.1, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Draw_PD5-SS', -0.4, 0.4, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Draw_PS-PD1', 0, 4, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Draw_PD1-PD2', 0, 1, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Draw_PD2-PD3', 0, 0.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Draw_PD3-PD4', 0, 0.5, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Draw_PD4-PD5', 0, 0.5, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Draw_WS-PS', -0.005, 0.005, inplace=True)
-        impute_outside_limits_with_grade_median(turnup, 'Current_reel_moisture_average(reel)', 7, 10, inplace=True)
+
         impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Top_Roll', 0.35, 0.55, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Bottom_Roll~^0', 0.14, 0.35, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Current_reel_moisture_average(SpeedSizer)', 8.5, 9.5, inplace=True)
@@ -2880,16 +2899,10 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
         impute_outside_limits_with_grade_median(turnup, 'BSW_2_sigma', 0.5, 3, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Mois_Size_Press_2_sigma', 0.5, 3, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Mois_2_sigma', 0.5, 3, inplace=True)
-        for d in ['Draw_AD7-PR', 'Draw_SS-AD6', 'Draw_AD6-AD7','Draw_PD5-SS','Draw_WS-PS']:
-            impute_outside_limits_with_grade_median(turnup, v, 0, 0.5, inplace=True)
 
-        for v in ['Draw_PS-PD1','Draw_PD1-PD2','Draw_PD2-PD3', 'Draw_PD3-PD4', 'Draw_PD4-PD5']:
-            impute_outside_limits_with_grade_median(turnup, v, 1, 3, inplace=True) 
-
-        for v in ['Contact_pressure_reel_holders', 'Reel_discharge_pressure','Contact_pressure_secondary_arm_OS','Contact_pressure_secondary_arm_DS']:
+        for v in ['Contact_pressure_reel_holders', 'Reel_discharge_pressure', 'Contact_pressure_secondary_arm_OS', 'Contact_pressure_secondary_arm_DS']:
             impute_outside_limits_with_grade_median(turnup, v, 40, 60, inplace=True)
 
-        
         impute_outside_limits_with_grade_median(turnup, 'Moisture_out_of_PreDryer', 8.5, 9.5, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'CO2_mass_flow__g/T_', 600, 1400, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Consistency_starch_main_line', 10, 30, inplace=True)
@@ -2911,9 +2924,8 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
         impute_outside_limits_with_grade_median(turnup, 'AirTurn_Temperature', 70, 100, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Reactor_Temperature', 40, 100, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Storage_tank_temperature', 80, 120, inplace=True)
-
-        impute_outside_limits_with_grade_median(turnup, 'Temperature_starch_working_tank_1', 60, 95, inplace=True)
-        impute_outside_limits_with_grade_median(turnup, 'Temperature_starch_working_tank_2', 60, 95, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Temperature_starch_working_tank_1', 60, 90, inplace=True)
+        impute_outside_limits_with_grade_median(turnup, 'Temperature_starch_working_tank_2', 60, 90, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Cylinder_1-5_steam_temperature', 100, 140, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Inlet_Air_1_Temperature', 10, 50, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Inlet_Air_2_Temperature', 10, 50, inplace=True)
@@ -2924,10 +2936,6 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
         impute_outside_limits_with_grade_median(turnup, 'Dilution_water_deculator_temperature', 25, 55, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Stock_deculator_temperature', 25, 55, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Steam_temperature_for_PM', 150, 185, inplace=True)
-        
-        impute_outside_limits_with_grade_median(turnup, 'Starch_uptake_by_paper_Top_Roll__g/m2_', 0.5, 3, inplace=True)
-        impute_outside_limits_with_grade_median(turnup, 'Starch_uptake_by_paper_Bottom_Roll__g/m2_', 1.5, 5, inplace=True)
-        
         impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Bottom_Roll~^0', 0.1, 0.4, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Pressure_of_Starch_flow_Speedsizer_Top_Roll', 0.3, 0.6, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Starch_consumption_Bottom___m³/h_', 0.5, 3.0, inplace=True)
@@ -3010,10 +3018,10 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
         impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_accept_flow', 400, 500, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'LF_screen_1_reject_flow', 130, 150, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_reject_flow', 35, 50, inplace=True)
-        turnup['LF_screen_3_power']=np.where((turnup['LF_screen_3_power']>20) &  (turnup['LF_screen_3_power']<100),turnup['LF_screen_2_power'],0)
-        turnup['LF_screen_3_accept_flow']=np.where((turnup['LF_screen_3_accept_flow']>150) &  (turnup['LF_screen_3_accept_flow']<250),turnup['LF_screen_3_accept_flow'],0)
-        turnup['LF_screen_3_reject_flow']=np.where((turnup['LF_screen_3_reject_flow']>10) &  (turnup['LF_screen_3_reject_flow']<40),turnup['LF_screen_3_reject_flow'],0)
-        turnup['Headbox_total_flow']=0
+        turnup['LF_screen_3_power'] = np.where((turnup['LF_screen_3_power'] > 20) & (turnup['LF_screen_3_power'] < 100), turnup['LF_screen_2_power'], 0)
+        turnup['LF_screen_3_accept_flow'] = np.where((turnup['LF_screen_3_accept_flow'] > 150) & (turnup['LF_screen_3_accept_flow'] < 250), turnup['LF_screen_3_accept_flow'], 0)
+        turnup['LF_screen_3_reject_flow'] = np.where((turnup['LF_screen_3_reject_flow'] > 10) & (turnup['LF_screen_3_reject_flow'] < 40), turnup['LF_screen_3_reject_flow'], 0)
+        turnup['Headbox_total_flow'] = 0
         impute_outside_limits_with_grade_median(turnup, 'Multifractor_1_long_fibre_flow', 200, 400, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Multifractor_2_long_fibre_flow', 200, 400, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Multifractor_3_long_fibre_flow', 200, 400, inplace=True)
@@ -3041,94 +3049,96 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
         impute_outside_limits_with_grade_median(turnup, 'Inlet_Thickerner_2__m3/h_', 50, 70, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Act_Production_Rate_Gross', 40, 80, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'MC_SF_LF_Demand', 20, 80, inplace=True)
-        impute_outside_limits_with_grade_median(turnup, 'Viscosity_for_working_tank_bottom_roll', 15, 65, inplace=True)
+        if 'Viscosity_for_working_tank_bottom_roll' in turnup.columns:
+            impute_outside_limits_with_grade_median(turnup, 'Viscosity_for_working_tank_bottom_roll', 15, 65, inplace=True)
 
         impute_outside_limits_with_grade_median(turnup, 'MBS_SCT_MD', 2.2, 4.5, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'MBS_SCT_CD', 1.4, 2.4, inplace=True)
-        
+
         for v in ['Moisture_after_SpeedSizer',
-                    'Actual_moisture',
-                    'SP1:_1-000-FC028_01____NaOH-Dosierung_Pulper_:__MESSWERT',
-                    'SP1:_1-000-FC028_02____NaOH-Dosierung_Kurzfaser-SF_:__MESSWE',
-                    'SP1:_1-000-FC028_03____NaOH-Dosierung_Langfaser-SF_:__MESSWE',
-                    'Starch_uptake_by_paper_Top_Roll__g/m2_',
-                    'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
-                    'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
-                    'Conductivity_white_water_B46'
-                    ]:
-            outlier_flag = detect_outliers(turnup,v,
-                                            method="iqr",
-                                            #group_col="AB_Grade_ID" 
-                                            )
-            
+                  'Actual_moisture',
+                  'SP1:_1-000-FC028_01____NaOH-Dosierung_Pulper_:__MESSWERT',
+                  'SP1:_1-000-FC028_02____NaOH-Dosierung_Kurzfaser-SF_:__MESSWE',
+                  'SP1:_1-000-FC028_03____NaOH-Dosierung_Langfaser-SF_:__MESSWE',
+                  'Starch_uptake_by_paper_Top_Roll__g/m2_',
+                  'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
+                  'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
+                  'Conductivity_white_water_B46',
+                  ]:
+            outlier_flag = detect_outliers(turnup, v,
+                                           method="iqr",
+                                           # group_col="AB_Grade_ID"
+                                           )
+
         for v in ['Starch_uptake_by_paper_Top_Roll__g/m2_',
-                'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
-                ]:
-            outlier_flag = detect_outliers(turnup,v,
-                                            method="iqr",
-                                            group_col="AB_Grade_ID" 
-                                            )
+                  'Starch_uptake_by_paper_Bottom_Roll__g/m2_',
+                  ]:
+            outlier_flag = detect_outliers(turnup, v,
+                                           method="iqr",
+                                           group_col="AB_Grade_ID"
+                                           )
 
             impute(turnup,
-                value_col = v,
-                outlier_flag = outlier_flag, 
-                method = "ffill",
-                group_col = "AB_Grade_ID",
-                constant_value=None,
-                time_col = "Wedge_Time",
-                inplace = True,
-                new_col = None,
-            )
+                   value_col=v,
+                   outlier_flag=outlier_flag,
+                   method="ffill",
+                   group_col="AB_Grade_ID",
+                   constant_value=None,
+                   time_col="Wedge_Time",
+                   inplace=True,
+                   new_col=None,
+                   )
 
-        turnup["MBS_SCT_MD"]=turnup["MBS_SCT_MD"].bfill()
-        turnup["MBS_SCT_CD"]=turnup["MBS_SCT_CD"].bfill()
-        turnup["MBS_Burst"]=turnup["MBS_Burst"].bfill()
+        turnup["MBS_SCT_MD"] = turnup["MBS_SCT_MD"].bfill()
+        turnup["MBS_SCT_CD"] = turnup["MBS_SCT_CD"].bfill()
+        turnup["MBS_Burst"] = turnup["MBS_Burst"].bfill()
 
-    turnup.loc[(turnup["AB_Grade_ID"]=="6010100") &  ( turnup["MBS_CMT30"] > 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]=="6010100"]["MBS_CMT30"].mean()
-    turnup.loc[(turnup["AB_Grade_ID"]=="6010100") &  ( turnup["MBS_CMT30"].isnull()), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]=="6010100"]["MBS_CMT30"].mean()
-    turnup.loc[(turnup["AB_Grade_ID"]=="6010120") &  ( turnup["MBS_CMT30"] < 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]=="6010120"]["MBS_CMT30"].mean()
-    turnup.loc[(turnup["AB_Grade_ID"]=="6010120") &  ( turnup["MBS_CMT30"].isnull()), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"]=="6010120"]["MBS_CMT30"].mean()
-    turnup.loc[(turnup["AB_Grade_ID"]!="6010120") &  (turnup["AB_Grade_ID"]!="6010100"), "MBS_CMT30"] = 0
-    
+    turnup.loc[(turnup["AB_Grade_ID"] == 6010100) & (turnup["MBS_CMT30"] > 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"] == 6010100]["MBS_CMT30"].mean()
+    turnup.loc[(turnup["AB_Grade_ID"] == 6010100) & (turnup["MBS_CMT30"].isnull()), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"] == 6010100]["MBS_CMT30"].mean()
+    turnup.loc[(turnup["AB_Grade_ID"] == 6010120) & (turnup["MBS_CMT30"] < 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"] == 6010120]["MBS_CMT30"].mean()
+    turnup.loc[(turnup["AB_Grade_ID"] == 6010120) & (turnup["MBS_CMT30"].isnull()), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"] == 6010120]["MBS_CMT30"].mean()
+    turnup.loc[(turnup["AB_Grade_ID"] != 6010120) & (turnup["AB_Grade_ID"] != 6010100), "MBS_CMT30"] = 0
 
     # TO ADD
     if not steam_null:
-        turnup = turnup[turnup["Steam_flow_to_PreDryers"]>42] 
-        turnup = turnup[~((turnup.Wedge_Time > "2025-10-23 11:56") & (turnup.Wedge_Time <"2025-11-16 10:00"))]
+        turnup = turnup[turnup["Steam_flow_to_PreDryers"] > 42]
+        turnup = turnup[~((turnup.Wedge_Time > "2025-10-23 11:56") & (turnup.Wedge_Time < "2025-11-16 10:00"))]
     # END TO ADD
-
-
 
     turnup = turnup.copy()
 
+    turnup.rename(columns={
+        'Electrical_Consumption_Wire_Section': 'Electrical_Consumtion_Wire_Section',
+        'Spezifischer_Energieverbrauch_APA': 'Spezifischer_Energieverbrauch_APA_',
+    }, inplace=True)
+
     cond_col = turnup['Condensate_energy_from_paper_plant_to_power_plant']
     cond_med = cond_col[(cond_col >= 0) & (cond_col <= 10)].median()
-    if  math.isnan(cond_med) :
+    if math.isnan(cond_med):
         cond_med = 5.11
     cond = cond_col.where((cond_col >= 0) & (cond_col <= 10), cond_med)
-    turnup["Steam_power"] = turnup['Steam_flow_to_PM'] + turnup['Waste_steam_flow'] 
+    turnup["Steam_power"] = turnup['Steam_flow_to_PM'] + turnup['Waste_steam_flow']
     turnup["Steam_power_corrected"] = (((turnup["Steam_power"] * 0.788 - cond) * 1.02 - (0.5938 / 24))) * 1000
-    turnup["Steam__kWh/T_"]  = turnup["Steam_power_corrected"] / turnup["Production_Rate__T/h_"]
-
+    turnup["Steam__kWh/T_"] = turnup["Steam_power_corrected"] / turnup["Production_Rate__T/h_"]
 
     turnup["Electrical_power_MW"] = (
-        turnup['Summe_Energieverbrauch_APA_in_kW'] + 
-        turnup['Mehrmotorenantrieb_Former__-1..10_MW_']*1000 +
-        turnup['Mehrmotorenantrieb_Presse__-1..10_MW_']*1000 +
-        turnup['VariSTEP_div._Hauben+Lueftung_Ventilatoren']*1000 +
-        turnup['VariSTEP_div._Hauben+Lueftung_Ventilatoren']*1000 +
-        turnup['Varisprint_660V__-10..10_MW_']*1000 +
-        turnup['Varisprint_400V__-10..10_MW_']*1000 +
-        turnup['Mehrmotorenantrieb_Trockenpartie__-1..10_MW_']*1000 +
-        turnup['PM_400V__-1..10_MW_']*1000 +
-        turnup['PM_660V_Festantriebe_Verteiler2__-1..10_MW_']*1000 +
-        turnup['PM_660V_Festantriebe_Verteiler3__-1..10_MW_']*1000 +
-        turnup['PM_660V_Festantriebe_Verteiler3__-1..10_MW_~^0']*1000 +
-        turnup['PM_660V_Festantriebe_Verteiler2__-1..10_MW_~^1']*1000 +
-        turnup['PM_660V_Festantriebe_Verteiler1__-1..10_MW_~^0']*1000 +
-        turnup['PM_660V_Festantriebe_Verteiler1__-1..10_MW_~^1']*1000 +
-        turnup['MCC_Einzel-FU_660V__-10..10_MW_~^0']*1000 +
-        turnup['MCC_Einzel-FU_660V__-10..10_MW_~^1']*1000 +
+        turnup['Summe_Energieverbrauch_APA_in_kW'] +
+        turnup['Mehrmotorenantrieb_Former__-1..10_MW_'] * 1000 +
+        turnup['Mehrmotorenantrieb_Presse__-1..10_MW_'] * 1000 +
+        turnup['VariSTEP_div._Hauben+Lueftung_Ventilatoren'] * 1000 +
+        turnup['VariSTEP_div._Hauben+Lueftung_Ventilatoren'] * 1000 +
+        turnup['Varisprint_660V__-10..10_MW_'] * 1000 +
+        turnup['Varisprint_400V__-10..10_MW_'] * 1000 +
+        turnup['Mehrmotorenantrieb_Trockenpartie__-1..10_MW_'] * 1000 +
+        turnup['PM_400V__-1..10_MW_'] * 1000 +
+        turnup['PM_660V_Festantriebe_Verteiler2__-1..10_MW_'] * 1000 +
+        turnup['PM_660V_Festantriebe_Verteiler3__-1..10_MW_'] * 1000 +
+        turnup['PM_660V_Festantriebe_Verteiler3__-1..10_MW_~^0'] * 1000 +
+        turnup['PM_660V_Festantriebe_Verteiler2__-1..10_MW_~^1'] * 1000 +
+        turnup['PM_660V_Festantriebe_Verteiler1__-1..10_MW_~^0'] * 1000 +
+        turnup['PM_660V_Festantriebe_Verteiler1__-1..10_MW_~^1'] * 1000 +
+        turnup['MCC_Einzel-FU_660V__-10..10_MW_~^0'] * 1000 +
+        turnup['MCC_Einzel-FU_660V__-10..10_MW_~^1'] * 1000 +
         turnup['Last_Antrieb_10_1.TG__0..100_kW_'] +
         turnup['Last_Antrieb_11_1.TG__0..100_kW_'] +
         turnup['Last_Antrieb_12_2.TG__0..100_kW_'] +
@@ -3153,23 +3163,22 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
         turnup['Last_Antrieb_36_7.TG__0..200_kW_'] +
         turnup['Last_Antrieb_37_7.TG__0..200_kW_'] +
         turnup['Last_Antrieb_38_7.TG__0..200_kW_'] +
-        turnup['Last_Antrieb_39_7.TG__0..200_kW_'] 
-        
-    )/1000
+        turnup['Last_Antrieb_39_7.TG__0..200_kW_']
+    ) / 1000
 
-    turnup["Starch_uptake__g/m2_"]=turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"]+turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"]
-    turnup["concentration_starch_working_tank_1"]=21.5 * turnup["Flow_starch_main_line_to_working_tank_1~^0"]/(turnup["Dilution_water_working_tank_1"]+turnup["Flow_starch_main_line_to_working_tank_1~^0"])
-    turnup["concentration_starch_working_tank_2"]=21.5 * turnup["Flow_starch_main_line_to_working_tank_2~^0"]/(turnup["Dilution_water_working_tank_2"]+turnup["Flow_starch_main_line_to_working_tank_2~^0"])
-    turnup["retention"]=1-turnup['Consistency_white_water']/(10*turnup['Headbox_consistency'])
+    turnup["Starch_uptake__g/m2_"] = turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] + turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"]
+    turnup["concentration_starch_working_tank_1"] = 21.5 * turnup["Flow_starch_main_line_to_working_tank_1~^0"] / (turnup["Dilution_water_working_tank_1"] + turnup["Flow_starch_main_line_to_working_tank_1~^0"])
+    turnup["concentration_starch_working_tank_2"] = 21.5 * turnup["Flow_starch_main_line_to_working_tank_2~^0"] / (turnup["Dilution_water_working_tank_2"] + turnup["Flow_starch_main_line_to_working_tank_2~^0"])
+    turnup["retention"] = 1 - turnup['Consistency_white_water'] / (10 * turnup['Headbox_consistency'])
 
-    steam_flows=['Steam_flow_to_PreDryers','Steam_flow_to_AfterDryers','Steam_flow_to_starch_kitchen','Steam_flow_to_heat_exchangers','Steam_flow_to_white_water_heating']
+    steam_flows = ['Steam_flow_to_PreDryers', 'Steam_flow_to_AfterDryers', 'Steam_flow_to_starch_kitchen', 'Steam_flow_to_heat_exchangers', 'Steam_flow_to_white_water_heating']
     turnup['Steam_Predryers'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_PreDryers'] / turnup[steam_flows].sum(axis=1)
     turnup['Steam_Afterdryers'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_AfterDryers'] / turnup[steam_flows].sum(axis=1)
     turnup['Steam_Starchkitchen'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_starch_kitchen'] / turnup[steam_flows].sum(axis=1)
     turnup['Steam_Heatexchangers'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_heat_exchangers'] / turnup[steam_flows].sum(axis=1)
     turnup['Steam_Whitewater'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_white_water_heating'] / turnup[steam_flows].sum(axis=1)
 
-    electricity_consumptions=['Electrical_Consumtion_Wire_Section',"Press_and_Steambox",'PM_Freq_Converters_1_to_3','Other_PM_1_to_10','Predryers_sensor_10_to_25','Afterdryers_sensor_1_to_9','Spezifischer_Energieverbrauch_APA_']
+    electricity_consumptions = ['Electrical_Consumtion_Wire_Section', "Press_and_Steambox", 'PM_Freq_Converters_1_to_3', 'Other_PM_1_to_10', 'Predryers_sensor_10_to_25', 'Afterdryers_sensor_1_to_9', 'Spezifischer_Energieverbrauch_APA_']
     turnup['Electricity_Wiresection'] = turnup['Electricity__€/T_'] * turnup['Electrical_Consumtion_Wire_Section'] / turnup[electricity_consumptions].sum(axis=1)
     turnup['Electricity_Press_and_Steambox'] = turnup['Electricity__€/T_'] * turnup['Press_and_Steambox'] / turnup[electricity_consumptions].sum(axis=1)
     turnup['Electricity_Freqconverters'] = turnup['Electricity__€/T_'] * turnup['PM_Freq_Converters_1_to_3'] / turnup[electricity_consumptions].sum(axis=1)
@@ -3180,38 +3189,39 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip = True):
 
     coef_df = pd.DataFrame({
         "property": ["MBS_SCT_MD", "MBS_SCT_CD", "MBS_Burst", "MBS_CMT30"],
-        "starch_coef": [0.1356332061139627, 0.15738688100760012, 10.8090692825425, 3.701831560389852]
+        "starch_coef": [0.1356332061139627, 0.15738688100760012, 10.8090692825425, 3.701831560389852],
     })
 
     turnup["Wedge_Date"] = turnup["Wedge_Time"].dt.date
 
-    turnup.drop_duplicates(["MBS_Current_reel_ID"],keep="last", inplace=True)
+    turnup.drop_duplicates(["MBS_Current_reel_ID"], keep="last", inplace=True)
 
-    overprocessing=pd.melt(turnup[["Wedge_Time",'AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_','MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30']], id_vars=['Wedge_Time','AB_Grade_ID','MBS_Current_reel_ID','Current_basis_weight','Starch_uptake__g/m2_'], value_vars=['MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30'],var_name="property").merge(setpoint_df.pivot(index=["AB_Grade_ID","property"], columns=["variable"], values="value").reset_index(), on=["AB_Grade_ID","property"], how="left").dropna()
-    overprocessing=pd.merge(overprocessing,coef_df,on=["property"],how="left")
-    overprocessing["property_diff"]=overprocessing["value"]-overprocessing["min"]
-    overprocessing["property_pct"]=overprocessing["property_diff"]/overprocessing["min"]
-    overprocessing["overprocessing_std"]=(overprocessing["value"]-(overprocessing["min"] + overprocessing["target"])/2)/((overprocessing["target"] - overprocessing["min"])/2)
-    overprocessing["overprocessing_score"]=(overprocessing["overprocessing_std"]-1).clip(0)
-    overprocessing["underprocessing_score"]=(-overprocessing["overprocessing_std"]-1).clip(0)
-    overprocessing["starch_uptake_diff"]=overprocessing["property_diff"]*overprocessing["starch_coef"]
-    overprocessing["starch_mass_flow_diff_avg"]=overprocessing["starch_uptake_diff"]*1000/overprocessing['Current_basis_weight'] #kg/T
-    overprocessing["starch_cost_diff"]=overprocessing["starch_mass_flow_diff_avg"]* 434.22 / 1000
-    overprocessing = overprocessing[["MBS_Current_reel_ID","property","property_pct","starch_cost_diff","overprocessing_std","overprocessing_score","underprocessing_score"]]
-    overprocessingT=overprocessing.groupby('MBS_Current_reel_ID').agg({"property_pct":"mean","starch_cost_diff":"mean", "overprocessing_std":"mean","overprocessing_score":"sum","underprocessing_score":"sum"}).reset_index()
-    overprocessingT["property"]="ALL"
-    overprocessing=pd.concat([overprocessing,overprocessingT],axis=0)
-    overprocessing.pivot(index=["MBS_Current_reel_ID"],columns="property",values=["property_pct","overprocessing_std","starch_cost_diff"])
-    overprocessing=overprocessing.pivot(index=["MBS_Current_reel_ID"],columns="property",values=["property_pct","overprocessing_std","starch_cost_diff"])
-    overprocessing1=overprocessing["property_pct"].rename(columns={"ALL":"Overprocessing_percentage","MBS_SCT_CD":"Overprocessing_SCT_CD","MBS_Burst":"Overprocessing_Burst","MBS_CMT30":"Overprocessing_CMT30"})
-    overprocessing2=overprocessing["starch_cost_diff"][["ALL"]].rename(columns={"ALL":"Overprocessing_cost__€/T_"})
-    overprocessing3=overprocessingT[["MBS_Current_reel_ID","overprocessing_std","overprocessing_score","underprocessing_score"]].set_index("MBS_Current_reel_ID")
-    overprocessing4=overprocessing["overprocessing_std"].rename(columns={"ALL":"Overprocessing_std_ALL","MBS_SCT_CD":"Overprocessing_std_SCT_CD","MBS_Burst":"Overprocessing_std_Burst","MBS_CMT30":"Overprocessing_std_CMT30"})
-    overprocessing=pd.concat([overprocessing1,overprocessing2,overprocessing3,overprocessing4],axis=1)
-    overprocessing=overprocessing.reset_index()[["MBS_Current_reel_ID","Overprocessing_percentage","Overprocessing_SCT_CD","Overprocessing_Burst","Overprocessing_CMT30","Overprocessing_cost__€/T_",'Overprocessing_std_ALL', 'Overprocessing_std_Burst',
-        'Overprocessing_std_CMT30', 'Overprocessing_std_SCT_CD',"overprocessing_std","overprocessing_score","underprocessing_score"]]
-    turnup=pd.merge(turnup,overprocessing,on='MBS_Current_reel_ID',how="left")
+    overprocessing = pd.melt(turnup[["Wedge_Time", 'AB_Grade_ID', 'MBS_Current_reel_ID', 'Current_basis_weight', 'Starch_uptake__g/m2_', 'MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30']], id_vars=['Wedge_Time', 'AB_Grade_ID', 'MBS_Current_reel_ID', 'Current_basis_weight', 'Starch_uptake__g/m2_'], value_vars=['MBS_SCT_MD', 'MBS_SCT_CD', 'MBS_Burst', 'MBS_CMT30'], var_name="property").merge(setpoint_df.pivot(index=["AB_Grade_ID", "property"], columns=["variable"], values="value").reset_index(), on=["AB_Grade_ID", "property"], how="left").dropna()
+    overprocessing = pd.merge(overprocessing, coef_df, on=["property"], how="left")
+    overprocessing["property_diff"] = overprocessing["value"] - overprocessing["min"]
+    overprocessing["property_pct"] = overprocessing["property_diff"] / overprocessing["min"]
+    overprocessing["overprocessing_std"] = (overprocessing["value"] - (overprocessing["min"] + overprocessing["target"]) / 2) / ((overprocessing["target"] - overprocessing["min"]) / 2)
+    overprocessing["overprocessing_score"] = (overprocessing["overprocessing_std"] - 1).clip(0)
+    overprocessing["underprocessing_score"] = (-overprocessing["overprocessing_std"] - 1).clip(0)
+    overprocessing["starch_uptake_diff"] = overprocessing["property_diff"] * overprocessing["starch_coef"]
+    overprocessing["starch_mass_flow_diff_avg"] = overprocessing["starch_uptake_diff"] * 1000 / overprocessing['Current_basis_weight']  # kg/T
+    overprocessing["starch_cost_diff"] = overprocessing["starch_mass_flow_diff_avg"] * 434.22 / 1000
+    overprocessing = overprocessing[["MBS_Current_reel_ID", "property", "property_pct", "starch_cost_diff", "overprocessing_std", "overprocessing_score", "underprocessing_score"]]
+    overprocessingT = overprocessing.groupby('MBS_Current_reel_ID').agg({"property_pct": "mean", "starch_cost_diff": "mean", "overprocessing_std": "mean", "overprocessing_score": "sum", "underprocessing_score": "sum"}).reset_index()
+    overprocessingT["property"] = "ALL"
+    overprocessing = pd.concat([overprocessing, overprocessingT], axis=0)
+    overprocessing.pivot(index=["MBS_Current_reel_ID"], columns="property", values=["property_pct", "overprocessing_std", "starch_cost_diff"])
+    overprocessing = overprocessing.pivot(index=["MBS_Current_reel_ID"], columns="property", values=["property_pct", "overprocessing_std", "starch_cost_diff"])
+    overprocessing1 = overprocessing["property_pct"].rename(columns={"ALL": "Overprocessing_percentage", "MBS_SCT_CD": "Overprocessing_SCT_CD", "MBS_Burst": "Overprocessing_Burst", "MBS_CMT30": "Overprocessing_CMT30"})
+    overprocessing2 = overprocessing["starch_cost_diff"][["ALL"]].rename(columns={"ALL": "Overprocessing_cost__€/T_"})
+    overprocessing3 = overprocessingT[["MBS_Current_reel_ID", "overprocessing_std", "overprocessing_score", "underprocessing_score"]].set_index("MBS_Current_reel_ID")
+    overprocessing4 = overprocessing["overprocessing_std"].rename(columns={"ALL": "Overprocessing_std_ALL", "MBS_SCT_CD": "Overprocessing_std_SCT_CD", "MBS_Burst": "Overprocessing_std_Burst", "MBS_CMT30": "Overprocessing_std_CMT30"})
+    overprocessing = pd.concat([overprocessing1, overprocessing2, overprocessing3, overprocessing4], axis=1)
+    overprocessing = overprocessing.reset_index()[["MBS_Current_reel_ID", "Overprocessing_percentage", "Overprocessing_SCT_CD", "Overprocessing_Burst", "Overprocessing_CMT30", "Overprocessing_cost__€/T_", 'Overprocessing_std_ALL', 'Overprocessing_std_Burst',
+        'Overprocessing_std_CMT30', 'Overprocessing_std_SCT_CD', "overprocessing_std", "overprocessing_score", "underprocessing_score"]]
+    turnup = pd.merge(turnup, overprocessing, on='MBS_Current_reel_ID', how="left")
     return turnup
+
 
 
 def _turnup_data(local, bucket, fs, setpoint_df, steam_null):
@@ -7928,3 +7938,383 @@ class DivideByFeatureRegressor(BaseEstimator, RegressorMixin):
         return prediction
 
         
+
+# =============================================================================
+# Deployment objects for the differencing models (shared filter + per-model state)
+# Moved here from explore_differencing_experiments.ipynb so cloudpickle stores them
+# BY REFERENCE (utility.TurnupFilter, etc.) instead of by value. This makes the
+# pickled bundles independent of the Python minor version used to create them:
+# the loading interpreter compiles this source itself. Requires `utility` importable
+# on both the training and engine sides (same version).
+# =============================================================================
+import json as _json
+import numpy as _np
+import pandas as _pd
+from pathlib import Path as _Path
+from sklearn.pipeline import Pipeline as _SKPipeline
+
+try:
+    import cloudpickle as _cloudpickle
+except Exception:  # cloudpickle optional at import time; only needed by load_state_and_prod
+    _cloudpickle = None
+
+
+class TurnupFilter:
+    """Shared, model-agnostic EWM filter at one common halflife.
+
+    Index: input and output are Wedge_Time-indexed. Reel id (MBS_Current_reel_ID) is a
+    COLUMN and is used only as the SELECTION KEY: the engine passes the reel ids of the
+    rows it wants filtered. Everything internal is time-based (it must be).
+
+    Reproduces the training EWM exactly (utility.ewm_reset form):
+        out = s.ewm(halflife=halflife, times=s.index, adjust=True).mean()
+        out.iloc[0] = (s.iloc[0] + s.iloc[1]) / 2.0   # softened start (oldest row of segment)
+    per segment; segments reset on grammage change OR time gap > gap_threshold.
+
+    Causality: filtered value at a row depends only on that row and OLDER in-segment rows,
+    so the engine can cache old rows and only re-request recent reel ids.
+    """
+
+    def __init__(self, halflife, grammage_col="grammage", gap_threshold="12h",
+                 time_col="Wedge_Time", id_col="MBS_Current_reel_ID"):
+        self.halflife = halflife
+        self.grammage_col = grammage_col
+        self.gap_threshold = gap_threshold
+        self.time_col = time_col
+        self.id_col = id_col
+
+    def _ewm_segment(self, s):
+        out = s.ewm(halflife=self.halflife, times=s.index, adjust=True).mean()
+        if len(s) >= 2:
+            out.iloc[0] = (s.iloc[0] + s.iloc[1]) / 2.0
+        return out
+
+    def _prep(self, turnup_raw):
+        """Return a Wedge_Time-indexed copy, sorted ascending, with id_col as a column."""
+        df = turnup_raw.copy()
+        if df.index.name == self.time_col:
+            df = df.reset_index()
+        if self.time_col not in df.columns:
+            raise ValueError(f"'{self.time_col}' not found as column or index")
+        if self.id_col not in df.columns:
+            if df.index.name == self.id_col:
+                df = df.reset_index()
+            else:
+                raise ValueError(f"'{self.id_col}' not found as column or index")
+        return df.set_index(_pd.DatetimeIndex(df[self.time_col])).sort_index()
+
+    def segments(self, frame):
+        g = frame[self.grammage_col].values
+        grade_change = _pd.Series(g).ne(_pd.Series(g).shift())
+        time_gap = frame.index.to_series().diff().gt(_pd.Timedelta(self.gap_threshold))
+        time_gap.iloc[0] = True
+        return (grade_change.values | time_gap.values).cumsum()
+
+    def _filter_columns(self, frame, columns, seg):
+        out = frame.copy()
+        for col in columns:
+            if col in out.columns and _pd.api.types.is_numeric_dtype(out[col]):
+                s = _pd.Series(out[col].values, index=out.index)
+                out[col] = s.groupby(seg).transform(self._ewm_segment).values
+        keep = [c for c in columns if c in out.columns]
+        res = out.loc[:, keep].copy()
+        res[self.id_col] = out[self.id_col].values   # keep reel id as a column
+        return res
+
+    def filter_all(self, turnup_raw, columns):
+        """Full-frame filter (source of truth). Wedge_Time-indexed; reel id as a column."""
+        df = self._prep(turnup_raw)
+        seg = self.segments(df)
+        return self._filter_columns(df, columns, seg)
+
+    def filter(self, turnup_raw, columns, reel_ids, lag_days=None):
+        """Filter and return the requested reels PLUS the history their state computation
+        needs. Wedge_Time-indexed, reel id kept as a column.
+
+        Why history: computing state for a requested reel at time t needs its lag partner
+        at t - k (k = lag_days) and that partner's EWM warm-up. So filter() returns not
+        only the requested rows but also the rows back to the earliest lag partner, keeping
+        whole segments (so EWM is exact). Pass `lag_days` (the model's lag) so we know how
+        far back t - k reaches; if None, only the segments of the requested reels are
+        returned (state may then be NaN for reels whose partner falls in an older segment).
+
+        Efficient for both small (incremental) and large (cold-start / all) requests: we
+        select whole SEGMENTS by time span and filter each once; never loops per reel.
+        `reel_ids` may be a list, a pandas Index, or any iterable of reel ids (int64).
+        Unknown reel ids are silently skipped.
+        """
+        df = self._prep(turnup_raw)
+        seg = _np.asarray(self.segments(df))
+        id_vals = df[self.id_col].values
+        times = df.index
+
+        requested = set(_np.asarray(list(reel_ids)).tolist())
+        if not requested:
+            return _pd.DataFrame(columns=list(columns) + [self.id_col])
+
+        wanted_row = _np.array([rid in requested for rid in id_vals])
+        if not wanted_row.any():
+            return _pd.DataFrame(columns=list(columns) + [self.id_col])
+
+        # time span we must cover: from the earliest lag partner up to the newest request
+        latest_t = times[wanted_row].max()
+        earliest_req_t = times[wanted_row].min()
+        if lag_days is not None:
+            # partner is ~k hours older; go a bit beyond k to be safe for the nearest match
+            k = _pd.Timedelta(hours=float(lag_days) * 24.0)
+            earliest_needed_t = earliest_req_t - k * 1.5
+        else:
+            earliest_needed_t = earliest_req_t
+
+        # include EVERY segment that has any row in [earliest_needed_t, latest_t]
+        in_span = (times >= earliest_needed_t) & (times <= latest_t)
+        span_segs = set(_np.unique(seg[in_span]).tolist())
+        # also always include the segments of the requested reels
+        span_segs |= set(_np.unique(seg[wanted_row]).tolist())
+
+        seg_mask = _np.array([s in span_segs for s in seg])
+        sub = df[seg_mask]
+        sub_seg = seg[seg_mask]
+        filt = self._filter_columns(sub, columns, sub_seg)
+        return filt.sort_index()
+
+
+class StateBuilder:
+    """Per-model state builder. Consumes an ALREADY-EWM-FILTERED, Wedge_Time-indexed frame
+    (the filtered feat_list columns + filtered target + reel id column) and appends
+    `Y_COLUMN + "_state"` where c(t) = y_ewm(t-k) - beta'X(t-k).
+
+    `reel_ids` (optional) is the SELECTION KEY: if given, state is written only for those
+    reels' rows. Their lag partners (older rows, possibly other reels) are still looked up
+    from the full frame, so the frame must contain the history. Wedge_Time index unchanged.
+    """
+
+    def __init__(self, pre_estimator, estimator, feat_list, selected_features,
+                 y_column, lag_days, ewm_halflife, tolerance=0.35,
+                 id_col="MBS_Current_reel_ID", max_tolerance=None, fill=None,
+                 grammage_col="grammage", gap_threshold="12h"):
+        self.pre_estimator = pre_estimator
+        self.estimator = estimator
+        self.feat_list = list(feat_list)
+        self.selected_features = selected_features
+        self.y_column = y_column
+        self.state_col = y_column + "_state"
+        self.lag_days = lag_days
+        self.ewm_halflife = ewm_halflife
+        self.tolerance = tolerance
+        self.id_col = id_col
+        # NaN-reduction options (default OFF -> strict behaviour, nothing changes silently)
+        self.max_tolerance = max_tolerance
+        self.fill = fill
+        self.grammage_col = grammage_col
+        self.gap_threshold = gap_threshold
+
+    @staticmethod
+    def _to_hours(index):
+        t = _pd.DatetimeIndex(index).asi8.astype(_np.float64)
+        return (t - t[0]) / 3.6e12
+
+    @staticmethod
+    def _lag_pairs(t_hours, lag_hours, tolerance=0.35, max_tolerance=None):
+        """Nearest strictly-earlier partner to t - lag_hours, accepted within tolerance.
+        If max_tolerance > tolerance, rows unresolved at tolerance retry at the wider
+        window (tight matches are kept -> identical to strict for those rows)."""
+        target = t_hours - lag_hours
+        j = _np.searchsorted(t_hours, target)
+        j = _np.clip(j, 0, len(t_hours) - 1)
+        j_alt = _np.clip(j - 1, 0, len(t_hours) - 1)
+        better = _np.abs(t_hours[j_alt] - target) < _np.abs(t_hours[j] - target)
+        j = _np.where(better, j_alt, j)
+        realised = t_hours - t_hours[j]
+        has_earlier = j < _np.arange(len(t_hours))
+        ok = has_earlier & (_np.abs(realised - lag_hours) <= tolerance * lag_hours)
+        if max_tolerance is not None and max_tolerance > tolerance:
+            relaxed = has_earlier & ~ok & (_np.abs(realised - lag_hours) <= max_tolerance * lag_hours)
+            ok = ok | relaxed
+        later = _np.flatnonzero(ok)
+        return later, j[later]
+
+    def _ffill_within_segments(self, ts, state_series):
+        """Carry last resolved state forward, never across grade change or >gap_threshold."""
+        if self.grammage_col in ts.columns:
+            g = ts[self.grammage_col].values
+            grade_change = _pd.Series(g).ne(_pd.Series(g).shift())
+        else:
+            grade_change = _pd.Series([False] * len(ts))
+        time_gap = ts.index.to_series().diff().gt(_pd.Timedelta(self.gap_threshold))
+        grade_change.iloc[0] = True
+        time_gap.iloc[0] = True
+        seg = (grade_change.values | time_gap.values).cumsum()
+        filled = _pd.Series(state_series.values, index=ts.index)
+        return filled.groupby(seg).ffill()
+
+    def append_state(self, filtered_frame, reel_ids=None, inplace=False,
+                     max_tolerance="_default", fill="_default"):
+        """Append `self.state_col` to a Wedge_Time-indexed, already-filtered frame.
+
+        reel_ids=None -> state for all computable rows (batch / validation).
+        reel_ids=[...] -> state only for those reels' rows (partners still from full frame).
+
+        NaN-reduction (default to instance settings, which default OFF):
+          max_tolerance : widen partner search only for rows unresolved at `tolerance`.
+          fill='ffill'  : carry last resolved state forward within a segment (never across
+                          grade change / >gap_threshold).
+        Unresolved edge rows get NaN, never raise.
+        """
+        if max_tolerance == "_default":
+            max_tolerance = self.max_tolerance
+        if fill == "_default":
+            fill = self.fill
+
+        ts = filtered_frame if inplace else filtered_frame.copy()
+        ts = ts.sort_index()
+
+        available = [c for c in self.feat_list if c in ts.columns]
+        transformed = self.pre_estimator.transform(ts.loc[:, available])
+        beta_x = self.estimator.predict(
+            transformed[self.selected_features].values.astype(float)).ravel()
+        y_ewm = ts[self.y_column].reindex(transformed.index).values.astype(float)
+
+        t_hours = self._to_hours(transformed.index)
+        later, earlier = self._lag_pairs(t_hours, self.lag_days * 24.0,
+                                         self.tolerance, max_tolerance)
+        c = y_ewm[earlier] - beta_x[earlier]
+        state = _np.full(len(transformed), _np.nan)
+        state[later] = c
+        state_series = _pd.Series(state, index=transformed.index).reindex(ts.index)
+
+        if fill == "ffill":
+            state_series = self._ffill_within_segments(ts, state_series)
+
+        if reel_ids is not None and self.id_col in ts.columns:
+            keep = ts[self.id_col].isin(list(reel_ids)).values
+            vals = state_series.values.copy()
+            vals[~keep] = _np.nan
+            state_series = _pd.Series(vals, index=ts.index)
+
+        ts[self.state_col] = state_series.values
+        if inplace:
+            filtered_frame[self.state_col] = ts[self.state_col].values
+            return filtered_frame
+        return ts
+
+    def append_state_from_raw(self, turnup_raw, turnup_filter, reel_ids=None):
+        """Validation helper: filter (all) then state, end to end."""
+        cols = self.feat_list + [self.y_column]
+        filtered = turnup_filter.filter_all(turnup_raw, cols)
+        return self.append_state(filtered, reel_ids=reel_ids)
+
+
+class ProductionModel(RegressorMixin, BaseEstimator):
+    """sklearn-compatible estimator: y = (state + beta'X) * scale * multiplier / divisor.
+
+    Consumes a pre-computed `state_col` on the input frame; it does NOT compute state.
+    The engine treats this like any other sklearn model:
+        model.feature_names_in_   -> the input columns it must supply
+        model.predict(X)          -> predictions
+
+    feature_names_in_ = feat_list + [state_col] (+ multiplier + divisor if set), i.e.
+    EVERY column predict() reads.
+    """
+
+    def __init__(self, pre_estimator, estimator, feat_list, selected_features,
+                 state_col, scale=1.0, multiplier=None, divisor=None):
+        self.pre_estimator = pre_estimator
+        self.estimator = estimator
+        self.feat_list = feat_list
+        self.selected_features = selected_features
+        self.state_col = state_col
+        self.scale = scale
+        self.multiplier = multiplier
+        self.divisor = divisor
+        self._set_fitted_attributes()
+
+    def _set_fitted_attributes(self):
+        names = list(self.feat_list) + [self.state_col]
+        if self.multiplier and self.multiplier not in names:
+            names.append(self.multiplier)
+        if self.divisor and self.divisor not in names:
+            names.append(self.divisor)
+        self.feature_names_in_ = _np.asarray(names, dtype=object)
+        self.n_features_in_ = len(names)
+
+    def fit(self, X=None, y=None):
+        """No-op fit: the model is built from a trained artifact."""
+        self._set_fitted_attributes()
+        return self
+
+    def get_feature_names_out(self, input_features=None):
+        return _np.asarray(self.feature_names_in_, dtype=object)
+
+    @property
+    def required_cols(self):
+        """Backwards-compatible alias for the full input column list."""
+        return list(self.feature_names_in_)
+
+    def _beta_x(self, df):
+        cols = [c for c in self.feat_list if c in df.columns]
+        X = self.pre_estimator.transform(df.loc[:, cols])
+        return self.estimator.predict(X[self.selected_features].values).ravel()
+
+    def predict(self, X):
+        """Predict from a DataFrame (batch) or a single row (Series) carrying
+        feature_names_in_. Returns an array (batch) or a float (single row)."""
+        if isinstance(X, _pd.Series):
+            df = X.to_frame().T
+            df.index = _pd.DatetimeIndex([X.name]) if X.name is not None else df.index
+            single = True
+        else:
+            df = X
+            single = False
+
+        missing = [c for c in self.feature_names_in_ if c not in df.columns]
+        if missing:
+            raise ValueError(f"missing required input columns: {missing}")
+
+        state = df[self.state_col].values.astype(float)
+        if _np.isnan(state).any():
+            raise ValueError(f"{self.state_col} contains NaN for {int(_np.isnan(state).sum())} row(s)")
+
+        beta_x = self._beta_x(df)
+        result = (state + beta_x) * self.scale
+        if self.multiplier is not None:
+            result = result * df[self.multiplier].values.astype(float)
+        if self.divisor is not None:
+            result = result / df[self.divisor].values.astype(float)
+
+        return float(result[0]) if single else result
+
+
+def load_state_and_prod(artifact_dir, use_full_model=True,
+                        scale=1.0, multiplier=None, divisor=None,
+                        max_tolerance=None, fill=None):
+    """Build (StateBuilder, ProductionModel) from an artifact directory (training side).
+
+    max_tolerance / fill are passed to the StateBuilder to control NaN reduction (both
+    default None -> strict partner matching, no carry-forward)."""
+    artifact_dir = _Path(artifact_dir)
+    results = _json.load(open(artifact_dir / "results.json"))
+    model_file = "model_full.pkl" if use_full_model else "model.pkl"
+    with open(artifact_dir / model_file, "rb") as f:
+        art = _cloudpickle.load(f)
+
+    y_column = results["parameters"]["y_column"]
+    lag_days = results["parameters"]["lag_days"]
+    ewm_halflife = results["parameters"].get("ewm_halflife", "120min")
+    feature_cols = results["data"]["feature_cols"]
+    feat_list = art["feat_list"]
+    pre_estimator = art["pre_estimator"]
+    selected_features = art.get("selected_features", feature_cols)
+
+    raw_model = art["model"]
+    est = getattr(raw_model, "best_estimator_", raw_model)
+    if "scaler" in art and art["scaler"] is not None:
+        est = _SKPipeline([("scaler", art["scaler"]), ("model", est)])
+
+    builder = StateBuilder(pre_estimator, est, feat_list, selected_features,
+                           y_column, lag_days, ewm_halflife,
+                           max_tolerance=max_tolerance, fill=fill)
+    prod = ProductionModel(pre_estimator, est, feat_list, selected_features,
+                           y_column + "_state", scale=scale,
+                           multiplier=multiplier, divisor=divisor)
+    return builder, prod

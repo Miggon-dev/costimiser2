@@ -6543,3 +6543,25 @@ AttributeError: 'DivideByFeatureRegressor' object has no attribute 'best_estimat
 2026-09-01 08:28:05,086 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
 2026-09-01 08:28:05,089 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
 2026-09-01 08:28:05,092 INFO: Working directory: c:\workspace\costimiser
+2026-09-07 15:12:45,665 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-09-07 15:12:45,668 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-09-07 15:12:45,670 INFO: Working directory: c:\workspace\costimiser
+2026-09-07 15:13:19,832 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-09-07 15:13:19,836 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-09-07 15:13:19,840 INFO: Working directory: c:\workspace\costimiser
+2026-09-07 15:13:28,747 INFO: Fibre_cost__€/T_
+2026-09-07 15:13:38,364 INFO: Steam__€/T_
+2026-09-07 15:15:05,621 INFO: Electricity__€/T_
+2026-09-07 15:15:31,463 INFO: Starch__€/T_
+2026-09-07 15:16:19,991 INFO: Fibre_cost__€/T_
+2026-09-07 15:16:32,603 INFO: Steam__€/T_
+2026-09-07 15:18:35,120 INFO: Electricity__€/T_
+2026-09-07 15:19:00,833 INFO: Starch__€/T_
+2026-09-07 15:19:40,728 INFO: Fibre_cost__€/T_
+2026-09-07 15:19:48,978 INFO: Steam__€/T_
+2026-09-07 15:21:30,166 INFO: Electricity__€/T_
+2026-09-07 15:21:52,255 INFO: Starch__€/T_
+2026-09-07 15:22:36,852 INFO: Fibre_cost__€/T_
+2026-09-07 15:22:50,671 INFO: Steam__€/T_
+2026-09-07 15:24:23,974 INFO: Electricity__€/T_
+2026-09-07 15:24:48,364 INFO: Starch__€/T_
