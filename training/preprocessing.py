@@ -89,6 +89,7 @@ def build_pre_estimator(
     ewm_grade_col: str = "AB_Grade_ID",
     ewm_halflife: str = "120min",
     ewm_gap_threshold: str = "12h",
+    include_grammage: bool = True,
 ) -> tuple[Pipeline, list[str]]:
     """
     Build the final pre-estimator pipeline from a reduced variable list.
@@ -120,10 +121,15 @@ def build_pre_estimator(
     from utility import FeatureCreator, SKColumnSelector
     from data_cleaning import unique_in_order, ordered_difference, ordered_intersection
 
-    # Separate grammage to end, ensure it's categorical
-    selected_model_features = (
-        [v for v in exog_vars_reduced if "grammage" not in v] + ["grammage"]
-    )
+    # Separate grammage to end, ensure it's categorical.
+    # include_grammage=False (same-grammage differencing): drop grammage as a model
+    # feature entirely -- after same-grammage differencing its one-hot columns are
+    # identically zero in dX, so it carries no information. The per-grade level is
+    # instead handled by the state's grade baseline g(grammage). grammage is NOT added
+    # to the regression; it remains a plain turnup column used only for EWM
+    # segmentation and the same-grammage pairing constraint (outside this pipeline).
+    base_feats = [v for v in exog_vars_reduced if "grammage" not in v]
+    selected_model_features = (base_feats + ["grammage"]) if include_grammage else base_feats
     # Ensure created variables are in selected_model_features so they pass
     # through FeatureCreator (they were excluded from exog_vars_reduced upstream
     # to avoid treating them as raw inputs, but they must still appear as model
@@ -175,6 +181,20 @@ def build_pre_estimator(
     # Determine which created variables are needed: either as model features
     # or as PLS source columns (they appear in features_to_keep_feat)
     features_to_create = ordered_intersection(created_vars, features_to_keep_feat)
+    # A PLS *source* column can itself be a FeatureCreator-engineered variable
+    # (e.g. inv_Rod_Pressure_Bottom_Roll is a Starch-Bottom PLS source AND a
+    # derived feature whose raw input is Rod_Pressure_Bottom_Roll). Such columns
+    # get pulled into features_to_keep_feat by the PLS source expansion above, but
+    # they are NOT raw turnup columns -- they must be routed through FeatureCreator.
+    # Recognize them via the FeatureCreator registry so they are created rather than
+    # requested as raw inputs (which would raise KeyError on the turnup frame).
+    # Non-creatable (truly raw) sources are untouched, so existing models that have
+    # no creatable PLS sources are unaffected.
+    _created_registry = FeatureCreator._registry()
+    features_to_create = unique_in_order(
+        features_to_create
+        + [v for v in features_to_keep_feat if v in _created_registry]
+    )
 
     # If EWM is enabled, ensure the grade column passes through FeatureCreator
     if apply_ewm:
@@ -398,3 +418,123 @@ def build_final_pipeline(
     pre_estimator.steps.append(("ridge", Ridge(alpha=ridge_alpha)))
 
     return pre_estimator, feat_list
+
+
+def prune_pre_estimator(
+    selected_features: list[str],
+    prep_pip: "Pipeline",
+    created_vars: list[str],
+    full_pre_estimator: "Pipeline",
+    X_raw_fit: "pd.DataFrame",
+    y_fit,
+    X_raw_all: "pd.DataFrame",
+    X_selected_reference,
+    *,
+    apply_ewm: bool = False,
+    ewm_grade_col: str = "AB_Grade_ID",
+    ewm_halflife: str = "120min",
+    ewm_gap_threshold: str = "12h",
+    tol: float = 1e-6,
+    verbose: bool = True,
+):
+    """Rebuild a MINIMAL pre_estimator that produces only `selected_features`, and
+    verify it reproduces the reference transform before returning it.
+
+    Back-propagates from the features that actually reach the model:
+      - PLS groups whose scores are all unselected are dropped (and their source cols),
+      - created features that don't reach the model / aren't PLS sources are dropped,
+      - feat_list shrinks to the minimal raw inputs required.
+
+    This is done by `build_pre_estimator(exog_vars_reduced=selected_features, ...)` (the
+    same machinery `build_final_pipeline` uses), then re-fitting on the same train slice.
+
+    Safety: the pruned pipeline is re-fit and its transform (reindexed to `selected_features`
+    order) is compared against `X_selected_reference` (the selected columns of the ORIGINAL
+    full transform, in `selected_features` order). If they match to `tol`, the model's
+    coefficients remain valid with the pruned pipeline and (pruned_pre_estimator, feat_list)
+    is returned. Otherwise this returns (None, None) and the caller must keep the full
+    pipeline (no silent model change).
+
+    Parameters
+    ----------
+    selected_features : transformed feature names that reach the model (fs_ridge selection).
+                        May include one-hot names like "grammage_90" -> mapped to "grammage".
+    X_raw_all, X_selected_reference : the full raw input frame and the reference
+        transformed+selected matrix (n_rows x len(selected_features)), columns in
+        `selected_features` order.
+    """
+    import numpy as np
+    import pandas as pd
+    from data_cleaning import unique_in_order
+
+    # Map one-hot grammage names back to the raw 'grammage' column (as build_final_pipeline does)
+    pre_features = []
+    for f in selected_features:
+        if "grammage" in f.lower():
+            if "grammage" not in pre_features:
+                pre_features.append("grammage")
+        else:
+            pre_features.append(f)
+
+    try:
+        pruned, feat_list_min = build_pre_estimator(
+            exog_vars_reduced=pre_features,
+            prep_pip=prep_pip,
+            created_vars=created_vars,
+            apply_ewm=apply_ewm,
+            ewm_grade_col=ewm_grade_col,
+            ewm_halflife=ewm_halflife,
+            ewm_gap_threshold=ewm_gap_threshold,
+        )
+    except Exception as exc:  # any config edge case -> keep full pipeline
+        if verbose:
+            print(f"  [prune] build_pre_estimator failed ({exc!r}); keeping full pipeline")
+        return None, None
+
+    # feat_list_min must be a subset of the columns available in the raw frame
+    missing = [c for c in feat_list_min if c not in X_raw_all.columns]
+    if missing:
+        if verbose:
+            print(f"  [prune] pruned feat_list needs unavailable cols {missing}; keeping full")
+        return None, None
+
+    # Re-fit the pruned pipeline on the same train slice, then transform all rows
+    try:
+        pruned.fit(X_raw_fit.loc[:, feat_list_min], y_fit)
+        pruned_out = pruned.transform(X_raw_all.loc[:, feat_list_min])
+    except Exception as exc:
+        if verbose:
+            print(f"  [prune] pruned pipeline fit/transform failed ({exc!r}); keeping full")
+        return None, None
+
+    # The pruned pipeline must output at least the selected feature columns.
+    # It may emit ADDITIONAL grammage one-hot columns (build_pre_estimator always adds
+    # grammage as a categorical) even when none were selected -- those are harmless
+    # (the model never sees them; inference subsets to selected_features), so we only
+    # require the selected columns to be present and compare on those.
+    out_cols = list(pruned_out.columns)
+    want = list(selected_features)
+    miss = set(want) - set(out_cols)
+    if miss:
+        if verbose:
+            print(f"  [prune] pruned pipeline missing selected cols {sorted(miss)}; keeping full")
+        return None, None
+
+    # Reindex to the exact selected order the model was trained on, then compare
+    pruned_mat = pruned_out.loc[:, want].values.astype(float)
+    ref = np.asarray(X_selected_reference, dtype=float)
+    if pruned_mat.shape != ref.shape:
+        if verbose:
+            print(f"  [prune] shape mismatch {pruned_mat.shape} vs {ref.shape}; keeping full")
+        return None, None
+
+    max_diff = float(np.nanmax(np.abs(pruned_mat - ref)))
+    if not np.isfinite(max_diff) or max_diff > tol:
+        if verbose:
+            print(f"  [prune] transform differs (max|diff|={max_diff:.2e} > {tol:g}); keeping full")
+        return None, None
+
+    if verbose:
+        print(f"  [prune] OK: {len(feat_list_min)} raw inputs, "
+              f"transform matches (max|diff|={max_diff:.2e})")
+    return pruned, feat_list_min

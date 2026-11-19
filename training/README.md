@@ -1,11 +1,16 @@
 # Training Pipeline: Iterative Backfitting (CMA-ES + Ridge + Local Level)
 
 ## Setup
+Create virtual environment (Windows)
+
+```
+py -3.11 -m venv .venv11
+```
 
 Activate the virtual environment:
 
 ```
-.venv\Scripts\activate.bat
+.venv11\Scripts\activate.bat
 ```
 
 ## Run Experiment

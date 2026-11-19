@@ -2382,6 +2382,12 @@ def _costs_to_consider():
 def _costs_to_consider2():
     return ['Steam__€/T_','Electricity__€/T_','Starch__€/T_','Chemicals__€/T_','Fibre_cost__€/T_']
 
+def _consumptions_to_consider():
+    return ['Steam__kWh/T_','Electricity__kWh/T_',"Starch_mass_flow__kg/T_","Fibre_usage__T/T_"]
+
+def _prices_to_consider():
+    return ['Steam_price','Electricity_price','Starch_price','Fibre_price']
+
 def _agg_cost_label():
     return "Aggregated_cost__€/T_"
 
@@ -2392,10 +2398,29 @@ def _chemical_names():
     return ['Retention_Aid__€/T_','Bentonite_1__€/T_','Bentonite_2__€/T_','Fixative_2__€/T_','Deaerator__€/T_','Defoamer__€/T_','Sizing_Agent__€/T_','Dry_Strength_Agent__€/T_','Natriumhydroxide__€/T_']
 
 def _steam_names():
-    return ['Steam_Predryers','Steam_Afterdryers','Steam_Starchkitchen','Steam_Heatexchangers','Steam_Whitewater']
+    return ['Steam_Predryers__€/T_','Steam_Afterdryers__€/T_','Steam_Starchkitchen__€/T_','Steam_Heatexchangers__€/T_','Steam_Whitewater__€/T_']
 
 def _electricity_names():
-    return ['Electricity_Wiresection', 'Electricity_Press_and_Steambox', 'Electricity_Freqconverters', 'Electricity_Other', 'Electricity_Predryer', 'Electricity_Afterdryer', 'Electricity_Specific']
+    return ['Electricity_Wiresection__€/T_', 'Electricity_Press_and_Steambox__€/T_', 'Electricity_Freqconverters__€/T_', 'Electricity_Other__€/T_', 'Electricity_Predryer__€/T_', 'Electricity_Afterdryer__€/T_', 'Electricity_Specific__€/T_']
+
+def _steam_consumption_names():
+    return ['Steam_Predryers__kWh/T_','Steam_Afterdryers__kWh/T_','Steam_Starchkitchen__kWh/T_','Steam_Heatexchangers__kWh/T_','Steam_Whitewater__kWh/T_']
+
+def _electricity_consumption_names():
+    return ['Electricity_Wiresection__kWh/T_', 'Electricity_Press_and_Steambox__kWh/T_', 'Electricity_Freqconverters__kWh/T_', 'Electricity_Other__kWh/T_', 'Electricity_Predryer__kWh/T_', 'Electricity_Afterdryer__kWh/T_', 'Electricity_Specific__kWh/T_']
+
+def _chemical_consumption_names_raw():
+    return ['Retention_Aid_mass_flow__g/T_','Bentonite_1_mass_flow__g/T_','Bentonite_2_mass_flow__g/T_','Fixative_2_mass_flow__g/T_', 'Act_Deaerator_mass_flow__g/T_','Defoamer_mass_flow__g/T_','Sizing_Agent__g/T_','Dry_Strength_Agent_mass_flow__g/T_','Natriumhydroxide_mass_flow__g/T_']
+
+def _chemical_consumption_names():
+    return [v.replace("_mass_flow","") for v in _chemical_consumption_names_raw()]
+
+def _price_names(): 
+    return ['Fibre_price','Steam_price','Electricity_price','Starch_price','Natriumhydroxide_price','Defoamer_price','Deaerator_price','Sizing_Agent_price', 'Dry_Strength_Agent_price','Retention_Aid_price','Bentonite_price','Fixative_2_price']
+
+def _chemical_prices_names():
+    return ['Retention_Aid_price','Bentonite_price','Bentonite_price','Fixative_2_price', 'Deaerator_price','Defoamer_price','Sizing_Agent_price','Dry_Strength_Agent_price','Natriumhydroxide_price']
+
 
 def _overprocessing_vars():
     return ['Overprocessing_SCT_CD', 'Overprocessing_Burst', 'Overprocessing_CMT30']
@@ -2830,46 +2855,6 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip=True):
     paper_type = pd.get_dummies(turnup["paper_type"])
     turnup = pd.concat([turnup, paper_type], axis=1)
 
-    cost_dict = {}
-    cost_dict["Natriumhydroxide_mass_flow__g/T_"] = {"unitary_cost": 0.30 / 1000, "cost_name": "Natriumhydroxide__€/T_"}
-    cost_dict["Defoamer_mass_flow__g/T_"] = {"unitary_cost": 4.22 / 1000, "cost_name": "Defoamer__€/T_"}
-    cost_dict["Act_Deaerator_mass_flow__g/T_"] = {"unitary_cost": 1.53 / 1000, "cost_name": "Deaerator__€/T_"}
-    cost_dict["Sizing_Agent__g/T_"] = {"unitary_cost": 0.84 / 1000, "cost_name": "Sizing_Agent__€/T_"}
-    cost_dict["Dry_Strength_Agent_mass_flow__kg/T_"] = {"unitary_cost": 0.30, "cost_name": "Dry_Strength_Agent__€/T_"}
-    cost_dict["Steam__kWh/T_"] = {"unitary_cost": 89.03 / 1000, "cost_name": "Steam__€/T_"}
-    cost_dict["Electricity__kWh/T_"] = {"unitary_cost": 113.66 / 1000, "cost_name": "Electricity__€/T_"}
-    cost_dict["Fibre_usage__T/T_"] = {"unitary_cost": 146.46, "cost_name": "Fibre_cost__€/T_"}
-    cost_dict["Starch_mass_flow__kg/T_"] = {"unitary_cost": 434.22 / 1000, "cost_name": "Starch__€/T_"}
-    cost_dict["Retention_Aid_mass_flow__g/T_"] = {"unitary_cost": 4.08 / 1000, "cost_name": "Retention_Aid__€/T_"}
-    cost_dict["Bentonite_1_mass_flow__g/T_"] = {"unitary_cost": 0.28 / 1000, "cost_name": "Bentonite_1__€/T_"}
-    cost_dict["Bentonite_2_mass_flow__g/T_"] = {"unitary_cost": 0.28 / 1000, "cost_name": "Bentonite_2__€/T_"}
-    cost_dict["Fixative_2_mass_flow__g/T_"] = {"unitary_cost": 3.58 / 1000, "cost_name": "Fixative_2__€/T_"}
-
-    impute_outside_limits_with_grade_median(turnup, "Natriumhydroxide_mass_flow__g/T_", 1000, 2000, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, "Defoamer_mass_flow__g/T_", 50, 200, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, "Act_Deaerator_mass_flow__g/T_", 70, 200, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, "Sizing_Agent__g/T_", 3500, 6000, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, "Dry_Strength_Agent_mass_flow__kg/T_", 10, 16, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, "Steam__kWh/T_", 850, 1200, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, "Electricity__kWh/T_", 250, 400, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, "Starch_mass_flow__kg/T_", 35, 80, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, "Retention_Aid_mass_flow__g/T_", 100, 400, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, "Bentonite_1_mass_flow__g/T_", 0, 3000, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, "Bentonite_2_mass_flow__g/T_", 0, 3000, inplace=True)
-    impute_outside_limits_with_grade_median(turnup, "Fixative_2_mass_flow__g/T_", 0, 2000, inplace=True)
-
-    turnup["Fibre_usage__T/T_"] = (turnup["Current_basis_weight"] * (1 - turnup["Current_reel_moisture_average(reel)"] / 100) - turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] - turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"]) / turnup["Current_basis_weight"]
-
-    turnup[_chemical_names()] = turnup[_chemical_names()].fillna(value=0)
-
-    for c in cost_dict.keys():
-        turnup[cost_dict[c]["cost_name"]] = turnup[c] * cost_dict[c]["unitary_cost"]
-
-    turnup['Chemicals__€/T_'] = turnup[_chemical_names()].sum(axis=1)
-
-    turnup[_agg_cost_label()] = turnup[_costs_to_consider()].sum(axis=1)
-    turnup[_agg_cost_label2()] = turnup[_costs_to_consider2()].sum(axis=1)
-
     if clip:
         for v in [v for v in turnup.columns if "speedsizer" not in v.lower() and "speed" in v.lower()]:
             impute_outside_limits_with_grade_median(turnup, v, 950, 1400, inplace=True)
@@ -3005,13 +2990,6 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip=True):
         impute_outside_limits_with_grade_median(turnup, 'VariSTEP_div._Hauben+Lueftung_Ventilatoren', 0.2, 1.2, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Dilution_water_working_tank_1', 2.0, 8.0, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'Dilution_water_working_tank_2', 1.8, 7.0, inplace=True)
-        impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_white_water_heating', 0.0, 10.0, inplace=True)
-        impute_outside_limits_with_grade_median(turnup, 'Steam_energy_from_power_plant_to_paper_plant', 20, 80.0, inplace=True)
-        impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_AfterDryers', 15, 30, inplace=True)
-        impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_heat_exchangers', 0.2, 1.4, inplace=True)
-        impute_outside_limits_with_grade_median(turnup, 'Steam_flow_from_power_plant_to_PM', 0, 120, inplace=True)
-        impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_PreDryers', 0, 100, inplace=True)
-        impute_outside_limits_with_grade_median(turnup, 'Press_and_Steambox', 14, 30, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'LF_screen_1_power', 100, 140, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'LF_screen_2_power', 100, 140, inplace=True)
         impute_outside_limits_with_grade_median(turnup, 'LF_screen_1_accept_flow', 600, 1000, inplace=True)
@@ -3093,11 +3071,11 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip=True):
         turnup["MBS_SCT_CD"] = turnup["MBS_SCT_CD"].bfill()
         turnup["MBS_Burst"] = turnup["MBS_Burst"].bfill()
 
-    turnup.loc[(turnup["AB_Grade_ID"] == 6010100) & (turnup["MBS_CMT30"] > 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"] == 6010100]["MBS_CMT30"].mean()
-    turnup.loc[(turnup["AB_Grade_ID"] == 6010100) & (turnup["MBS_CMT30"].isnull()), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"] == 6010100]["MBS_CMT30"].mean()
-    turnup.loc[(turnup["AB_Grade_ID"] == 6010120) & (turnup["MBS_CMT30"] < 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"] == 6010120]["MBS_CMT30"].mean()
-    turnup.loc[(turnup["AB_Grade_ID"] == 6010120) & (turnup["MBS_CMT30"].isnull()), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"] == 6010120]["MBS_CMT30"].mean()
-    turnup.loc[(turnup["AB_Grade_ID"] != 6010120) & (turnup["AB_Grade_ID"] != 6010100), "MBS_CMT30"] = 0
+    turnup.loc[(turnup["AB_Grade_ID"] == "6010100") & (turnup["MBS_CMT30"] > 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"] == "6010100"]["MBS_CMT30"].mean()
+    turnup.loc[(turnup["AB_Grade_ID"] == "6010100") & (turnup["MBS_CMT30"].isnull()), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"] == "6010100"]["MBS_CMT30"].mean()
+    turnup.loc[(turnup["AB_Grade_ID"] == "6010120") & (turnup["MBS_CMT30"] < 180), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"] == "6010120"]["MBS_CMT30"].mean()
+    turnup.loc[(turnup["AB_Grade_ID"] == "6010120") & (turnup["MBS_CMT30"].isnull()), "MBS_CMT30"] = turnup[turnup["AB_Grade_ID"] == "6010120"]["MBS_CMT30"].mean()
+    turnup.loc[(turnup["AB_Grade_ID"] != "6010120") & (turnup["AB_Grade_ID"] != "6010100"), "MBS_CMT30"] = 0
 
     # TO ADD
     if not steam_null:
@@ -3117,6 +3095,17 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip=True):
     if math.isnan(cond_med):
         cond_med = 5.11
     cond = cond_col.where((cond_col >= 0) & (cond_col <= 10), cond_med)
+
+    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_PreDryers', 0, 100, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_AfterDryers', 15, 30, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_starch_kitchen', 0, 10, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_heat_exchangers', 0.2, 1.4, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_white_water_heating', 0.0, 10.0, inplace=True)
+
+    impute_outside_limits_with_grade_median(turnup, 'Steam_energy_from_power_plant_to_paper_plant', 20, 80.0, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_from_power_plant_to_PM', 0, 120, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Steam_flow_to_PM', 0, 120, inplace=True)
+
     turnup["Steam_power"] = turnup['Steam_flow_to_PM'] + turnup['Waste_steam_flow']
     turnup["Steam_power_corrected"] = (((turnup["Steam_power"] * 0.788 - cond) * 1.02 - (0.5938 / 24))) * 1000
     turnup["Steam__kWh/T_"] = turnup["Steam_power_corrected"] / turnup["Production_Rate__T/h_"]
@@ -3171,26 +3160,129 @@ def _feature_engineering(turnup, setpoint_df, steam_null, clip=True):
     turnup["concentration_starch_working_tank_2"] = 21.5 * turnup["Flow_starch_main_line_to_working_tank_2~^0"] / (turnup["Dilution_water_working_tank_2"] + turnup["Flow_starch_main_line_to_working_tank_2~^0"])
     turnup["retention"] = 1 - turnup['Consistency_white_water'] / (10 * turnup['Headbox_consistency'])
 
-    steam_flows = ['Steam_flow_to_PreDryers', 'Steam_flow_to_AfterDryers', 'Steam_flow_to_starch_kitchen', 'Steam_flow_to_heat_exchangers', 'Steam_flow_to_white_water_heating']
-    turnup['Steam_Predryers'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_PreDryers'] / turnup[steam_flows].sum(axis=1)
-    turnup['Steam_Afterdryers'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_AfterDryers'] / turnup[steam_flows].sum(axis=1)
-    turnup['Steam_Starchkitchen'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_starch_kitchen'] / turnup[steam_flows].sum(axis=1)
-    turnup['Steam_Heatexchangers'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_heat_exchangers'] / turnup[steam_flows].sum(axis=1)
-    turnup['Steam_Whitewater'] = turnup['Steam__€/T_'] * turnup['Steam_flow_to_white_water_heating'] / turnup[steam_flows].sum(axis=1)
-
     electricity_consumptions = ['Electrical_Consumtion_Wire_Section', "Press_and_Steambox", 'PM_Freq_Converters_1_to_3', 'Other_PM_1_to_10', 'Predryers_sensor_10_to_25', 'Afterdryers_sensor_1_to_9', 'Spezifischer_Energieverbrauch_APA_']
-    turnup['Electricity_Wiresection'] = turnup['Electricity__€/T_'] * turnup['Electrical_Consumtion_Wire_Section'] / turnup[electricity_consumptions].sum(axis=1)
-    turnup['Electricity_Press_and_Steambox'] = turnup['Electricity__€/T_'] * turnup['Press_and_Steambox'] / turnup[electricity_consumptions].sum(axis=1)
-    turnup['Electricity_Freqconverters'] = turnup['Electricity__€/T_'] * turnup['PM_Freq_Converters_1_to_3'] / turnup[electricity_consumptions].sum(axis=1)
-    turnup['Electricity_Other'] = turnup['Electricity__€/T_'] * turnup['Other_PM_1_to_10'] / turnup[electricity_consumptions].sum(axis=1)
-    turnup['Electricity_Predryer'] = turnup['Electricity__€/T_'] * turnup['Predryers_sensor_10_to_25'] / turnup[electricity_consumptions].sum(axis=1)
-    turnup['Electricity_Afterdryer'] = turnup['Electricity__€/T_'] * turnup['Afterdryers_sensor_1_to_9'] / turnup[electricity_consumptions].sum(axis=1)
-    turnup['Electricity_Specific'] = turnup['Electricity__€/T_'] * turnup['Spezifischer_Energieverbrauch_APA_'] / turnup[electricity_consumptions].sum(axis=1)
+    steam_flows = ['Steam_flow_to_PreDryers', 'Steam_flow_to_AfterDryers', 'Steam_flow_to_starch_kitchen', 'Steam_flow_to_heat_exchangers', 'Steam_flow_to_white_water_heating']
+    
+    impute_outside_limits_with_grade_median(turnup, "Electrical_power_MW", 10, 30, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Steam__kWh/T_", 850, 1200, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Electricity__kWh/T_", 250, 400, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Starch_mass_flow__kg/T_", 35, 80, inplace=True)
 
+    impute_outside_limits_with_grade_median(turnup, "Electrical_Consumtion_Wire_Section", 5, 60, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "PM_Freq_Converters_1_to_3", 5, 60, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Other_PM_1_to_10", 50, 300, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Predryers_sensor_10_to_25", 1, 50, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Afterdryers_sensor_1_to_9", 1, 30, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Spezifischer_Energieverbrauch_APA_", 20, 150, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, 'Press_and_Steambox', 14, 30, inplace=True)
+
+    impute_outside_limits_with_grade_median(turnup, "Natriumhydroxide_mass_flow__g/T_", 1000, 2000, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Defoamer_mass_flow__g/T_", 50, 200, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Act_Deaerator_mass_flow__g/T_", 70, 200, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Sizing_Agent__g/T_", 3500, 6000, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Dry_Strength_Agent_mass_flow__kg/T_", 10, 16, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Retention_Aid_mass_flow__g/T_", 100, 400, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Bentonite_1_mass_flow__g/T_", 0, 3000, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Bentonite_2_mass_flow__g/T_", 0, 3000, inplace=True)
+    impute_outside_limits_with_grade_median(turnup, "Fixative_2_mass_flow__g/T_", 0, 2000, inplace=True)
+    
+    turnup['Steam_Predryers__kWh/T_'] = turnup['Steam__kWh/T_'] * turnup['Steam_flow_to_PreDryers'] / turnup[steam_flows].sum(axis=1)
+    turnup['Steam_Afterdryers__kWh/T_'] = turnup['Steam__kWh/T_'] * turnup['Steam_flow_to_AfterDryers'] / turnup[steam_flows].sum(axis=1)
+    turnup['Steam_Starchkitchen__kWh/T_'] = turnup['Steam__kWh/T_'] * turnup['Steam_flow_to_starch_kitchen'] / turnup[steam_flows].sum(axis=1)
+    turnup['Steam_Heatexchangers__kWh/T_'] = turnup['Steam__kWh/T_'] * turnup['Steam_flow_to_heat_exchangers'] / turnup[steam_flows].sum(axis=1)
+    turnup['Steam_Whitewater__kWh/T_'] = turnup['Steam__kWh/T_'] * turnup['Steam_flow_to_white_water_heating'] / turnup[steam_flows].sum(axis=1)
+
+    
+    turnup['Electricity_Wiresection__kWh/T_'] = turnup['Electricity__kWh/T_'] * turnup['Electrical_Consumtion_Wire_Section'] / turnup[electricity_consumptions].sum(axis=1)
+    turnup['Electricity_Press_and_Steambox__kWh/T_'] = turnup['Electricity__kWh/T_'] * turnup['Press_and_Steambox'] / turnup[electricity_consumptions].sum(axis=1)
+    turnup['Electricity_Freqconverters__kWh/T_'] = turnup['Electricity__kWh/T_'] * turnup['PM_Freq_Converters_1_to_3'] / turnup[electricity_consumptions].sum(axis=1)
+    turnup['Electricity_Other__kWh/T_'] = turnup['Electricity__kWh/T_'] * turnup['Other_PM_1_to_10'] / turnup[electricity_consumptions].sum(axis=1)
+    turnup['Electricity_Predryer__kWh/T_'] = turnup['Electricity__kWh/T_'] * turnup['Predryers_sensor_10_to_25'] / turnup[electricity_consumptions].sum(axis=1)
+    turnup['Electricity_Afterdryer__kWh/T_'] = turnup['Electricity__kWh/T_'] * turnup['Afterdryers_sensor_1_to_9'] / turnup[electricity_consumptions].sum(axis=1)
+    turnup['Electricity_Specific__kWh/T_'] = turnup['Electricity__kWh/T_'] * turnup['Spezifischer_Energieverbrauch_APA_'] / turnup[electricity_consumptions].sum(axis=1)
+
+    turnup['Fibre_price'] = 146.46
+    turnup['Steam_price'] = 89.03 / 1000
+    turnup['Electricity_price'] = 113.66 / 1000
+    turnup['Starch_price'] = 434.22 / 1000
+    turnup['Natriumhydroxide_price'] = 0.30 / 1000
+    turnup['Defoamer_price'] = 4.22 / 1000
+    turnup['Deaerator_price'] = 1.53 / 1000
+    turnup['Sizing_Agent_price'] = 0.84 / 1000
+    turnup['Dry_Strength_Agent_price'] = 0.30 / 1000
+    turnup['Retention_Aid_price'] = 4.08 / 1000
+    turnup['Bentonite_price'] = 0.28 / 1000
+    turnup['Fixative_2_price'] = 3.58 / 1000
+
+    cost_dict = {}
+    cost_dict["Natriumhydroxide_mass_flow__g/T_"] = {"unitary_cost": 'Natriumhydroxide_price', "cost_name": "Natriumhydroxide__€/T_"}
+    cost_dict["Defoamer_mass_flow__g/T_"] = {"unitary_cost": 'Defoamer_price', "cost_name": "Defoamer__€/T_"}
+    cost_dict["Act_Deaerator_mass_flow__g/T_"] = {"unitary_cost": 'Deaerator_price', "cost_name": "Deaerator__€/T_"}
+    cost_dict["Sizing_Agent__g/T_"] = {"unitary_cost": 'Sizing_Agent_price', "cost_name": "Sizing_Agent__€/T_"}
+    cost_dict["Dry_Strength_Agent_mass_flow__g/T_"] = {"unitary_cost": 'Dry_Strength_Agent_price', "cost_name": "Dry_Strength_Agent__€/T_"}
+    cost_dict["Retention_Aid_mass_flow__g/T_"] = {"unitary_cost": 'Retention_Aid_price', "cost_name": "Retention_Aid__€/T_"}
+    cost_dict["Bentonite_1_mass_flow__g/T_"] = {"unitary_cost": 'Bentonite_price', "cost_name": "Bentonite_1__€/T_"}
+    cost_dict["Bentonite_2_mass_flow__g/T_"] = {"unitary_cost": 'Bentonite_price', "cost_name": "Bentonite_2__€/T_"}
+    cost_dict["Fixative_2_mass_flow__g/T_"] = {"unitary_cost": 'Fixative_2_price', "cost_name": "Fixative_2__€/T_"}
+    
+    cost_dict["Fibre_usage__T/T_"] = {"unitary_cost": 'Fibre_price', "cost_name": "Fibre_cost__€/T_"}
+    
+    cost_dict["Steam__kWh/T_"] = {"unitary_cost": 'Steam_price', "cost_name": "Steam__€/T_"}
+    for cost, consumption in zip(_steam_names(), _steam_consumption_names()):
+        cost_dict[consumption] = {"unitary_cost": 'Steam_price', "cost_name": cost}
+
+    cost_dict["Electricity__kWh/T_"] = {"unitary_cost": 'Electricity_price', "cost_name": "Electricity__€/T_"}
+    for cost, consumption in zip(_electricity_names(), _electricity_consumption_names()):
+        cost_dict[consumption] = {"unitary_cost": 'Electricity_price', "cost_name": cost}
+
+    cost_dict["Starch_mass_flow__kg/T_"] = {"unitary_cost":'Starch_price', "cost_name": "Starch__€/T_"}
+
+
+    turnup["Dry_Strength_Agent_mass_flow__g/T_"] = turnup["Dry_Strength_Agent_mass_flow__kg/T_"] * 1000
+
+    turnup["Fibre_usage__T/T_"] = (turnup["Current_basis_weight"] * (1 - turnup["Current_reel_moisture_average(reel)"] / 100) - turnup["Starch_uptake_by_paper_Bottom_Roll__g/m2_"] - turnup["Starch_uptake_by_paper_Top_Roll__g/m2_"]) / turnup["Current_basis_weight"]
+
+    turnup[_chemical_names()] = turnup[_chemical_names()].fillna(value=0)
+    turnup[_chemical_consumption_names_raw()] = turnup[_chemical_consumption_names_raw()].fillna(value=0)
+
+    new_cost_df = pd.DataFrame(
+        {
+            cost_dict[c]["cost_name"]:
+                turnup[c] * turnup[cost_dict[c]["unitary_cost"]]
+            for c in cost_dict
+        },
+        index=turnup.index,
+    )
+
+    turnup = pd.concat(
+        [
+            turnup.drop(
+                columns=new_cost_df.columns,
+                errors="ignore",
+            ),
+            new_cost_df,
+        ],
+        axis=1,
+    )
+
+
+    for new_name, old_name in zip(_chemical_consumption_names(), _chemical_consumption_names_raw()):
+        turnup[new_name] = turnup[old_name]
+
+    turnup['Chemicals__€/T_'] = turnup[_chemical_names()].sum(axis=1)
+
+    turnup[_agg_cost_label()] = turnup[_costs_to_consider()].sum(axis=1)
+    turnup[_agg_cost_label2()] = turnup[_costs_to_consider2()].sum(axis=1)
+
+    turnup["Current_reel_weight"] = turnup["Current_reel_weight"]/1000
+    
     coef_df = pd.DataFrame({
         "property": ["MBS_SCT_MD", "MBS_SCT_CD", "MBS_Burst", "MBS_CMT30"],
         "starch_coef": [0.1356332061139627, 0.15738688100760012, 10.8090692825425, 3.701831560389852],
     })
+
+    turnup["dry_broke"] = turnup["Dry_broke_flow"]*turnup["Dry_Broke_Consistancy__%_"] / turnup["Production_Rate__T/h_"] /6000
+    turnup["wet_broke"] = turnup["Wet_broke_flow"]*turnup["Wet_broke_consistency"] / turnup["Production_Rate__T/h_"] /6000
 
     turnup["Wedge_Date"] = turnup["Wedge_Time"].dt.date
 
@@ -6320,9 +6412,18 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
         self.copy = copy
 
     def fit(self, X, y=None):
-        self.feature_names_in_ = (
-            np.asarray(X.columns, dtype=object) if hasattr(X, "columns") else None
-        )
+        # feature_names_in_ = the RAW inputs this transformer consumes:
+        #   the kept-as-is columns that are NOT engineered here, plus the raw inputs
+        #   required to build the engineered (created) features. Handles None for either
+        #   list. Falls back to the fitted columns if nothing is declared.
+        keep = list(self.features_to_keep) if self.features_to_keep is not None else []
+        create = list(self.features_to_create) if self.features_to_create is not None else []
+        raw_kept = [f for f in keep if f not in create]
+        input_features = list(dict.fromkeys(raw_kept + self.features_required()))
+        if input_features:
+            self.feature_names_in_ = np.asarray(input_features, dtype=object)
+        elif hasattr(X, "columns"):
+            self.feature_names_in_ = np.asarray(X.columns, dtype=object)
         return self
 
     def transform(self, X):
@@ -6540,6 +6641,10 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
                 "Temperature_starch_working_tank_1",
                 "Temperature_starch_working_tank_2"
             ],
+            "retention": [
+                "Consistency_white_water",
+                "Headbox_consistency"
+            ],
         }
 
     def _expand_with_deps(self, requested):
@@ -6750,6 +6855,10 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
     def _add_fibre_short_long_ratio(df):        
         df["fibre_short/long"] = df['Short_fibre_flow']*df['Short_fibre_B06_consistency']/(df['Long_fibre_flow']*df['Long_fibre_consistency_B07'])
 
+    @staticmethod
+    def _add_retention(df):        
+        df["retention"] = 1 - df['Consistency_white_water'] / (10 * df['Headbox_consistency'])
+
     @classmethod
     def _registry(cls):
         return {
@@ -6774,9 +6883,11 @@ class FeatureCreator(BaseEstimator, TransformerMixin):
             "fibre_short/long": cls._add_fibre_short_long_ratio,
             "delta_basis_weight": cls._add_delta_basis_weight,
             "temperature_starch_working_tank": cls._add_temperature_starch_working_tank,
+            "retention": cls._add_retention,
         }
     
-    
+
+
 class SKColumnSelector(BaseEstimator, TransformerMixin):
     def __init__(self, columns):
         self.columns = columns
@@ -8092,7 +8203,8 @@ class StateBuilder:
     def __init__(self, pre_estimator, estimator, feat_list, selected_features,
                  y_column, lag_days, ewm_halflife, tolerance=0.35,
                  id_col="MBS_Current_reel_ID", max_tolerance=None, fill=None,
-                 grammage_col="grammage", gap_threshold="12h"):
+                 grammage_col="grammage", gap_threshold="12h",
+                 allow_cross_grammage=False, grade_baseline=None):
         self.pre_estimator = pre_estimator
         self.estimator = estimator
         self.feat_list = list(feat_list)
@@ -8108,6 +8220,16 @@ class StateBuilder:
         self.fill = fill
         self.grammage_col = grammage_col
         self.gap_threshold = gap_threshold
+        # Same-grammage differencing: a lag partner (t-k) with a DIFFERENT grammage than
+        # the row would make the state's contrast straddle a grade change, which is a
+        # confounding source. Default False -> only same-grammage partners (match the
+        # training default --allow_cross_grammage=off). Set True to allow cross-grammage.
+        self.allow_cross_grammage = allow_cross_grammage
+        # Per-grade baseline g(grammage) = mean of (y_ewm - beta'X) per grade, learned at
+        # train time. The state is decomposed as c(t) = g(grammage) + deviation(t), so a
+        # cold-start row (no lag partner) falls back to g(grammage) instead of NaN.
+        # Unseen grammage -> g = 0 (loses the baseline, still works via deviation).
+        self.grade_baseline = dict(grade_baseline) if grade_baseline else {}
 
     @staticmethod
     def _to_hours(index):
@@ -8115,10 +8237,12 @@ class StateBuilder:
         return (t - t[0]) / 3.6e12
 
     @staticmethod
-    def _lag_pairs(t_hours, lag_hours, tolerance=0.35, max_tolerance=None):
+    def _lag_pairs(t_hours, lag_hours, tolerance=0.35, max_tolerance=None, grammage=None):
         """Nearest strictly-earlier partner to t - lag_hours, accepted within tolerance.
         If max_tolerance > tolerance, rows unresolved at tolerance retry at the wider
-        window (tight matches are kept -> identical to strict for those rows)."""
+        window (tight matches are kept -> identical to strict for those rows).
+        If `grammage` (per-row array) is given, a partner with a DIFFERENT grammage is
+        rejected (same-grammage contrasts only)."""
         target = t_hours - lag_hours
         j = _np.searchsorted(t_hours, target)
         j = _np.clip(j, 0, len(t_hours) - 1)
@@ -8127,9 +8251,14 @@ class StateBuilder:
         j = _np.where(better, j_alt, j)
         realised = t_hours - t_hours[j]
         has_earlier = j < _np.arange(len(t_hours))
-        ok = has_earlier & (_np.abs(realised - lag_hours) <= tolerance * lag_hours)
+        same_g = _np.ones(len(t_hours), dtype=bool)
+        if grammage is not None:
+            g = _np.asarray(grammage)
+            same_g = (g == g[j])
+        ok = has_earlier & same_g & (_np.abs(realised - lag_hours) <= tolerance * lag_hours)
         if max_tolerance is not None and max_tolerance > tolerance:
-            relaxed = has_earlier & ~ok & (_np.abs(realised - lag_hours) <= max_tolerance * lag_hours)
+            relaxed = (has_earlier & same_g & ~ok
+                       & (_np.abs(realised - lag_hours) <= max_tolerance * lag_hours))
             ok = ok | relaxed
         later = _np.flatnonzero(ok)
         return later, j[later]
@@ -8176,11 +8305,32 @@ class StateBuilder:
         y_ewm = ts[self.y_column].reindex(transformed.index).values.astype(float)
 
         t_hours = self._to_hours(transformed.index)
+
+        # grammage per transformed row (for same-grammage pairing AND grade baseline)
+        row_grammage = None
+        if self.grammage_col in ts.columns:
+            row_grammage = ts[self.grammage_col].reindex(transformed.index).values
+        pair_grammage = None if self.allow_cross_grammage else row_grammage
+
         later, earlier = self._lag_pairs(t_hours, self.lag_days * 24.0,
-                                         self.tolerance, max_tolerance)
-        c = y_ewm[earlier] - beta_x[earlier]
-        state = _np.full(len(transformed), _np.nan)
-        state[later] = c
+                                         self.tolerance, max_tolerance,
+                                         grammage=pair_grammage)
+
+        # Grade baseline g(grammage) for every row (0 for unseen grades / no grammage).
+        if row_grammage is not None and self.grade_baseline:
+            g_row = _np.array([self.grade_baseline.get(float(gv), 0.0)
+                               for gv in row_grammage], dtype=float)
+        else:
+            g_row = _np.zeros(len(transformed), dtype=float)
+
+        # State = grade baseline + deviation.
+        #   deviation(t) = [y_ewm(t-k) - beta'X(t-k)] - g(grammage[t]), from the partner.
+        #   rows with a valid same-grammage partner get baseline + deviation (full freshness);
+        #   cold-start rows (no partner) fall back to the grade baseline g(grammage) alone.
+        state = g_row.copy()                               # default: baseline only
+        c_partner = y_ewm[earlier] - beta_x[earlier]       # raw leftover at the partner
+        deviation = c_partner - g_row[later]               # deviation from this grade's baseline
+        state[later] = g_row[later] + deviation            # == c_partner (identity), but explicit
         state_series = _pd.Series(state, index=transformed.index).reindex(ts.index)
 
         if fill == "ffill":
@@ -8229,14 +8379,53 @@ class ProductionModel(RegressorMixin, BaseEstimator):
         self.divisor = divisor
         self._set_fitted_attributes()
 
+    @staticmethod
+    def _creatable_inputs(col):
+        """If `col` is a FeatureCreator-creatable feature, return its raw component
+        inputs (e.g. Production_Rate__T/h_ -> [Current_basis_weight, Speed,
+        Current_reel_width]); otherwise return None (col is a plain raw column)."""
+        if col is None:
+            return None
+        try:
+            registry = FeatureCreator._registry()
+            if col not in registry:
+                return None
+            inputs = FeatureCreator._feature_raw_inputs().get(col, [])
+            return list(inputs) if inputs else None
+        except Exception:
+            return None
+
     def _set_fitted_attributes(self):
+        # Resolve whether multiplier/divisor are creatable features. If so, the engine
+        # supplies their raw COMPONENTS (filtered upstream) and we build the filtered
+        # value at predict time -- so feature_names_in_ lists the components, NOT the
+        # derived column. If not creatable, the derived column stays a required raw input.
+        self._mult_inputs = self._creatable_inputs(self.multiplier)
+        self._div_inputs = self._creatable_inputs(self.divisor)
+
         names = list(self.feat_list) + [self.state_col]
-        if self.multiplier and self.multiplier not in names:
-            names.append(self.multiplier)
-        if self.divisor and self.divisor not in names:
-            names.append(self.divisor)
+        for col, comp in ((self.multiplier, self._mult_inputs),
+                          (self.divisor, self._div_inputs)):
+            if not col:
+                continue
+            if comp is not None:
+                for c in comp:            # creatable -> require its components
+                    if c not in names:
+                        names.append(c)
+            elif col not in names:        # plain column -> require the column itself
+                names.append(col)
         self.feature_names_in_ = _np.asarray(names, dtype=object)
         self.n_features_in_ = len(names)
+
+    def _factor_values(self, df, col, comp_inputs):
+        """Return the per-row values of a multiplier/divisor column. If it is a
+        creatable feature, build its (filtered, since components are filtered upstream)
+        value with a standalone FeatureCreator; else read the raw column directly."""
+        if comp_inputs is None:
+            return df[col].values.astype(float)
+        fc = FeatureCreator(features_to_create=[col], features_to_keep=[col], errors="raise")
+        built = fc.fit(df).transform(df)
+        return built[col].values.astype(float)
 
     def fit(self, X=None, y=None):
         """No-op fit: the model is built from a trained artifact."""
@@ -8278,9 +8467,9 @@ class ProductionModel(RegressorMixin, BaseEstimator):
         beta_x = self._beta_x(df)
         result = (state + beta_x) * self.scale
         if self.multiplier is not None:
-            result = result * df[self.multiplier].values.astype(float)
+            result = result * self._factor_values(df, self.multiplier, self._mult_inputs)
         if self.divisor is not None:
-            result = result / df[self.divisor].values.astype(float)
+            result = result / self._factor_values(df, self.divisor, self._div_inputs)
 
         return float(result[0]) if single else result
 
@@ -8313,8 +8502,37 @@ def load_state_and_prod(artifact_dir, use_full_model=True,
 
     builder = StateBuilder(pre_estimator, est, feat_list, selected_features,
                            y_column, lag_days, ewm_halflife,
-                           max_tolerance=max_tolerance, fill=fill)
+                           max_tolerance=max_tolerance, fill=fill,
+                           grade_baseline=art.get("grade_baseline"))
     prod = ProductionModel(pre_estimator, est, feat_list, selected_features,
                            y_column + "_state", scale=scale,
                            multiplier=multiplier, divisor=divisor)
     return builder, prod
+
+from typing import Iterable, TypeVar
+
+import numpy as np
+import pandas as pd
+
+T = TypeVar("T")
+
+
+# =============================================================================
+# Collection helpers
+# =============================================================================
+
+def unique_in_order(values: Iterable[T]) -> list[T]:
+    """Remove duplicates while preserving first-occurrence order."""
+    return list(dict.fromkeys(values))
+
+
+def ordered_difference(values: Iterable[T], excluded: Iterable[T]) -> list[T]:
+    """Remove excluded items while preserving order."""
+    excluded_set = set(excluded)
+    return [v for v in values if v not in excluded_set]
+
+
+def ordered_intersection(values: Iterable[T], allowed: Iterable[T]) -> list[T]:
+    """Keep only allowed items while preserving order."""
+    allowed_set = set(allowed)
+    return [v for v in values if v in allowed_set]

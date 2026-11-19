@@ -1,0 +1,1019 @@
+{
+  "start_time": "2026-11-18T18:26:46.710823",
+  "end_time": "2026-11-18T18:28:11.685900",
+  "duration_seconds": 84.975077,
+  "parameters": {
+    "y_column": "Electricity__kWh/T_",
+    "data_path": "../data/costimiser_turnup.parquet",
+    "model": "ridge",
+    "lag_days": 0.25,
+    "apply_ewm_filter": true,
+    "apply_ewm_filter_y": true,
+    "ewm_halflife": "6h",
+    "allow_cross_grammage": false,
+    "conditional_independence": true,
+    "ci_max_states": 5000,
+    "ci_max_tests": 500000,
+    "ci_max_k": 3,
+    "ci_alpha": 0.02,
+    "spline_knots": null,
+    "spline_degree": null,
+    "ridge_alpha": 5298.316906283708,
+    "fs_k_features": null,
+    "realmlp_params": null
+  },
+  "data": {
+    "n_samples": 9628,
+    "split": 7702,
+    "n_features": 13,
+    "feature_cols": [
+      "Contact_pressure_secondary_arm_DS",
+      "Cylinder_1-5_fresh_steam",
+      "Cylinder_1-5_steam_temperature",
+      "Forming_Wire_Speed",
+      "Bottom_wire_tension",
+      "White_water_temperature",
+      "Short_fibre_B06_consistency",
+      "Dissolved_gas_after_stock_deculator_measurement_2",
+      "Retention_Aid_mass_flow__g/T_",
+      "Natriumhydroxide_mass_flow__g/T_",
+      "dry_broke",
+      "Fibre__g/m2_",
+      "Production_Rate__T/h_"
+    ],
+    "n_train_contrasts": 5482,
+    "n_test_contrasts": 1392
+  },
+  "metrics": {
+    "dy": {
+      "rmse": 3.483607688179816,
+      "mae": 2.52321546368143,
+      "r2": 0.10579055887180588
+    },
+    "ewm_persistence": {
+      "rmse": 3.685316204412329,
+      "mae": 2.6959686113626535,
+      "r2": 0.9761716460734677
+    },
+    "ewm_model": {
+      "rmse": 3.483607688179817,
+      "mae": 2.52321546368143,
+      "r2": 0.9787086593101751
+    },
+    "raw_persistence": {
+      "rmse": 11.71324284659882,
+      "mae": 8.696250915527344,
+      "r2": 0.7891570329666138
+    },
+    "raw_model": {
+      "rmse": 9.166567830558847,
+      "mae": 6.779949445594744,
+      "r2": 0.870872609691888
+    },
+    "gain_over_persistence_ewm": 0.0025370132367074083,
+    "gain_over_persistence_raw": 0.08171557672527419
+  },
+  "ci_selection": {
+    "metadata": {
+      "target": "Electricity__kWh/T_",
+      "complete": true,
+      "stop_reason": "complete",
+      "selected_count": 15,
+      "fixed_vars": [],
+      "fixed_count": 0,
+      "states_visited": 19,
+      "ci_tests": 11224,
+      "alpha": 0.02,
+      "alpha_conditional": 0.02,
+      "alpha_marginal": 0.7,
+      "max_k": 3,
+      "unblocked_omitted_count": 0,
+      "invalid_survivor_or_candidate_tests": false,
+      "note": "Any incomplete output is provisional. Completion is bounded subset-test consistency, not global optimality. Fixed variables are exempt from survival; see fixed_audit_df."
+    },
+    "selected_feature_independence": [
+      {
+        "variable": "Cylinder_1-5_steam_temperature",
+        "role": "selected",
+        "marginal_r": -0.4130742389894223,
+        "marginal_p": 1.5335368140403433e-281,
+        "min_abs_partial_r": 0.17264709287356306,
+        "max_p": 4.0600087352311335e-47,
+        "weakest_conditioning_set": [
+          "Contact_pressure_secondary_arm_DS",
+          "Retention_Aid_mass_flow__g/T_",
+          "Production_Rate__T/h_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.02,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Retention_Aid_mass_flow__g/T_",
+        "role": "selected",
+        "marginal_r": 0.4087586248327027,
+        "marginal_p": 3.614379307761414e-275,
+        "min_abs_partial_r": 0.14418910732692003,
+        "max_p": 3.0474052903138898e-33,
+        "weakest_conditioning_set": [
+          "Contact_pressure_secondary_arm_DS",
+          "Cylinder_1-5_steam_temperature",
+          "Production_Rate__T/h_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.02,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Production_Rate__T/h_",
+        "role": "selected",
+        "marginal_r": -0.3556827432416413,
+        "marginal_p": 3.9245725022466554e-204,
+        "min_abs_partial_r": 0.13448343380825117,
+        "max_p": 4.246458123014069e-29,
+        "weakest_conditioning_set": [
+          "Dissolved_gas_after_stock_deculator_measurement_2",
+          "Retention_Aid_mass_flow__g/T_",
+          "Fibre__g/m2_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.02,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Bentonite_1_mass_flow__g/T_",
+        "role": "selected",
+        "marginal_r": 0.33083431677836617,
+        "marginal_p": 3.068681537779703e-175,
+        "min_abs_partial_r": 0.11364185575915542,
+        "max_p": 3.425660207402333e-21,
+        "weakest_conditioning_set": [
+          "Contact_pressure_secondary_arm_DS",
+          "Cylinder_1-5_steam_temperature",
+          "Fibre__g/m2_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.02,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Short_fibre_B06_consistency",
+        "role": "selected",
+        "marginal_r": -0.1825878925458175,
+        "marginal_p": 1.3281918699998546e-52,
+        "min_abs_partial_r": 0.11195167501081268,
+        "max_p": 1.3097021469904326e-20,
+        "weakest_conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Retention_Aid_mass_flow__g/T_",
+          "Fibre__g/m2_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.02,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Natriumhydroxide_mass_flow__g/T_",
+        "role": "selected",
+        "marginal_r": 0.1395971841406709,
+        "marginal_p": 2.941344316165946e-31,
+        "min_abs_partial_r": 0.11014563785419113,
+        "max_p": 5.368428199328667e-20,
+        "weakest_conditioning_set": [
+          "Forming_Wire_Speed",
+          "Short_fibre_B06_consistency",
+          "Production_Rate__T/h_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.02,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Contact_pressure_secondary_arm_DS",
+        "role": "selected",
+        "marginal_r": -0.307903651561006,
+        "marginal_p": 7.260130322751228e-151,
+        "min_abs_partial_r": 0.0982245109349399,
+        "max_p": 3.3437684122683046e-16,
+        "weakest_conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Bentonite_1_mass_flow__g/T_",
+          "Bentonite_2_mass_flow__g/T_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.019999999999999667,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Cylinder_1-5_fresh_steam",
+        "role": "selected",
+        "marginal_r": -0.1645375274479264,
+        "marginal_p": 6.445427483875157e-43,
+        "min_abs_partial_r": 0.07578173361892075,
+        "max_p": 3.1835953857763863e-10,
+        "weakest_conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Forming_Wire_Speed",
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.01999999968164046,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Forming_Wire_Speed",
+        "role": "selected",
+        "marginal_r": -0.289991309077237,
+        "marginal_p": 2.744451705205775e-133,
+        "min_abs_partial_r": 0.06470831013553936,
+        "max_p": 7.942973107133317e-08,
+        "weakest_conditioning_set": [
+          "White_water_temperature",
+          "Dissolved_gas_after_stock_deculator_measurement_2",
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.01999992057026893,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "White_water_temperature",
+        "role": "selected",
+        "marginal_r": -0.22616875185527707,
+        "marginal_p": 1.8835831030292484e-80,
+        "min_abs_partial_r": 0.06264594197126942,
+        "max_p": 2.0255667454177523e-07,
+        "weakest_conditioning_set": [
+          "Contact_pressure_secondary_arm_DS",
+          "Retention_Aid_mass_flow__g/T_",
+          "Production_Rate__T/h_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.01999979744332546,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "dry_broke",
+        "role": "selected",
+        "marginal_r": 0.0762645389655701,
+        "marginal_p": 2.4336684390619097e-10,
+        "min_abs_partial_r": 0.055927667744339105,
+        "max_p": 3.5058163737653654e-06,
+        "weakest_conditioning_set": [
+          "White_water_temperature",
+          "Natriumhydroxide_mass_flow__g/T_",
+          "Fibre__g/m2_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.019996494183626236,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Bentonite_2_mass_flow__g/T_",
+        "role": "selected",
+        "marginal_r": 0.16242989971286434,
+        "marginal_p": 7.436516821348618e-42,
+        "min_abs_partial_r": 0.047131698337048916,
+        "max_p": 9.295629169615822e-05,
+        "weakest_conditioning_set": [
+          "Contact_pressure_secondary_arm_DS",
+          "Retention_Aid_mass_flow__g/T_",
+          "Fibre__g/m2_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.019907043708303842,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Dissolved_gas_after_stock_deculator_measurement_2",
+        "role": "selected",
+        "marginal_r": -0.25676552737903585,
+        "marginal_p": 6.294982176128474e-104,
+        "min_abs_partial_r": 0.03301882919585962,
+        "max_p": 0.006195924567398318,
+        "weakest_conditioning_set": [
+          "Contact_pressure_secondary_arm_DS",
+          "Retention_Aid_mass_flow__g/T_",
+          "Production_Rate__T/h_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.013804075432601683,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Bottom_wire_tension",
+        "role": "selected",
+        "marginal_r": 0.06470710370619946,
+        "marginal_p": 7.895908080224018e-08,
+        "min_abs_partial_r": 0.029930255291436957,
+        "max_p": 0.01309893697652947,
+        "weakest_conditioning_set": [
+          "Contact_pressure_secondary_arm_DS",
+          "Short_fibre_B06_consistency",
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.00690106302347053,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Fibre__g/m2_",
+        "role": "selected",
+        "marginal_r": -0.181293657508851,
+        "marginal_p": 7.130984296130677e-52,
+        "min_abs_partial_r": 0.028421747542702734,
+        "max_p": 0.01847448807306807,
+        "weakest_conditioning_set": [
+          "Bentonite_1_mass_flow__g/T_",
+          "Bentonite_2_mass_flow__g/T_",
+          "Production_Rate__T/h_"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.0015255119269319307,
+        "borderline": true,
+        "n_invalid_tests": 0
+      }
+    ],
+    "omitted_separators": [
+      {
+        "variable": "Speed",
+        "conditioning_set": [
+          "Forming_Wire_Speed",
+          "Production_Rate__T/h_"
+        ],
+        "r": -0.02038986278684392,
+        "p": 0.09100166889743883
+      },
+      {
+        "variable": "Current_reel_weight",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": 0.009865657507942277,
+        "p": 0.413488960439181
+      },
+      {
+        "variable": "Current_reel_width",
+        "conditioning_set": [
+          "Bentonite_1_mass_flow__g/T_"
+        ],
+        "r": -0.006960868973158442,
+        "p": 0.5639510517834952
+      },
+      {
+        "variable": "Current_reel_length",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": 0.003976653339242998,
+        "p": 0.7416870696588299
+      },
+      {
+        "variable": "Current_reel_moisture_average(reel)",
+        "conditioning_set": [
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": -0.018486205057757107,
+        "p": 0.12541774887927662
+      },
+      {
+        "variable": "Actual_moisture",
+        "conditioning_set": [
+          "Forming_Wire_Speed",
+          "Production_Rate__T/h_"
+        ],
+        "r": -0.019805518483309588,
+        "p": 0.10065408930878536
+      },
+      {
+        "variable": "Contact_pressure_reel_holders",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": 0.013789976896186057,
+        "p": 0.2530034829866942
+      },
+      {
+        "variable": "Reel_discharge_pressure",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": 0.018920704244452493,
+        "p": 0.11677643135881022
+      },
+      {
+        "variable": "Draw_meaurement_pope_reel_FS",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": -0.0072211218593367385,
+        "p": 0.5494692625704456
+      },
+      {
+        "variable": "Draw_measurement_pope_reel_DS",
+        "conditioning_set": [
+          "Forming_Wire_Speed",
+          "Short_fibre_B06_consistency",
+          "Production_Rate__T/h_"
+        ],
+        "r": -0.02130077366915517,
+        "p": 0.07747439128237431
+      },
+      {
+        "variable": "Total_draw_measurement_pope_reel",
+        "conditioning_set": [
+          "Contact_pressure_secondary_arm_DS",
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": -0.027534761771157015,
+        "p": 0.02245505083005422
+      },
+      {
+        "variable": "Contact_pressure_secondary_arm_OS",
+        "conditioning_set": [
+          "Contact_pressure_secondary_arm_DS"
+        ],
+        "r": 0.013034381029574238,
+        "p": 0.2799436580392356
+      },
+      {
+        "variable": "Inlet_Air_2_Temperature",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": 0.02618851686552309,
+        "p": 0.02992371414292829
+      },
+      {
+        "variable": "Inlet_Air_1_Temperature",
+        "conditioning_set": [
+          "Cylinder_1-5_fresh_steam",
+          "Cylinder_1-5_steam_temperature",
+          "dry_broke"
+        ],
+        "r": 0.027739638684445955,
+        "p": 0.02148199604912945
+      },
+      {
+        "variable": "PD1_Fabric_tension",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": -0.008670404445632322,
+        "p": 0.4723318550180999
+      },
+      {
+        "variable": "PD2_Fabric_tension",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Forming_Wire_Speed",
+          "Production_Rate__T/h_"
+        ],
+        "r": -0.019841540300220104,
+        "p": 0.10006107848607768
+      },
+      {
+        "variable": "PD5_fabric_tension_bottom",
+        "conditioning_set": [
+          "Contact_pressure_secondary_arm_DS",
+          "Forming_Wire_Speed",
+          "Fibre__g/m2_"
+        ],
+        "r": -0.020379087461616815,
+        "p": 0.09119622672928648
+      },
+      {
+        "variable": "PD4_fabric_tension",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": -0.02058608670531405,
+        "p": 0.08790939917519448
+      },
+      {
+        "variable": "PD4_fabric_tension_bottom",
+        "conditioning_set": [
+          "Contact_pressure_secondary_arm_DS",
+          "Cylinder_1-5_steam_temperature",
+          "dry_broke"
+        ],
+        "r": -0.023696413494995478,
+        "p": 0.04951275095828731
+      },
+      {
+        "variable": "PD5_fabric_tension_top",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "dry_broke",
+          "Fibre__g/m2_"
+        ],
+        "r": -0.024188235062946047,
+        "p": 0.04497079875219604
+      },
+      {
+        "variable": "ProRelease_1_LoVac",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": 0.0009615935842369091,
+        "p": 0.9364718441652595
+      },
+      {
+        "variable": "ProRelease_2_LoVac",
+        "conditioning_set": [
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": 0.0266414102158426,
+        "p": 0.027198439588713857
+      },
+      {
+        "variable": "ProRelease_3_LoVac",
+        "conditioning_set": [
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": 0.0220818203486114,
+        "p": 0.06716748442369332
+      },
+      {
+        "variable": "ProRelease_4_LoVac",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": 0.010177250179693315,
+        "p": 0.3989280463614062
+      },
+      {
+        "variable": "ProRelease_5_LoVac",
+        "conditioning_set": [
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": 0.025179695447234998,
+        "p": 0.03684859608465243
+      },
+      {
+        "variable": "ProRelease_6_LoVac",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Retention_Aid_mass_flow__g/T_",
+          "Production_Rate__T/h_"
+        ],
+        "r": 0.020305097900748515,
+        "p": 0.09237756971627523
+      },
+      {
+        "variable": "ProRelease_7_LoVac",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": 0.01628494288185384,
+        "p": 0.17707199011141478
+      },
+      {
+        "variable": "Compressor_1_outgoing_pressure",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": 0.012185103855829982,
+        "p": 0.3124750608448829
+      },
+      {
+        "variable": "Compressor_2_outgoing_pressure",
+        "conditioning_set": [
+          "Bentonite_1_mass_flow__g/T_"
+        ],
+        "r": -0.026349546020854334,
+        "p": 0.028928973674377193
+      },
+      {
+        "variable": "PickUp_Tension",
+        "conditioning_set": [
+          "Retention_Aid_mass_flow__g/T_",
+          "Production_Rate__T/h_"
+        ],
+        "r": 0.025261188395789634,
+        "p": 0.03625612847740243
+      },
+      {
+        "variable": "Dewatering_Suction_Press_Roll",
+        "conditioning_set": [
+          "Production_Rate__T/h_"
+        ],
+        "r": -0.000629621970935198,
+        "p": 0.9583785654843212
+      },
+      {
+        "variable": "Dewatering_Shoe_press",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Production_Rate__T/h_"
+        ],
+        "r": -0.011880339734246553,
+        "p": 0.32476831993119154
+      },
+      {
+        "variable": "Dewatering_Pick-Up",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": 0.0032307153288165806,
+        "p": 0.7888611380663583
+      },
+      {
+        "variable": "Uhle_box_1_flow___l/min_",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": -0.011422906685694461,
+        "p": 0.3437110125749148
+      },
+      {
+        "variable": "Uhle_box_2_flow___l/min_",
+        "conditioning_set": [],
+        "r": 0.00382437593687448,
+        "p": 0.7512277180045419
+      },
+      {
+        "variable": "Top_Felt_Tension",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": 0.019706010786557714,
+        "p": 0.1023762817369335
+      },
+      {
+        "variable": "Bottom_Felt_Tension",
+        "conditioning_set": [
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": 0.02392072846575278,
+        "p": 0.0473633488729756
+      },
+      {
+        "variable": "Dewatering_top_wire_suction_box_zone_2",
+        "conditioning_set": [
+          "Production_Rate__T/h_"
+        ],
+        "r": 0.008588486524890337,
+        "p": 0.47652687761261997
+      },
+      {
+        "variable": "Consistency_white_water",
+        "conditioning_set": [
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": -0.021331293142564527,
+        "p": 0.07700748261759646
+      },
+      {
+        "variable": "Conductivity_white_water_B46",
+        "conditioning_set": [
+          "Contact_pressure_secondary_arm_DS",
+          "Production_Rate__T/h_"
+        ],
+        "r": -0.027750153777467833,
+        "p": 0.021423099390956594
+      },
+      {
+        "variable": "Top_wire_tenstion",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": -0.013792425528144749,
+        "p": 0.25291922025328717
+      },
+      {
+        "variable": "pH_measurement_white_water_B41",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Bentonite_1_mass_flow__g/T_"
+        ],
+        "r": -0.0210936348340431,
+        "p": 0.0803798053217534
+      },
+      {
+        "variable": "Headbox_pressure",
+        "conditioning_set": [
+          "Forming_Wire_Speed",
+          "Bentonite_1_mass_flow__g/T_"
+        ],
+        "r": -0.019955070272919463,
+        "p": 0.09810928008532668
+      },
+      {
+        "variable": "Dilution_water_deculator_temperature",
+        "conditioning_set": [
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": -0.007330533308243143,
+        "p": 0.5434362675343126
+      },
+      {
+        "variable": "Stock_deculator_pressure",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": -0.025840656653755137,
+        "p": 0.03218587683942689
+      },
+      {
+        "variable": "Stock_deculator_temperature",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": -0.0011627995042973816,
+        "p": 0.9232166193639071
+      },
+      {
+        "variable": "Long_fibre_consistency_B07",
+        "conditioning_set": [
+          "Contact_pressure_secondary_arm_DS",
+          "Short_fibre_B06_consistency"
+        ],
+        "r": -0.017243564133788178,
+        "p": 0.1529194488613857
+      },
+      {
+        "variable": "Free_gas_before_dilution_water_deculator_measurement_1~^0",
+        "conditioning_set": [
+          "Retention_Aid_mass_flow__g/T_",
+          "Production_Rate__T/h_"
+        ],
+        "r": -0.014439735156383256,
+        "p": 0.231359966961188
+      },
+      {
+        "variable": "Free_gas_before_dilution_water_deculator_measurement_2",
+        "conditioning_set": [
+          "Retention_Aid_mass_flow__g/T_",
+          "Production_Rate__T/h_"
+        ],
+        "r": -0.011616216030260857,
+        "p": 0.3356414305244982
+      },
+      {
+        "variable": "Dissolved_gas_before_dilution_water_deculator",
+        "conditioning_set": [
+          "Production_Rate__T/h_"
+        ],
+        "r": -0.020530471550423014,
+        "p": 0.08877056620433256
+      },
+      {
+        "variable": "Free_gas_after_stock_deculator~^0",
+        "conditioning_set": [
+          "Production_Rate__T/h_"
+        ],
+        "r": -0.021332918367090288,
+        "p": 0.07698496955353541
+      },
+      {
+        "variable": "Dissolved_gas_after_stock_deculator_measurement_1",
+        "conditioning_set": [
+          "Retention_Aid_mass_flow__g/T_",
+          "Bentonite_1_mass_flow__g/T_",
+          "Production_Rate__T/h_"
+        ],
+        "r": -0.026546659321067687,
+        "p": 0.02777287870777917
+      },
+      {
+        "variable": "Combisorter_1_power",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": 0.02655843657030942,
+        "p": 0.027681081229993996
+      },
+      {
+        "variable": "Combisorter_2_power",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": -0.013030888969628392,
+        "p": 0.28007252732774657
+      },
+      {
+        "variable": "Combisorter_3_power",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Bentonite_1_mass_flow__g/T_"
+        ],
+        "r": -0.01943259883897829,
+        "p": 0.1072291144534206
+      },
+      {
+        "variable": "Contaminex_2_power",
+        "conditioning_set": [
+          "Natriumhydroxide_mass_flow__g/T_"
+        ],
+        "r": 0.02751250408925856,
+        "p": 0.022554284800938403
+      },
+      {
+        "variable": "Fixative_2_mass_flow__g/T_",
+        "conditioning_set": [
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": 0.002872531089118988,
+        "p": 0.8118033600779307
+      },
+      {
+        "variable": "Act_Deaerator_mass_flow__g/T_",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Production_Rate__T/h_"
+        ],
+        "r": 0.0024395707295984375,
+        "p": 0.8397620206369673
+      },
+      {
+        "variable": "Paper_break_status_check",
+        "conditioning_set": [],
+        "r": 0.002538821919712552,
+        "p": 0.8333127715094265
+      },
+      {
+        "variable": "Starch_mass_flow__kg/T_",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": 0.011003869716362594,
+        "p": 0.3617396291764738
+      },
+      {
+        "variable": "Defoamer_mass_flow__g/T_",
+        "conditioning_set": [
+          "Production_Rate__T/h_"
+        ],
+        "r": 0.009019473235182363,
+        "p": 0.4546860025881363
+      },
+      {
+        "variable": "Sizing_Agent__g/T_",
+        "conditioning_set": [
+          "Bentonite_1_mass_flow__g/T_",
+          "Fibre__g/m2_"
+        ],
+        "r": -0.0243155680368347,
+        "p": 0.043838495335569445
+      },
+      {
+        "variable": "Dry_Strength_Agent_mass_flow__kg/T_",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": 0.01551637592566861,
+        "p": 0.19837109779374287
+      },
+      {
+        "variable": "Approach_flow_returns",
+        "conditioning_set": [
+          "Production_Rate__T/h_"
+        ],
+        "r": -0.02749444529897987,
+        "p": 0.022643082216480623
+      },
+      {
+        "variable": "Consistency_main_pipe_%",
+        "conditioning_set": [],
+        "r": 0.0029415868216989462,
+        "p": 0.8073532450004316
+      },
+      {
+        "variable": "Concentration_of_starch_to_top_roll",
+        "conditioning_set": [
+          "Contact_pressure_secondary_arm_DS"
+        ],
+        "r": -0.027843105305396736,
+        "p": 0.020981336964370278
+      },
+      {
+        "variable": "concentration_starch_working_tank_1",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": 0.001271569862662579,
+        "p": 0.9160595785078973
+      },
+      {
+        "variable": "concentration_starch_working_tank_2",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": -0.0016475414686394248,
+        "p": 0.8913767776745308
+      },
+      {
+        "variable": "ambient_temp_C",
+        "conditioning_set": [
+          "Production_Rate__T/h_"
+        ],
+        "r": 0.020655136610027904,
+        "p": 0.08684959034413305
+      },
+      {
+        "variable": "Dry_Strength_Agent_mass_flow__g/T_",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": 0.015516376511023736,
+        "p": 0.1983710808620785
+      },
+      {
+        "variable": "wet_broke",
+        "conditioning_set": [
+          "Contact_pressure_secondary_arm_DS",
+          "Forming_Wire_Speed",
+          "Natriumhydroxide_mass_flow__g/T_"
+        ],
+        "r": -0.027387728688514336,
+        "p": 0.023194082893583153
+      },
+      {
+        "variable": "Starch_uptake__g/m2_",
+        "conditioning_set": [],
+        "r": 0.000511999643697954,
+        "p": 0.9661463767721589
+      },
+      {
+        "variable": "fibre_short/long",
+        "conditioning_set": [
+          "Short_fibre_B06_consistency"
+        ],
+        "r": -0.009586366146604044,
+        "p": 0.4268359949377746
+      },
+      {
+        "variable": "temperature_starch_working_tank",
+        "conditioning_set": [
+          "Contact_pressure_secondary_arm_DS",
+          "Production_Rate__T/h_"
+        ],
+        "r": -0.010427464616665267,
+        "p": 0.38743558917279225
+      },
+      {
+        "variable": "speedsizer_linepressure_1",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Retention_Aid_mass_flow__g/T_"
+        ],
+        "r": 0.022992681903668145,
+        "p": 0.056657772452446395
+      },
+      {
+        "variable": "linepressure_1",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature",
+          "Retention_Aid_mass_flow__g/T_",
+          "Bentonite_1_mass_flow__g/T_"
+        ],
+        "r": 0.024405012639896376,
+        "p": 0.043083334548068196
+      },
+      {
+        "variable": "linepressure_2",
+        "conditioning_set": [
+          "Cylinder_1-5_steam_temperature"
+        ],
+        "r": -0.02697611350567345,
+        "p": 0.025324534949125944
+      }
+    ],
+    "fixed_audit": []
+  }
+}

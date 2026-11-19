@@ -7,6 +7,8 @@ kubectl port-forward deploy/cost-analysis-dashboard 8000:8000
 
 \kubectl -n "$NS" logs -f "pod/$POD" -- | command grep -viE 'info|debug'
 
+kubectl -n "$NS" logs -f "pod/$POD" | grep -v "/health" | grep -v "opentelemetry" | grep -v "/ready"
+
 SEL=$(kubectl -n "$NS" get deploy cost-analysis-dashboard -o json \
   | jq -r '.spec.selector.matchLabels | to_entries | map("\(.key)=\(.value)") | join(",")')
 
@@ -127,3 +129,84 @@ git config --global http.sslVerify false
 
 
 
+backfills in DEV
+
+python app/backfill_toolkit/scripts/backfill_refetch_api.py \
+  --env dev \
+  --start 2026-09-01 \
+  --end 2026-09-19 \
+  --output-target s3 \
+  --overwrite 1 \
+  --cooldown-seconds 1 \
+  --tags-csv app/init_data/tags-v3.csv \
+  --glossary-csv app/init_data/data_glossary_3.csv\
+  --dry-run 0
+
+python app/Backfill_toolkit/backfill_optivision_raw.py \
+  --env dev \
+  --start 2026-09-01 \
+  --end 2026-09-18 \
+  --overwrite 1 \
+  --dry-run 0
+
+python app/Backfill_toolkit/backfill_aggregated_optivision.py \
+  --env dev \
+  --start 2026-09-01 \
+  --end 2026-09-18 \
+  --overwrite 1 \
+  --dry-run 0
+
+python app/turn_up_backfill_toolkit/app/backfill_turn_up_monthly.py \
+  --env dev \
+  --start 2026-09-01 \
+  --end 2026-09-18 \
+  --numeric-cols-keep-last '["AB_Grade_ID", "Sheet_Off"]' \
+  --overwrite 1 \
+  --dry-run 0    
+
+python app/turn_up_backfill_toolkit/app/backfill_turn_up_monthly.py \
+  --env dev \
+  --start 2026-09-18 \
+  --end 2026-09-29 \
+  --numeric-cols-keep-last '["AB_Grade_ID", "Sheet_Off"]' \
+  --overwrite 1 \
+  --dry-run 0    
+
+
+kubectl config current-context
+
+kubectl --context arn:aws:eks:eu-west-1:781690932061:cluster/dev-datafactory -n costimiser patch cronjob costimiser-model-state-updater \
+      --type merge -p '{"spec":{"suspend":false}}'
+
+kubectl --context arn:aws:eks:eu-west-1:781690932061:cluster/dev-datafactory -n costimiser patch cronjob costimiser-background \
+      --type merge -p '{"spec":{"suspend":false}}'
+
+python app/Backfill_toolkit/Backfill_predictions.py \
+  --env dev \
+  --start 2026-09-17 \
+  --targets MBS_SCT_CD MBS_SCT_MD MBS_Burst MBS_CMT30 \
+  --prediction-history-source-prefix data-v2 \
+  --output-source-prefix data-v2 \
+  --backups-prefix models/2026_03_16/backups \
+  --output-backups-prefix models/2026_03_16/backups \
+  --pointer-key models/2026_03_16/current_model_pointer.json \
+  --persist-state 1 \
+  --cleanup-old-models 0 \
+  --dry-run 0
+
+kubectl --context arn:aws:eks:eu-west-1:781690932061:cluster/dev-datafactory -n costimiser patch cronjob costimiser-model-state-updater \
+      --type merge -p '{"spec":{"suspend":true}}'
+
+kubectl --context arn:aws:eks:eu-west-1:781690932061:cluster/dev-datafactory -n costimiser patch cronjob costimiser-background \
+      --type merge -p '{"spec":{"suspend":true}}'
+
+
+
+
+http://127.0.0.1:5000/v2/reports/cost-analysis?conditional=false#exec-summary
+
+https://ai-analytic-engine.dev-datafactory.eu-west-1.aws.dssmith.local/health
+
+https://ai-analytic-engine.dev-datafactory.eu-west-1.aws.dssmith.local/v2/reports/cost-analysis?conditional=false#exec-summary
+
+python3 -m uvicorn app:app --app-dir /app --host 0.0.0.0 --port 5000

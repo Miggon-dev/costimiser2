@@ -1,0 +1,2019 @@
+{
+  "start_time": "2026-11-18T18:44:12.162941",
+  "end_time": "2026-11-18T18:44:58.905448",
+  "duration_seconds": 46.742507,
+  "parameters": {
+    "y_column": "Starch_uptake_by_paper_Top_Roll__g/m2_",
+    "data_path": "../data/costimiser_turnup.parquet",
+    "model": "ridge",
+    "lag_days": 0.1,
+    "apply_ewm_filter": true,
+    "apply_ewm_filter_y": true,
+    "ewm_halflife": "6h",
+    "allow_cross_grammage": false,
+    "conditional_independence": true,
+    "ci_max_states": 5000,
+    "ci_max_tests": 500000,
+    "ci_max_k": 3,
+    "ci_alpha": 0.03,
+    "spline_knots": null,
+    "spline_degree": null,
+    "ridge_alpha": 85.31678524172806,
+    "fs_k_features": null,
+    "realmlp_params": null
+  },
+  "data": {
+    "n_samples": 2570,
+    "split": 2056,
+    "n_features": 12,
+    "feature_cols": [
+      "Actual_moisture",
+      "AD7_fabric_tension_bottom",
+      "AirTurn_Temperature",
+      "Pressure_slurry_pipe_3",
+      "ATS1_differential_pressure",
+      "Draw_PS-PD1",
+      "Draw_PD4-PD5",
+      "dry_broke",
+      "temperature_starch_working_tank",
+      "starch2_1",
+      "starch2_2",
+      "starch2_3"
+    ],
+    "n_train_contrasts": 1781,
+    "n_test_contrasts": 405
+  },
+  "metrics": {
+    "dy": {
+      "rmse": 0.02693662159743323,
+      "mae": 0.019439136337900002,
+      "r2": 0.28531646011584777
+    },
+    "ewm_persistence": {
+      "rmse": 0.03276234458677266,
+      "mae": 0.02236228315491201,
+      "r2": 0.9812869841421364
+    },
+    "ewm_model": {
+      "rmse": 0.026936621597433215,
+      "mae": 0.019439136337899995,
+      "r2": 0.9873503039938888
+    },
+    "raw_persistence": {
+      "rmse": 0.0919437139925335,
+      "mae": 0.0609949638814102,
+      "r2": 0.859638119259847
+    },
+    "raw_model": {
+      "rmse": 0.08157578379631943,
+      "mae": 0.06253271582071031,
+      "r2": 0.8895088219970655
+    },
+    "gain_over_persistence_ewm": 0.006063319851752347,
+    "gain_over_persistence_raw": 0.02987070273721848
+  },
+  "ci_selection": {
+    "metadata": {
+      "target": "Starch_uptake_by_paper_Top_Roll__g/m2_",
+      "complete": true,
+      "stop_reason": "complete",
+      "selected_count": 12,
+      "fixed_vars": [],
+      "fixed_count": 0,
+      "states_visited": 33,
+      "ci_tests": 6995,
+      "alpha": 0.03,
+      "alpha_conditional": 0.03,
+      "alpha_marginal": 0.7,
+      "max_k": 3,
+      "unblocked_omitted_count": 0,
+      "invalid_survivor_or_candidate_tests": false,
+      "note": "Any incomplete output is provisional. Completion is bounded subset-test consistency, not global optimality. Fixed variables are exempt from survival; see fixed_audit_df."
+    },
+    "selected_feature_independence": [
+      {
+        "variable": "starch2_1",
+        "role": "selected",
+        "marginal_r": 0.7092702198179698,
+        "marginal_p": 0.0,
+        "min_abs_partial_r": 0.5253090866669587,
+        "max_p": 3.885770937037475e-155,
+        "weakest_conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_2",
+          "starch2_3"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.03,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "temperature_starch_working_tank",
+        "role": "selected",
+        "marginal_r": 0.4802834805831973,
+        "marginal_p": 1.52675815782678e-126,
+        "min_abs_partial_r": 0.27145702176293174,
+        "max_p": 3.505523085935916e-38,
+        "weakest_conditioning_set": [
+          "AD7_fabric_tension_bottom",
+          "starch2_1",
+          "starch2_3"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.03,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "starch2_3",
+        "role": "selected",
+        "marginal_r": 0.2778911617621988,
+        "marginal_p": 4.69304119204323e-40,
+        "min_abs_partial_r": 0.22175191415362658,
+        "max_p": 1.0050039583690643e-25,
+        "weakest_conditioning_set": [
+          "AirTurn_Temperature",
+          "Pressure_slurry_pipe_3",
+          "temperature_starch_working_tank"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.03,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "ATS1_differential_pressure",
+        "role": "selected",
+        "marginal_r": -0.15098128092261742,
+        "marginal_p": 1.2864719861543484e-12,
+        "min_abs_partial_r": 0.0986958527537059,
+        "max_p": 3.838002647741862e-06,
+        "weakest_conditioning_set": [
+          "dry_broke",
+          "starch2_1",
+          "starch2_3"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.029996161997352257,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Pressure_slurry_pipe_3",
+        "role": "selected",
+        "marginal_r": -0.14634877799712195,
+        "marginal_p": 6.17182414535497e-12,
+        "min_abs_partial_r": 0.09672373075355224,
+        "max_p": 5.9766861768535235e-06,
+        "weakest_conditioning_set": [
+          "Draw_PD4-PD5",
+          "starch2_1",
+          "starch2_3"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.029994023313823146,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "AD7_fabric_tension_bottom",
+        "role": "selected",
+        "marginal_r": 0.2988310325061831,
+        "marginal_p": 2.470075145548396e-46,
+        "min_abs_partial_r": 0.09025663545742138,
+        "max_p": 2.4082607173750003e-05,
+        "weakest_conditioning_set": [
+          "Actual_moisture",
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.02997591739282625,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Actual_moisture",
+        "role": "selected",
+        "marginal_r": -0.24531642656810135,
+        "marginal_p": 2.536335656329316e-31,
+        "min_abs_partial_r": 0.07927918677458656,
+        "max_p": 0.00020903128608390145,
+        "weakest_conditioning_set": [
+          "AD7_fabric_tension_bottom",
+          "AirTurn_Temperature",
+          "starch2_1"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.029790968713916097,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Draw_PD4-PD5",
+        "role": "selected",
+        "marginal_r": 0.10925612070437452,
+        "marginal_p": 3.0448692984455005e-07,
+        "min_abs_partial_r": 0.07225122069468916,
+        "max_p": 0.0007294977408229092,
+        "weakest_conditioning_set": [
+          "Pressure_slurry_pipe_3",
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.02927050225917709,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "dry_broke",
+        "role": "selected",
+        "marginal_r": 0.09580020753628667,
+        "marginal_p": 7.2277527957971804e-06,
+        "min_abs_partial_r": 0.057801850108442174,
+        "max_p": 0.006905577663958531,
+        "weakest_conditioning_set": [
+          "Actual_moisture",
+          "ATS1_differential_pressure",
+          "Draw_PS-PD1"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.02309442233604147,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "starch2_2",
+        "role": "selected",
+        "marginal_r": 0.4276765835562678,
+        "marginal_p": 6.318028196050346e-98,
+        "min_abs_partial_r": 0.05727948085779368,
+        "max_p": 0.0074304483169828715,
+        "weakest_conditioning_set": [
+          "Pressure_slurry_pipe_3",
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.02256955168301713,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "Draw_PS-PD1",
+        "role": "selected",
+        "marginal_r": 0.10141549287995791,
+        "marginal_p": 2.022223440651398e-06,
+        "min_abs_partial_r": 0.053810517979843694,
+        "max_p": 0.011918494357753549,
+        "weakest_conditioning_set": [
+          "dry_broke",
+          "starch2_1",
+          "starch2_3"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.018081505642246448,
+        "borderline": false,
+        "n_invalid_tests": 0
+      },
+      {
+        "variable": "AirTurn_Temperature",
+        "role": "selected",
+        "marginal_r": 0.2629872772767286,
+        "marginal_p": 6.607853276473665e-36,
+        "min_abs_partial_r": 0.04680770746307793,
+        "max_p": 0.02874813192312625,
+        "weakest_conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_2",
+          "starch2_3"
+        ],
+        "survives": true,
+        "separating_set": null,
+        "margin_to_alpha": 0.0012518680768737502,
+        "borderline": true,
+        "n_invalid_tests": 0
+      }
+    ],
+    "omitted_separators": [
+      {
+        "variable": "Stock_pump_power",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": -0.0010656420383895666,
+        "p": 0.9603037153999647
+      },
+      {
+        "variable": "Speed",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": 0.02085684468718271,
+        "p": 0.32992903013856073
+      },
+      {
+        "variable": "Current_reel_weight",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.032306093081878935,
+        "p": 0.1311339354954045
+      },
+      {
+        "variable": "Current_reel_width",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1",
+          "starch2_3"
+        ],
+        "r": 0.046285254736546454,
+        "p": 0.03058065005116962
+      },
+      {
+        "variable": "Current_reel_length",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.032276175925143494,
+        "p": 0.1314914148095179
+      },
+      {
+        "variable": "Current_reel_moisture_average(reel)",
+        "conditioning_set": [
+          "Actual_moisture"
+        ],
+        "r": -0.03746160648382301,
+        "p": 0.07999463862992927
+      },
+      {
+        "variable": "Contact_pressure_reel_holders",
+        "conditioning_set": [
+          "Actual_moisture"
+        ],
+        "r": -0.025569776817807643,
+        "p": 0.23218682918762035
+      },
+      {
+        "variable": "Reel_discharge_pressure",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.03472151986610586,
+        "p": 0.10467865446233612
+      },
+      {
+        "variable": "Total_draw_measurement_pope_reel",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.006951723297638265,
+        "p": 0.7453557449335729
+      },
+      {
+        "variable": "Contact_pressure_secondary_arm_OS",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.04578252169456969,
+        "p": 0.03235841031220964
+      },
+      {
+        "variable": "Contact_pressure_secondary_arm_DS",
+        "conditioning_set": [
+          "Actual_moisture",
+          "ATS1_differential_pressure",
+          "starch2_1"
+        ],
+        "r": 0.0426033396286744,
+        "p": 0.04655770871977959
+      },
+      {
+        "variable": "Speed_Size_Press",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": 0.020245753694760997,
+        "p": 0.34429863737554406
+      },
+      {
+        "variable": "Web_tension_AD6",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.03717908074422845,
+        "p": 0.0822981510567314
+      },
+      {
+        "variable": "AD6_fabric_tension",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.01833076347133968,
+        "p": 0.39175746582991244
+      },
+      {
+        "variable": "Pressure_of_Starch_flow_Speedsizer_Bottom_Roll~^0",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.027115382607184862,
+        "p": 0.20515934831707383
+      },
+      {
+        "variable": "Pressure_of_Starch_flow_Speedsizer_Top_Roll",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.01185686711497004,
+        "p": 0.5796202379181703
+      },
+      {
+        "variable": "Airturn_pillow_pressure",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.03653254134808127,
+        "p": 0.087772026405931
+      },
+      {
+        "variable": "Rod_clamping_pressure_Bottom_Roll",
+        "conditioning_set": [],
+        "r": 0.00372564346432301,
+        "p": 0.8617929750599769
+      },
+      {
+        "variable": "Air_pressure_of_rod_clamping_hose_Bottom_Roll",
+        "conditioning_set": [],
+        "r": 0.002187680958283098,
+        "p": 0.9185773389436166
+      },
+      {
+        "variable": "Rod_clamping_pressure_Top_Roll",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.038932713512167504,
+        "p": 0.06883235552519133
+      },
+      {
+        "variable": "Air_pressure_of_rod_clamping_hose_Top_Roll",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.029442190629475992,
+        "p": 0.16889719729103442
+      },
+      {
+        "variable": "Enzyme_flow_Slurry_1",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.012929105962590903,
+        "p": 0.5458188248471594
+      },
+      {
+        "variable": "Slurry_1_dosing_screw_rotation",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.013120666956786556,
+        "p": 0.5398844943653731
+      },
+      {
+        "variable": "Slurry_1_level",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": -0.03557739837986822,
+        "p": 0.0963917278361742
+      },
+      {
+        "variable": "Dilution_water_flow_slurry_1",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.00030105083116105353,
+        "p": 0.9887787118040524
+      },
+      {
+        "variable": "Flow_slurry_1_to_reactor",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.020678405012866094,
+        "p": 0.33397352823754817
+      },
+      {
+        "variable": "Enzyme_flow_Slurry_2",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.011815881594991993,
+        "p": 0.5809315074330287
+      },
+      {
+        "variable": "Slurry_2_dosing_screw_rotation",
+        "conditioning_set": [
+          "starch2_1",
+          "starch2_3"
+        ],
+        "r": 0.021368676665006515,
+        "p": 0.31819657747385655
+      },
+      {
+        "variable": "Slurry_2_level",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.015069258147731066,
+        "p": 0.48141156986392064
+      },
+      {
+        "variable": "Dilution_water_flow_slurry_2",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.02196178497479724,
+        "p": 0.30483614408208426
+      },
+      {
+        "variable": "Flow_slurry_2_to_reactor",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.018145322398453716,
+        "p": 0.3965665833951761
+      },
+      {
+        "variable": "Enzyme_flow_Slurry_3",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.03592138489952832,
+        "p": 0.09321256725772525
+      },
+      {
+        "variable": "Slurry_3_dosing_screw_rotation",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.01276579346265424,
+        "p": 0.5509034486266735
+      },
+      {
+        "variable": "Slurry_3_level",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.04345071971866158,
+        "p": 0.042269543368466674
+      },
+      {
+        "variable": "Dilution_water_flow_slurry_3",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.03276148791634881,
+        "p": 0.12578494569439852
+      },
+      {
+        "variable": "Flow_slurry_3_to_reactor",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.03553204933067512,
+        "p": 0.09681724120285116
+      },
+      {
+        "variable": "Pressure_slurry_main_pipe",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.00039484895765334215,
+        "p": 0.9852828547010672
+      },
+      {
+        "variable": "Reactor_steam_pressure",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.02883991555235088,
+        "p": 0.17778661743947138
+      },
+      {
+        "variable": "Reactor_Temperature",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.0227779824745414,
+        "p": 0.2872098309189842
+      },
+      {
+        "variable": "Reactor_level",
+        "conditioning_set": [
+          "starch2_1",
+          "starch2_3"
+        ],
+        "r": -0.0034655434478230245,
+        "p": 0.8714129533761462
+      },
+      {
+        "variable": "Starch_flow_to_inactivation",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.040797290544637356,
+        "p": 0.05655550433404097
+      },
+      {
+        "variable": "Pressure_to_inactivation",
+        "conditioning_set": [
+          "Actual_moisture",
+          "AD7_fabric_tension_bottom",
+          "Draw_PD4-PD5"
+        ],
+        "r": 0.045800517411695586,
+        "p": 0.03236965299293256
+      },
+      {
+        "variable": "Temperature_inactivation",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.00499596330852094,
+        "p": 0.8154515515795936
+      },
+      {
+        "variable": "Pressure_after_inactivation",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.005390148169692639,
+        "p": 0.8011843342407223
+      },
+      {
+        "variable": "Storage_tank_level",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.016485850675758234,
+        "p": 0.44116602029739105
+      },
+      {
+        "variable": "Storage_tank_temperature",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.012152136404954631,
+        "p": 0.5702148029454172
+      },
+      {
+        "variable": "Pressure_starch_main_line",
+        "conditioning_set": [
+          "Actual_moisture",
+          "starch2_1"
+        ],
+        "r": -0.040204278009601316,
+        "p": 0.06030434139307084
+      },
+      {
+        "variable": "Level_storage_tank_2~^0",
+        "conditioning_set": [
+          "Actual_moisture"
+        ],
+        "r": -0.022513500053498243,
+        "p": 0.2928446099970234
+      },
+      {
+        "variable": "Differential_pressure_filter_storage_tank_1",
+        "conditioning_set": [
+          "starch2_1",
+          "starch2_3"
+        ],
+        "r": 0.04288986345106583,
+        "p": 0.04505303536544507
+      },
+      {
+        "variable": "Level_storage_tank_2",
+        "conditioning_set": [
+          "starch2_3"
+        ],
+        "r": -0.006128319488229993,
+        "p": 0.7746477219726032
+      },
+      {
+        "variable": "Differential_pressure_filter_storage_tank_2",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_3"
+        ],
+        "r": -0.018417316756350704,
+        "p": 0.3896336450670267
+      },
+      {
+        "variable": "Steam_Pressure_Inactivation",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.0010919008011120571,
+        "p": 0.9593170726461474
+      },
+      {
+        "variable": "Dilution_water_flow_slurry_2_control_setting",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.010843200900237394,
+        "p": 0.6124500655916743
+      },
+      {
+        "variable": "Pressure_cold_water_for_slurry_mixing",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.00016688502241923915,
+        "p": 0.9937794303355161
+      },
+      {
+        "variable": "Dilution_water_flow_slurry_1_control_setting",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.00994538615008659,
+        "p": 0.6421947019993937
+      },
+      {
+        "variable": "Revolution_of_Slurry_2_to_reactor_(control_setting)",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.02018964157444756,
+        "p": 0.3455272841568982
+      },
+      {
+        "variable": "Revolution_of_Slurry_3_to_reactor_(control_setting)",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.04121603779980649,
+        "p": 0.05406469739427637
+      },
+      {
+        "variable": "Revolution_of_Slurry_1_to_reactor_(control_setting)",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.002706470824864436,
+        "p": 0.8993843805392011
+      },
+      {
+        "variable": "Pressure_in_cyclon_storage_tank",
+        "conditioning_set": [
+          "AD7_fabric_tension_bottom",
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.03740942059287529,
+        "p": 0.0804854900286044
+      },
+      {
+        "variable": "Fresh_water_main_pipe_pressure",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.028882599670812487,
+        "p": 0.17714537080019577
+      },
+      {
+        "variable": "Speed_press_section",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": 0.012982431009207703,
+        "p": 0.5442558922408419
+      },
+      {
+        "variable": "Cylinder_1-5_fresh_steam",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.011876139656889353,
+        "p": 0.5790041222049445
+      },
+      {
+        "variable": "Cylinder_1-5_steam_temperature",
+        "conditioning_set": [
+          "starch2_2",
+          "starch2_3"
+        ],
+        "r": -0.043460871454454854,
+        "p": 0.04226857812604015
+      },
+      {
+        "variable": "Moisture_out_of_PreDryer",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.04550943644732796,
+        "p": 0.033405366551272936
+      },
+      {
+        "variable": "Inlet_Air_2_Temperature",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_3"
+        ],
+        "r": -0.035916011943420575,
+        "p": 0.09333661377538921
+      },
+      {
+        "variable": "Inlet_Air_1_Temperature",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_3"
+        ],
+        "r": -0.02648755420261807,
+        "p": 0.2159538851205919
+      },
+      {
+        "variable": "DG_1-3_zero_point",
+        "conditioning_set": [],
+        "r": -0.0048186217061219495,
+        "p": 0.8218504833048792
+      },
+      {
+        "variable": "PD1_Fabric_tension",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": -0.0042955053398716385,
+        "p": 0.840952663297724
+      },
+      {
+        "variable": "PD2_Fabric_tension",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.045911084288774925,
+        "p": 0.03187533295357044
+      },
+      {
+        "variable": "PD5_fabric_tension_bottom",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.032647268718208285,
+        "p": 0.12711031384582158
+      },
+      {
+        "variable": "PD4_fabric_tension",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.003447116467351375,
+        "p": 0.8720617160423296
+      },
+      {
+        "variable": "PD4_fabric_tension_bottom",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.03390865473990026,
+        "p": 0.1130630990987841
+      },
+      {
+        "variable": "PD5_fabric_tension_top",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.03901800565285396,
+        "p": 0.06822653069650275
+      },
+      {
+        "variable": "ProRelease_1_LoVac",
+        "conditioning_set": [
+          "starch2_3"
+        ],
+        "r": 0.021803172684219285,
+        "p": 0.3083430221600998
+      },
+      {
+        "variable": "ProRelease_2_LoVac",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.04585116741982416,
+        "p": 0.03209969796273358
+      },
+      {
+        "variable": "ProRelease_3_LoVac",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.004197936095455547,
+        "p": 0.8445187223191605
+      },
+      {
+        "variable": "ProRelease_4_LoVac",
+        "conditioning_set": [],
+        "r": 0.008109680135338875,
+        "p": 0.7047213919742159
+      },
+      {
+        "variable": "ProRelease_5_LoVac",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.023793024904101543,
+        "p": 0.26626642586091825
+      },
+      {
+        "variable": "ProRelease_6_LoVac",
+        "conditioning_set": [
+          "starch2_1",
+          "starch2_3"
+        ],
+        "r": 0.03620240275605239,
+        "p": 0.09075220753789669
+      },
+      {
+        "variable": "ProRelease_7_LoVac",
+        "conditioning_set": [
+          "starch2_2",
+          "starch2_3"
+        ],
+        "r": 0.03417603117093524,
+        "p": 0.11033030242696146
+      },
+      {
+        "variable": "Compressor_1_outgoing_pressure",
+        "conditioning_set": [],
+        "r": 0.0002769698924258829,
+        "p": 0.9896738813250704
+      },
+      {
+        "variable": "Compressor_2_outgoing_pressure",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.01907490524903946,
+        "p": 0.3728176405557022
+      },
+      {
+        "variable": "Forming_Wire_Speed",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": 0.012977496779264906,
+        "p": 0.5444089218138024
+      },
+      {
+        "variable": "PickUp_Tension",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.026575387720137403,
+        "p": 0.21432957733680352
+      },
+      {
+        "variable": "Dewatering_First_Press_Roll",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": 0.0317717602547606,
+        "p": 0.13772313947336023
+      },
+      {
+        "variable": "Dewatering_Suction_Press_Roll",
+        "conditioning_set": [],
+        "r": -0.003553226788483889,
+        "p": 0.8681290285786114
+      },
+      {
+        "variable": "Dewatering_Shoe_press",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.029650327182662122,
+        "p": 0.1659039392252506
+      },
+      {
+        "variable": "Uhle_box_1_flow___l/min_",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": -0.03147724767001887,
+        "p": 0.1413196647956319
+      },
+      {
+        "variable": "Top_Felt_Tension",
+        "conditioning_set": [],
+        "r": 0.004214912974865525,
+        "p": 0.8438627050257587
+      },
+      {
+        "variable": "Bottom_Felt_Tension",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.008353724342604871,
+        "p": 0.6963371164306016
+      },
+      {
+        "variable": "Total_Dewatering_Press",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.0030474052780218685,
+        "p": 0.8867903802334124
+      },
+      {
+        "variable": "Bottom_wire_tension",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.008817877013195486,
+        "p": 0.6803725225306736
+      },
+      {
+        "variable": "Dewatering_top_wire_suction_box_zone_1",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.0340787248732473,
+        "p": 0.11126648712679013
+      },
+      {
+        "variable": "Dewatering_top_wire_suction_box_zone_2",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.028281087087963945,
+        "p": 0.18634186574702097
+      },
+      {
+        "variable": "Consistency_white_water",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": 0.006442860291843259,
+        "p": 0.7634703300587801
+      },
+      {
+        "variable": "White_water_temperature",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": 0.01836141237561748,
+        "p": 0.3910746111699999
+      },
+      {
+        "variable": "Conductivity_white_water_B46",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.02058645305249843,
+        "p": 0.3361279259176752
+      },
+      {
+        "variable": "Top_wire_tenstion",
+        "conditioning_set": [
+          "AD7_fabric_tension_bottom"
+        ],
+        "r": -0.03697836550539264,
+        "p": 0.08396706904238228
+      },
+      {
+        "variable": "pH_measurement_white_water_B41",
+        "conditioning_set": [
+          "starch2_3"
+        ],
+        "r": 0.0239900566651993,
+        "p": 0.26232599147043584
+      },
+      {
+        "variable": "Differential_pressure_retention_aid_filter",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.013666482150373025,
+        "p": 0.5231547122393582
+      },
+      {
+        "variable": "Inlet_pressure_TrumpJet_station_A1-A4",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": -0.0032112491459350633,
+        "p": 0.8807751122615265
+      },
+      {
+        "variable": "Differential_pressure_A1-A4_between_stock_and_chemical",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.017026624530913297,
+        "p": 0.42632591878050335
+      },
+      {
+        "variable": "Inlet_pressure_TrumpJet_station_C1-C4",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": -0.00816393501783032,
+        "p": 0.7029691983524189
+      },
+      {
+        "variable": "Differential_pressure_C1-C4_between_stock_and_chemical",
+        "conditioning_set": [],
+        "r": 0.003697734441191939,
+        "p": 0.8628179981439862
+      },
+      {
+        "variable": "Pre_pressure_TrumpJet",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.009899892763242291,
+        "p": 0.6437178188120717
+      },
+      {
+        "variable": "Stock_to_TrumpJet",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.003888404335727021,
+        "p": 0.8558525520726531
+      },
+      {
+        "variable": "Mixing_water_to_TrumpJet",
+        "conditioning_set": [
+          "starch2_1",
+          "starch2_3"
+        ],
+        "r": -0.030759300070287973,
+        "p": 0.15071793264767813
+      },
+      {
+        "variable": "Flow_of_pressure_amplyfing_pump",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.041609094005798174,
+        "p": 0.051810612641798585
+      },
+      {
+        "variable": "Bentonite_filter_differential_pressure",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.035359434027147515,
+        "p": 0.09845065210355917
+      },
+      {
+        "variable": "Pressure_Bentonite_TrumpJet",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": -0.007344590922111093,
+        "p": 0.7315646131153731
+      },
+      {
+        "variable": "Differential_pressure_B1-B4_between_stock_and_chemical",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.00704518374246217,
+        "p": 0.7420532047911652
+      },
+      {
+        "variable": "Backflow_cross-flow_distributor_stock~^0",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.037620319998702044,
+        "p": 0.07872374494789021
+      },
+      {
+        "variable": "Headbox_pressure",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": -0.0071850440790120615,
+        "p": 0.7371779414211345
+      },
+      {
+        "variable": "Headbox_consistency",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": -0.019121727910860052,
+        "p": 0.37164517826651
+      },
+      {
+        "variable": "Jet/wire_ratio",
+        "conditioning_set": [
+          "Actual_moisture",
+          "temperature_starch_working_tank",
+          "starch2_2"
+        ],
+        "r": -0.01787573802409514,
+        "p": 0.4038365046462022
+      },
+      {
+        "variable": "Thick_Stock_Consistency__%_",
+        "conditioning_set": [
+          "Actual_moisture"
+        ],
+        "r": -0.034004438761829035,
+        "p": 0.11204845250174392
+      },
+      {
+        "variable": "Thick_Stock_Flow__l/min_",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.03316587458011354,
+        "p": 0.12117888857733532
+      },
+      {
+        "variable": "Machine_chest_consistency",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.03447391126828644,
+        "p": 0.10717870842510822
+      },
+      {
+        "variable": "Dilution_water_deculator_pressure",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.03274658719871975,
+        "p": 0.12595723677571066
+      },
+      {
+        "variable": "Sorter_stock_power",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.01883747127737613,
+        "p": 0.3787982799570607
+      },
+      {
+        "variable": "Dilution_water_deculator_temperature",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": -0.0318899415427723,
+        "p": 0.13617457607572267
+      },
+      {
+        "variable": "Stock_deculator_pressure",
+        "conditioning_set": [],
+        "r": -0.006273937363253965,
+        "p": 0.7693914246132881
+      },
+      {
+        "variable": "Stock_deculator_temperature",
+        "conditioning_set": [],
+        "r": 0.007784131888961715,
+        "p": 0.7160507282142248
+      },
+      {
+        "variable": "Dilutionwater_pump_power",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.01752389886135897,
+        "p": 0.4129399247356929
+      },
+      {
+        "variable": "Short_fibre_B06_consistency",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.027034286537953974,
+        "p": 0.20651803810907904
+      },
+      {
+        "variable": "Long_fibre_consistency_B07",
+        "conditioning_set": [
+          "Actual_moisture"
+        ],
+        "r": 0.026812947352485746,
+        "p": 0.21025957282134947
+      },
+      {
+        "variable": "pH-Messung_Verd\u00fcnnungswasser__2..12_pH_",
+        "conditioning_set": [],
+        "r": -0.00039243429958124755,
+        "p": 0.9853694955283326
+      },
+      {
+        "variable": "Wet_broke_consistency",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.026939652715255384,
+        "p": 0.2081117809453225
+      },
+      {
+        "variable": "Sludge_addition_to_stock",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.04220035731800672,
+        "p": 0.0485682240494896
+      },
+      {
+        "variable": "Free_gas_before_dilution_water_deculator_measurement_1~^0",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": 0.01932033055440849,
+        "p": 0.366807329561219
+      },
+      {
+        "variable": "Free_gas_before_dilution_water_deculator_measurement_2",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": 0.017474697059838996,
+        "p": 0.41436013588146803
+      },
+      {
+        "variable": "Dissolved_gas_before_dilution_water_deculator",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.03858184557871019,
+        "p": 0.07137118015727448
+      },
+      {
+        "variable": "Free_gas_after_stock_deculator~^0",
+        "conditioning_set": [
+          "starch2_3"
+        ],
+        "r": -0.04507968642294045,
+        "p": 0.0351115581710136
+      },
+      {
+        "variable": "Dissolved_gas_after_stock_deculator_measurement_1",
+        "conditioning_set": [
+          "starch2_3"
+        ],
+        "r": -0.03320698121535391,
+        "p": 0.1207181551862641
+      },
+      {
+        "variable": "Dissolved_gas_after_stock_deculator_measurement_2",
+        "conditioning_set": [
+          "starch2_3"
+        ],
+        "r": -0.02854371523194552,
+        "p": 0.18228409831868583
+      },
+      {
+        "variable": "Stock_Valve_Opening_From_Machine_Chest",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.034450673582527236,
+        "p": 0.10741574054302777
+      },
+      {
+        "variable": "Dry_Broke_Consistancy__%_",
+        "conditioning_set": [],
+        "r": 0.00026593401834028877,
+        "p": 0.9900853042464054
+      },
+      {
+        "variable": "Pulper_consistency",
+        "conditioning_set": [
+          "starch2_3"
+        ],
+        "r": 0.04042457733680308,
+        "p": 0.058852079654398134
+      },
+      {
+        "variable": "ATS1_power",
+        "conditioning_set": [
+          "ATS1_differential_pressure"
+        ],
+        "r": 0.005447142780564189,
+        "p": 0.7991268097803885
+      },
+      {
+        "variable": "ATS1_light_reject_flow",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": -0.004854935383035064,
+        "p": 0.820571103043491
+      },
+      {
+        "variable": "ATS2_differential_pressure",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.005784842197996257,
+        "p": 0.7869647792259198
+      },
+      {
+        "variable": "ATS2_light_reject_flow",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": -0.015707296143686992,
+        "p": 0.4630421652619275
+      },
+      {
+        "variable": "Combisorter_1_power",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.02831825331400972,
+        "p": 0.18576360652540325
+      },
+      {
+        "variable": "Combisorter_2_power",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.037673197464686,
+        "p": 0.07830399414813556
+      },
+      {
+        "variable": "Combisorter_3_power",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.00109112882135818,
+        "p": 0.959345810799412
+      },
+      {
+        "variable": "Contaminex_1_power",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.003947007156248819,
+        "p": 0.853704392479722
+      },
+      {
+        "variable": "Contaminex_2_power",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.038887511920967864,
+        "p": 0.06915520618294757
+      },
+      {
+        "variable": "Contaminex_3_power",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.01713466686065445,
+        "p": 0.423396244881839
+      },
+      {
+        "variable": "Multifractor_1_long_fibre_flow",
+        "conditioning_set": [],
+        "r": 0.0027664603663257355,
+        "p": 0.8971430340216897
+      },
+      {
+        "variable": "Multifractor_1_short_fibre_flow",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.01973643664443658,
+        "p": 0.3564651708483698
+      },
+      {
+        "variable": "Multifractor_1_consistency",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.037864681133507154,
+        "p": 0.07679917134520585
+      },
+      {
+        "variable": "Multifractor_2_long_fibre_flow",
+        "conditioning_set": [],
+        "r": -0.005465925582397193,
+        "p": 0.7984038749245292
+      },
+      {
+        "variable": "Multifractor_2_short_fibre_flow",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.011091533581763907,
+        "p": 0.6043314874218861
+      },
+      {
+        "variable": "Multifractor_2_consistency",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.04480583057651116,
+        "p": 0.03623715797919375
+      },
+      {
+        "variable": "Multifractor_3_long_fibre_flow",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.02042486968397861,
+        "p": 0.33993535940963127
+      },
+      {
+        "variable": "Multifractor_3_short_fibre_flow",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.0007769791273570686,
+        "p": 0.9710444878659987
+      },
+      {
+        "variable": "Multifractor_3_consistency",
+        "conditioning_set": [
+          "ATS1_differential_pressure"
+        ],
+        "r": -0.026042074098831667,
+        "p": 0.22367268744752006
+      },
+      {
+        "variable": "LF_screen_1_power",
+        "conditioning_set": [
+          "ATS1_differential_pressure"
+        ],
+        "r": -0.03194277461586231,
+        "p": 0.1355264720383409
+      },
+      {
+        "variable": "LF_screen_1_accept_flow",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.03534822431819106,
+        "p": 0.09855748234059783
+      },
+      {
+        "variable": "LF_screen_2_inlet_consistency",
+        "conditioning_set": [
+          "ATS1_differential_pressure"
+        ],
+        "r": 0.021017653345044088,
+        "p": 0.3261022532567391
+      },
+      {
+        "variable": "LF_screen_2_power",
+        "conditioning_set": [
+          "Actual_moisture",
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": 0.034435757152924205,
+        "p": 0.10772941222489879
+      },
+      {
+        "variable": "LF_screen_3_inlet_consistency",
+        "conditioning_set": [],
+        "r": 0.0024101669103607144,
+        "p": 0.910330012535077
+      },
+      {
+        "variable": "LF_screen_3_power",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.008500733711176534,
+        "p": 0.6912657357890972
+      },
+      {
+        "variable": "LF_screen_1_reject_flow",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.005089517431861926,
+        "p": 0.8120597033485247
+      },
+      {
+        "variable": "LF_screen_2_accept_flow",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.013872076721230798,
+        "p": 0.5169226981569013
+      },
+      {
+        "variable": "LF_screen_2_reject_flow",
+        "conditioning_set": [],
+        "r": -0.00021715410018709872,
+        "p": 0.991903874129625
+      },
+      {
+        "variable": "LF_screen_3_reject_flow",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.0292905548264854,
+        "p": 0.17110327171164724
+      },
+      {
+        "variable": "LF_screen_3_accept_flow",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.016390960944332674,
+        "p": 0.4438001837613952
+      },
+      {
+        "variable": "Pressure_main_steam_line",
+        "conditioning_set": [],
+        "r": -0.008066005219218061,
+        "p": 0.7062375829006347
+      },
+      {
+        "variable": "Steam_temperature_for_PM",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": -0.03325653835932961,
+        "p": 0.12016452908291075
+      },
+      {
+        "variable": "Condensate_conductivity",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.014266292283732123,
+        "p": 0.5050815653538769
+      },
+      {
+        "variable": "Total_condensate_flow",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.0378079581131991,
+        "p": 0.07724246761061693
+      },
+      {
+        "variable": "Freshwater_warm__l/min_",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.036277526967281835,
+        "p": 0.09001022316603492
+      },
+      {
+        "variable": "Freshwater_retention__l/min_",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.02030409455325089,
+        "p": 0.3427991880345731
+      },
+      {
+        "variable": "Freshwater_to_Machine_Tank__l/min_",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.02712367433423815,
+        "p": 0.20502079485569025
+      },
+      {
+        "variable": "Freshwater_pressure_from_the_city__bar_",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": -0.015937924509138515,
+        "p": 0.4564996242061909
+      },
+      {
+        "variable": "Viscosity_for_starch_ring_main_line",
+        "conditioning_set": [],
+        "r": 0.0072115064311787215,
+        "p": 0.7361295671404222
+      },
+      {
+        "variable": "Draw_AD7-PR",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": 0.044051694597905325,
+        "p": 0.03954205488206319
+      },
+      {
+        "variable": "Draw_SS-AD6",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.023251049514321394,
+        "p": 0.27731462027144366
+      },
+      {
+        "variable": "Draw_AD6-AD7",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.024325347085495597,
+        "p": 0.25571343227163545
+      },
+      {
+        "variable": "Draw_PD5-SS",
+        "conditioning_set": [
+          "starch2_1",
+          "starch2_3"
+        ],
+        "r": 0.03776993446263722,
+        "p": 0.07760876966110253
+      },
+      {
+        "variable": "Draw_PD2-PD3",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.045717798352817134,
+        "p": 0.03260397303015632
+      },
+      {
+        "variable": "Draw_PD3-PD4",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.010226435150176925,
+        "p": 0.6328187082413702
+      },
+      {
+        "variable": "Draw_PD1-PD2",
+        "conditioning_set": [
+          "starch2_3"
+        ],
+        "r": 0.04508152371664989,
+        "p": 0.03510410842507065
+      },
+      {
+        "variable": "Draw_WS-PS",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.030143725290881846,
+        "p": 0.1589678087747142
+      },
+      {
+        "variable": "Slurry_1_pumping_to_reactor",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.0166646122038162,
+        "p": 0.43622794936546494
+      },
+      {
+        "variable": "Slurry_2_pumping_to_reactor",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.012538074716677429,
+        "p": 0.5580319632147225
+      },
+      {
+        "variable": "Slurry_3_pumping_to_reactor",
+        "conditioning_set": [
+          "starch2_3"
+        ],
+        "r": 0.013845052589117621,
+        "p": 0.5177396585962472
+      },
+      {
+        "variable": "Total_Dewatering_Pick-Up",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.0018997363597997097,
+        "p": 0.9292801894939123
+      },
+      {
+        "variable": "Total_Dewatering_Bottom_Felt",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.022460583607012592,
+        "p": 0.29398083498593036
+      },
+      {
+        "variable": "Multifractor_1_Long_fibre_fraction",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.029408816198506885,
+        "p": 0.16938090573646244
+      },
+      {
+        "variable": "Multifractor_2_long_fibre_fraction",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.02790013686391376,
+        "p": 0.19234577400917482
+      },
+      {
+        "variable": "Multifractor_3_long_fibre_fraction",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.031261607225806363,
+        "p": 0.14406680038685704
+      },
+      {
+        "variable": "Retention_Aid_mass_flow__g/T_",
+        "conditioning_set": [
+          "Actual_moisture",
+          "starch2_1",
+          "starch2_3"
+        ],
+        "r": 0.04570770099216799,
+        "p": 0.032722240136519185
+      },
+      {
+        "variable": "Bentonite_1_mass_flow__g/T_",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": 0.04377531973948751,
+        "p": 0.04079831197257186
+      },
+      {
+        "variable": "Bentonite_2_mass_flow__g/T_",
+        "conditioning_set": [
+          "ATS1_differential_pressure"
+        ],
+        "r": -0.029515210265551234,
+        "p": 0.1678425085931598
+      },
+      {
+        "variable": "Fixative_2_mass_flow__g/T_",
+        "conditioning_set": [
+          "temperature_starch_working_tank",
+          "starch2_1"
+        ],
+        "r": -0.023440009800446495,
+        "p": 0.27353767466520523
+      },
+      {
+        "variable": "Act_Deaerator_mass_flow__g/T_",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.038171197812954555,
+        "p": 0.07443943992120512
+      },
+      {
+        "variable": "Defoamer_mass_flow__g/T_",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.040005725135123946,
+        "p": 0.061524747348377866
+      },
+      {
+        "variable": "Sizing_Agent__g/T_",
+        "conditioning_set": [
+          "Actual_moisture",
+          "AirTurn_Temperature",
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.013763093956192563,
+        "p": 0.52041263929826
+      },
+      {
+        "variable": "Natriumhydroxide_mass_flow__g/T_",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": 0.024607938912259503,
+        "p": 0.2502307995903082
+      },
+      {
+        "variable": "CO2_mass_flow__g/T_",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.004954907915468129,
+        "p": 0.8169411297426883
+      },
+      {
+        "variable": "Whitewater_solids_flow",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.023785002172197003,
+        "p": 0.2664277302908361
+      },
+      {
+        "variable": "Approach_flow_returns",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.011398190042254487,
+        "p": 0.5943733569361986
+      },
+      {
+        "variable": "Consistency_main_pipe_%",
+        "conditioning_set": [],
+        "r": 0.0048567872767061,
+        "p": 0.8204634101733939
+      },
+      {
+        "variable": "ambient_temp_C",
+        "conditioning_set": [
+          "ATS1_differential_pressure",
+          "temperature_starch_working_tank",
+          "starch2_3"
+        ],
+        "r": -0.045790810119775115,
+        "p": 0.032406375701709546
+      },
+      {
+        "variable": "wet_broke",
+        "conditioning_set": [
+          "Actual_moisture"
+        ],
+        "r": 0.04398169775105529,
+        "p": 0.039811630532193755
+      },
+      {
+        "variable": "Production_Rate__T/h_",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.0009611704914937516,
+        "p": 0.9641844357291758
+      },
+      {
+        "variable": "fibre_short/long",
+        "conditioning_set": [
+          "ATS1_differential_pressure"
+        ],
+        "r": 0.036455948956085275,
+        "p": 0.08843949479126585
+      },
+      {
+        "variable": "speedsizer_linepressure_1",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": 0.0015707891944225728,
+        "p": 0.9415013663300288
+      },
+      {
+        "variable": "linepressure_1",
+        "conditioning_set": [
+          "starch2_1"
+        ],
+        "r": -0.009298790422731566,
+        "p": 0.6639811753877601
+      },
+      {
+        "variable": "linepressure_2",
+        "conditioning_set": [
+          "temperature_starch_working_tank"
+        ],
+        "r": -0.014521343843802732,
+        "p": 0.4974973161280606
+      }
+    ],
+    "fixed_audit": []
+  }
+}

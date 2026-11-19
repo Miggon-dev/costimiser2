@@ -6565,3 +6565,39 @@ AttributeError: 'DivideByFeatureRegressor' object has no attribute 'best_estimat
 2026-09-07 15:22:50,671 INFO: Steam__€/T_
 2026-09-07 15:24:23,974 INFO: Electricity__€/T_
 2026-09-07 15:24:48,364 INFO: Starch__€/T_
+2026-09-14 16:12:19,884 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-09-14 16:12:19,888 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-09-14 16:12:19,890 INFO: Working directory: c:\workspace\costimiser
+2026-09-14 16:12:56,340 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-09-14 16:12:56,343 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-09-14 16:12:56,345 INFO: Working directory: c:\workspace\costimiser
+2026-09-14 16:13:09,646 INFO: Fibre_cost__€/T_
+2026-09-14 16:13:22,296 INFO: Steam__€/T_
+2026-09-14 16:14:48,986 INFO: Electricity__€/T_
+2026-09-14 16:15:12,040 INFO: Starch__€/T_
+2026-09-14 16:15:48,660 INFO: Fibre_cost__€/T_
+2026-09-14 16:15:58,817 INFO: Steam__€/T_
+2026-09-14 16:17:21,408 INFO: Electricity__€/T_
+2026-09-14 16:17:41,907 INFO: Starch__€/T_
+2026-09-14 16:18:20,461 INFO: Fibre_cost__€/T_
+2026-09-14 16:18:30,977 INFO: Steam__€/T_
+2026-09-14 16:19:54,269 INFO: Electricity__€/T_
+2026-09-14 16:20:16,870 INFO: Starch__€/T_
+2026-09-14 21:03:21,924 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-09-14 21:03:21,927 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-09-14 21:03:21,929 INFO: Working directory: c:\workspace\costimiser
+2026-09-14 21:04:01,986 INFO: === Entering drilldown_analysis_plot_fibre_6010085_cost_driver ===
+2026-09-14 21:04:01,989 INFO: Python executable: C:\WORKSP~1\COSTIM~1\VENV~1\Scripts\python.exe
+2026-09-14 21:04:01,991 INFO: Working directory: c:\workspace\costimiser
+2026-09-14 21:04:15,106 INFO: Fibre_cost__€/T_
+2026-09-14 21:04:27,322 INFO: Steam__€/T_
+2026-09-14 21:05:51,136 INFO: Electricity__€/T_
+2026-09-14 21:06:13,705 INFO: Starch__€/T_
+2026-09-14 21:06:50,104 INFO: Fibre_cost__€/T_
+2026-09-14 21:06:59,747 INFO: Steam__€/T_
+2026-09-14 21:08:26,276 INFO: Electricity__€/T_
+2026-09-14 21:08:48,232 INFO: Starch__€/T_
+2026-09-14 21:09:32,970 INFO: Fibre_cost__€/T_
+2026-09-14 21:09:45,176 INFO: Steam__€/T_
+2026-09-14 21:11:17,162 INFO: Electricity__€/T_
+2026-09-14 21:11:41,920 INFO: Starch__€/T_

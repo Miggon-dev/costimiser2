@@ -1,0 +1,81 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <graph edgedefault="undirected">
+    <node id="MBS_SCT_CD" />
+    <node id="Current_reel_dry_average" />
+    <node id="Bentonitmenge_z._Mischrohr__-10..9000_l/h_" />
+    <node id="Bentonitmenge_z._Siebwasserturm__-10..9000_l/h_" />
+    <node id="PM_660V_Festantriebe_Verteiler3__-1..10_MW_" />
+    <node id="Cylinder_37_differential_pressure" />
+    <node id="Web_tension_AD6" />
+    <node id="Moisture_after_SpeedSizer" />
+    <node id="Revolution_of_Slurry_3_to_reactor_(control_setting)" />
+    <node id="DG2_Ventilator_Revolution_Output" />
+    <node id="DG3_Ventilator_Revolution_Output" />
+    <node id="Dewatering_First_Press_Roll" />
+    <node id="Vacuum_suction_box_10" />
+    <node id="White_water_temperature" />
+    <node id="Jet/wire_ratio" />
+    <node id="Dry_broke_flow" />
+    <node id="Free_gas_after_stock_deculator~^0" />
+    <node id="Draw_AD7-PR" />
+    <node id="Total_Dewatering_Bottom_Felt" />
+    <node id="Starch_mass_flow__kg/T_" />
+    <node id="Sizing_Agent__g/T_" />
+    <node id="Whitewater_solids_flow" />
+    <node id="Fibre_usage__T/T_" />
+    <node id="Specific_Starch_Uptake_Top_Roll__kg/T" />
+    <edge source="MBS_SCT_CD" target="Current_reel_dry_average" />
+    <edge source="MBS_SCT_CD" target="Revolution_of_Slurry_3_to_reactor_(control_setting)" />
+    <edge source="MBS_SCT_CD" target="White_water_temperature" />
+    <edge source="MBS_SCT_CD" target="Jet/wire_ratio" />
+    <edge source="MBS_SCT_CD" target="Dry_broke_flow" />
+    <edge source="MBS_SCT_CD" target="Free_gas_after_stock_deculator~^0" />
+    <edge source="Current_reel_dry_average" target="Bentonitmenge_z._Mischrohr__-10..9000_l/h_" />
+    <edge source="Current_reel_dry_average" target="Cylinder_37_differential_pressure" />
+    <edge source="Current_reel_dry_average" target="Moisture_after_SpeedSizer" />
+    <edge source="Current_reel_dry_average" target="Sizing_Agent__g/T_" />
+    <edge source="Current_reel_dry_average" target="Fibre_usage__T/T_" />
+    <edge source="Bentonitmenge_z._Mischrohr__-10..9000_l/h_" target="Bentonitmenge_z._Siebwasserturm__-10..9000_l/h_" />
+    <edge source="Bentonitmenge_z._Mischrohr__-10..9000_l/h_" target="PM_660V_Festantriebe_Verteiler3__-1..10_MW_" />
+    <edge source="Bentonitmenge_z._Mischrohr__-10..9000_l/h_" target="Dewatering_First_Press_Roll" />
+    <edge source="Bentonitmenge_z._Mischrohr__-10..9000_l/h_" target="Draw_AD7-PR" />
+    <edge source="Bentonitmenge_z._Mischrohr__-10..9000_l/h_" target="Total_Dewatering_Bottom_Felt" />
+    <edge source="Bentonitmenge_z._Siebwasserturm__-10..9000_l/h_" target="Revolution_of_Slurry_3_to_reactor_(control_setting)" />
+    <edge source="Bentonitmenge_z._Siebwasserturm__-10..9000_l/h_" target="Dry_broke_flow" />
+    <edge source="Bentonitmenge_z._Siebwasserturm__-10..9000_l/h_" target="Whitewater_solids_flow" />
+    <edge source="PM_660V_Festantriebe_Verteiler3__-1..10_MW_" target="Cylinder_37_differential_pressure" />
+    <edge source="PM_660V_Festantriebe_Verteiler3__-1..10_MW_" target="Moisture_after_SpeedSizer" />
+    <edge source="PM_660V_Festantriebe_Verteiler3__-1..10_MW_" target="Revolution_of_Slurry_3_to_reactor_(control_setting)" />
+    <edge source="PM_660V_Festantriebe_Verteiler3__-1..10_MW_" target="White_water_temperature" />
+    <edge source="PM_660V_Festantriebe_Verteiler3__-1..10_MW_" target="Dry_broke_flow" />
+    <edge source="PM_660V_Festantriebe_Verteiler3__-1..10_MW_" target="Free_gas_after_stock_deculator~^0" />
+    <edge source="PM_660V_Festantriebe_Verteiler3__-1..10_MW_" target="Specific_Starch_Uptake_Top_Roll__kg/T" />
+    <edge source="Cylinder_37_differential_pressure" target="Vacuum_suction_box_10" />
+    <edge source="Cylinder_37_differential_pressure" target="Starch_mass_flow__kg/T_" />
+    <edge source="Web_tension_AD6" target="White_water_temperature" />
+    <edge source="Web_tension_AD6" target="Sizing_Agent__g/T_" />
+    <edge source="Moisture_after_SpeedSizer" target="Starch_mass_flow__kg/T_" />
+    <edge source="DG2_Ventilator_Revolution_Output" target="DG3_Ventilator_Revolution_Output" />
+    <edge source="DG2_Ventilator_Revolution_Output" target="White_water_temperature" />
+    <edge source="DG2_Ventilator_Revolution_Output" target="Free_gas_after_stock_deculator~^0" />
+    <edge source="DG3_Ventilator_Revolution_Output" target="Vacuum_suction_box_10" />
+    <edge source="DG3_Ventilator_Revolution_Output" target="White_water_temperature" />
+    <edge source="DG3_Ventilator_Revolution_Output" target="Total_Dewatering_Bottom_Felt" />
+    <edge source="DG3_Ventilator_Revolution_Output" target="Whitewater_solids_flow" />
+    <edge source="Dewatering_First_Press_Roll" target="Vacuum_suction_box_10" />
+    <edge source="Dewatering_First_Press_Roll" target="Free_gas_after_stock_deculator~^0" />
+    <edge source="Dewatering_First_Press_Roll" target="Total_Dewatering_Bottom_Felt" />
+    <edge source="Vacuum_suction_box_10" target="Jet/wire_ratio" />
+    <edge source="Jet/wire_ratio" target="Free_gas_after_stock_deculator~^0" />
+    <edge source="Jet/wire_ratio" target="Draw_AD7-PR" />
+    <edge source="Jet/wire_ratio" target="Starch_mass_flow__kg/T_" />
+    <edge source="Jet/wire_ratio" target="Specific_Starch_Uptake_Top_Roll__kg/T" />
+    <edge source="Dry_broke_flow" target="Total_Dewatering_Bottom_Felt" />
+    <edge source="Free_gas_after_stock_deculator~^0" target="Whitewater_solids_flow" />
+    <edge source="Total_Dewatering_Bottom_Felt" target="Whitewater_solids_flow" />
+    <edge source="Starch_mass_flow__kg/T_" target="Fibre_usage__T/T_" />
+    <edge source="Starch_mass_flow__kg/T_" target="Specific_Starch_Uptake_Top_Roll__kg/T" />
+    <edge source="Fibre_usage__T/T_" target="Specific_Starch_Uptake_Top_Roll__kg/T" />
+  </graph>
+</graphml>

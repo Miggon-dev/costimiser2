@@ -31,8 +31,15 @@ from datetime import datetime
 
 import cloudpickle
 import math
+import warnings
 import numpy as np
 import pandas as pd
+
+# _feature_engineering (utility.py) adds many columns one-by-one to a wide frame,
+# which triggers pandas PerformanceWarning about fragmentation. Harmless at this
+# data size; silence the noise.
+warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -43,10 +50,10 @@ from sklearn.preprocessing import StandardScaler, SplineTransformer
 from sklearn.compose import ColumnTransformer
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 
-from config import CONTROL_VARS
+from config import CONTROL_VARS, CONSIDERED_VARS, FIXED_VARIABLES, _BASE_CONSIDERED_VARS
 from data_cleaning import unique_in_order, ordered_difference, ordered_intersection
 from preprocessing import make_prep_pip, build_pre_estimator
-from utility import GroupwisePLSTransformer, _feature_engineering, setpoint_df
+from utility import GroupwisePLSTransformer, FeatureCreator, _feature_engineering, setpoint_df
 
 
 # =============================================================================
@@ -60,13 +67,35 @@ PIPELINE_PREFIXES = {
     "Electricity__kWh/T_": ["speedsizer_linepressure", "linepressure"],
     "Starch_uptake_by_paper_Top_Roll__g/m2_": ["speedsizer_linepressure", "linepressure","starch2"],
     "Starch_uptake_by_paper_Bottom_Roll__g/m2_": ["speedsizer_linepressure", "linepressure","starch1"],
-    "MBS_SCT_CD": ["draw", "speedsizer_linepressure", "linepressure", "conc_starch"],
-    "MBS_SCT_MD": ["draw", "speedsizer_linepressure", "linepressure", "conc_starch"],
-    "MBS_Burst": ["draw", "speedsizer_linepressure", "linepressure", "conc_starch"],
-    "MBS_CMT30": ["draw", "speedsizer_linepressure", "linepressure", "conc_starch"],
+    #"MBS_SCT_CD": ["draw", "speedsizer_linepressure", "linepressure", "conc_starch"],
+    "MBS_SCT_CD": [ "speedsizer_linepressure","conc_starch"],
+    "MBS_SCT_MD": ["speedsizer_linepressure", "conc_starch"],
+    "MBS_Burst": ["speedsizer_linepressure", "conc_starch"],
+    "MBS_CMT30": ["speedsizer_linepressure",  "conc_starch"],
 
 }
 PIPELINE_PREFIXES["Steam_power_corrected"] = PIPELINE_PREFIXES["Steam_power"]
+
+# PLS prefixes used in CONDITIONAL-INDEPENDENCE (CI) runs. In CI mode this set is the
+# single source of truth: it defines the PLS structure of BOTH the CI selection frame
+# AND the final fitted model (Option A), so CI can only select scores the model has, and
+# any group omitted here is absent from the model entirely (its score can't leak in).
+# Any target NOT listed here falls back to PIPELINE_PREFIXES[target] in CI mode, so you
+# only need to add the targets whose CI prefixes should differ. Non-CI runs always use
+# PIPELINE_PREFIXES and are unaffected by this dict.
+CI_PIPELINE_PREFIXES = {
+    "Steam_power":["steam_pressure", "exha_mois", "inlet_temp", "vacuum", "linepressure","fabric_tension","gas_decu"],
+    "Steam__kWh/T_":["inlet_temp",  "linepressure","fabric_tension","gas_decu"],
+    "Electrical_power_MW": ["speedsizer_linepressure", "linepressure"],
+    "Electricity__kWh/T_": ["speedsizer_linepressure", "linepressure"],
+    "Starch_uptake_by_paper_Top_Roll__g/m2_": ["speedsizer_linepressure", "linepressure","starch2"],
+    "Starch_uptake_by_paper_Bottom_Roll__g/m2_": ["speedsizer_linepressure", "linepressure","starch1"],
+    #"MBS_SCT_CD": ["draw", "speedsizer_linepressure", "linepressure", "conc_starch"],
+    "MBS_SCT_CD": [ "speedsizer_linepressure"],
+    "MBS_SCT_MD": ["speedsizer_linepressure"],
+    "MBS_Burst": ["speedsizer_linepressure"],
+    "MBS_CMT30": ["speedsizer_linepressure"],
+}
 
 BLACK_LIST = {
     "Steam_power": [
@@ -135,31 +164,31 @@ BLACK_LIST = {
         'Bentonite_1_mass_flow__g/T_',
         'Bentonite_2_mass_flow__g/T_',
         'DG3_Moisture_content_Outlet_Air',               
-        'Conductivity_white_water_B46',
+        #'Conductivity_white_water_B46',
         'pH-Messung_Verdünnungswasser__2..12_pH_', 
-        'pH_measurement_white_water_B41',
+        #'pH_measurement_white_water_B41',
         'CO2_mass_flow__g/T_',
-        "Current_reel_moisture_average(reel)"
+        #"Current_reel_moisture_average(reel)",
      ],
     "MBS_SCT_MD": [
         'Bentonite_1_mass_flow__g/T_',
         'Bentonite_2_mass_flow__g/T_',
         'DG3_Moisture_content_Outlet_Air',               
-        'Conductivity_white_water_B46',
+        #'Conductivity_white_water_B46',
         'pH-Messung_Verdünnungswasser__2..12_pH_', 
-        'pH_measurement_white_water_B41',
+        #'pH_measurement_white_water_B41',
         'CO2_mass_flow__g/T_',
-        "Current_reel_moisture_average(reel)"
+        #"Current_reel_moisture_average(reel)"
      ],
      "MBS_Burst": [
         'Bentonite_1_mass_flow__g/T_',
         'Bentonite_2_mass_flow__g/T_',
         'DG3_Moisture_content_Outlet_Air',               
-        'Conductivity_white_water_B46',
+        #'Conductivity_white_water_B46',
         'pH-Messung_Verdünnungswasser__2..12_pH_', 
-        'pH_measurement_white_water_B41',
+        #'pH_measurement_white_water_B41',
         'CO2_mass_flow__g/T_',
-        "Current_reel_moisture_average(reel)"
+        #"Current_reel_moisture_average(reel)"
      ],
      "MBS_CMT30": [
         'Bentonite_1_mass_flow__g/T_',
@@ -167,7 +196,7 @@ BLACK_LIST = {
         'DG3_Moisture_content_Outlet_Air',               
         'Conductivity_white_water_B46',
         'pH-Messung_Verdünnungswasser__2..12_pH_', 
-        'pH_measurement_white_water_B41',
+        #'pH_measurement_white_water_B41',
         'CO2_mass_flow__g/T_',
         "Current_reel_moisture_average(reel)"
      ],
@@ -182,6 +211,8 @@ CREATED_VARIABLE_CANDIDATES = {
         "Water_flow_Afterdryer_output",
         "dewatering",
         "fibre_short/long",
+        "retention",
+        "Production_Rate__T/h_"
     ],
     "Steam__kWh/T_": [
         "Water_Predryer",
@@ -190,15 +221,18 @@ CREATED_VARIABLE_CANDIDATES = {
         "Water_Afterdryer_output",
         "dewatering",
         "inv_Production_Rate__T/h_",
-        "fibre_short/long"
+        "fibre_short/long",
+        "retention"
     ],
     "Electrical_power_MW": [
         "dewatering",
         "Fibre__g/m2_",
+        "retention"
     ],
     "Electricity__kWh/T_": [
         "dewatering",
         "Fibre__g/m2_",
+        "retention"
     ],
      "Starch_uptake_by_paper_Top_Roll__g/m2_": [
         "delta_basis_weight",
@@ -206,6 +240,7 @@ CREATED_VARIABLE_CANDIDATES = {
         "Water_flow",                               
         "inv_Rod_pressure_Top_Roll",
         "square_Rod_pressure_Top_Roll",
+        "retention"
      ],
      "Starch_uptake_by_paper_Bottom_Roll__g/m2_":[
         "delta_basis_weight",
@@ -213,65 +248,70 @@ CREATED_VARIABLE_CANDIDATES = {
         "Water_flow",                               
         "inv_Rod_Pressure_Bottom_Roll",
         "square_Rod_Pressure_Bottom_Roll",
+        "retention"
      ],
      "MBS_SCT_CD": [
         "delta_basis_weight",
         "Starch_uptake__g/m2_",
-        "Water_flow_Predryer",
-        "Water_flow_Afterdryer",
-        "Water_flow",
-        "flow_diluted_starch",
+        #"Water_flow_Predryer",
+        #"Water_flow_Afterdryer",
+        #"Water_flow",
+        #"flow_diluted_starch",
         "Fibre__g/m2_",
-        "Water_flow_Afterdryer_input", 
-        "Water_flow_Afterdryer_output",
-        "dewatering",
+        #"Water_flow_Afterdryer_input", 
+        #"Water_flow_Afterdryer_output",
+        #"dewatering",
         "fibre_short/long",
-        "temperature_starch_working_tank"
+        "temperature_starch_working_tank",
+        "retention"
 
      ],
      "MBS_SCT_MD": [
         "delta_basis_weight",
         "Starch_uptake__g/m2_",
-        "Water_flow_Predryer",
-        "Water_flow_Afterdryer",
-        "Water_flow",
-        "flow_diluted_starch",
+        #"Water_flow_Predryer",
+        #"Water_flow_Afterdryer",
+        #"Water_flow",
+        #"flow_diluted_starch",
         "Fibre__g/m2_",
-        "Water_flow_Afterdryer_input", 
-        "Water_flow_Afterdryer_output",
-        "dewatering",
+        #"Water_flow_Afterdryer_input", 
+        #"Water_flow_Afterdryer_output",
+        #"dewatering",
         "fibre_short/long",
-        "temperature_starch_working_tank"
+        "temperature_starch_working_tank",
+        "retention"
 
      ],
      "MBS_Burst": [
         "delta_basis_weight",
         "Starch_uptake__g/m2_",
-        "Water_flow_Predryer",
-        "Water_flow_Afterdryer",
-        "Water_flow",
-        "flow_diluted_starch",
+        #"Water_flow_Predryer",
+        #"Water_flow_Afterdryer",
+        #"Water_flow",
+        #"flow_diluted_starch",
         "Fibre__g/m2_",
-        "Water_flow_Afterdryer_input", 
-        "Water_flow_Afterdryer_output",
-        "dewatering",
+        #"Water_flow_Afterdryer_input", 
+        #"Water_flow_Afterdryer_output",
+        #"dewatering",
         "fibre_short/long",
-        "temperature_starch_working_tank"
+        "temperature_starch_working_tank",
+        "retention"
 
      ],
      "MBS_CMT30": [
-        "delta_basis_weight",
+       "delta_basis_weight",
         "Starch_uptake__g/m2_",
-        "Water_flow_Predryer",
-        "Water_flow_Afterdryer",
-        "Water_flow",
-        "flow_diluted_starch",
+        #"Water_flow_Predryer",
+        #"Water_flow_Afterdryer",
+        #"Water_flow",
+        #"flow_diluted_starch",
         "Fibre__g/m2_",
-        "Water_flow_Afterdryer_input", 
-        "Water_flow_Afterdryer_output",
-        "dewatering",
+        #"Water_flow_Afterdryer_input", 
+        #"Water_flow_Afterdryer_output",
+        #"dewatering",
         "fibre_short/long",
-        "temperature_starch_working_tank"
+        "temperature_starch_working_tank",
+        "retention"
 
      ],
 }
@@ -280,7 +320,7 @@ CREATED_VARIABLE_CANDIDATES["Steam_power_corrected"] = CREATED_VARIABLE_CANDIDAT
 
 GRAMMAGES = [115, 120, 100, 90, 85, 110]
 TEST_SIZE = 0.20
-ALPHAS = np.logspace(0, 3, 20)
+ALPHAS = np.logspace(0, 4, 30)
 DEFAULT_LAG_SWEEP = [0.05, 0.1, 0.25, 0.5, 1, 2, 4, 7, 14]
 
 # RealMLP hyperparameters
@@ -309,8 +349,15 @@ def ewm_filter(s, halflife="120min"):
     return out
 
 
-def lag_pairs(t_hours, lag_hours, tolerance=0.35):
-    """Find (later, earlier) index pairs separated by ~lag_hours."""
+def lag_pairs(t_hours, lag_hours, tolerance=0.35, grammage=None):
+    """Find (later, earlier) index pairs separated by ~lag_hours.
+
+    If `grammage` (per-row array) is given, pairs whose two rows have DIFFERENT
+    grammage are dropped. Differencing a pair that straddles a grammage change
+    captures the between-regime jump rather than the within-run response to dX,
+    which is a confounding source -- so by default (see --allow_cross_grammage)
+    the caller passes grammage to keep only same-grammage contrasts.
+    """
     target = t_hours - lag_hours
     j = np.searchsorted(t_hours, target)
     j = np.clip(j, 0, len(t_hours) - 1)
@@ -319,8 +366,107 @@ def lag_pairs(t_hours, lag_hours, tolerance=0.35):
     j = np.where(better, j_alt, j)
     realised = t_hours - t_hours[j]
     ok = (j < np.arange(len(t_hours))) & (np.abs(realised - lag_hours) <= tolerance * lag_hours)
+    if grammage is not None:
+        g = np.asarray(grammage)
+        ok = ok & (g == g[j])
     later = np.flatnonzero(ok)
     return later, j[later]
+
+
+def build_ci_differenced_frame(turnup_data, y_column, considered_vars,
+                               pls_prefixes, created_candidates,
+                               lag_days, ewm_halflife, allow_cross_grammage,
+                               tolerance=0.35):
+    """Build the SAME differenced frame the model uses (EWM -> transform -> same-grammage
+    lag-differencing), but over the CONSIDERED_VARS candidate pool, for CI selection.
+
+    Returns a DataFrame whose first column is the differenced target `y_column` and the
+    rest are the differenced transformed candidate features (feature_cols), plus the list
+    of those feature_cols. Mirrors the main pipeline exactly so the CI selection is made
+    on the same data the model trains on.
+    """
+    from preprocessing import make_prep_pip, build_pre_estimator
+    from utility import FeatureCreator
+
+    ctl = unique_in_order(v for v in considered_vars if "vacuum" not in v.lower())
+    # ctl = unique_in_order(
+    #     [v for v in considered_vars if "vacuum" not in v.lower()] + list(created_candidates)
+    # )
+
+    # Treat as "created" any candidate that is (a) in this target's created-candidate
+    # list OR (b) a FeatureCreator-creatable feature. CONSIDERED_VARS is a global pool,
+    # so it can contain engineered names (e.g. delta_basis_weight,
+    # temperature_starch_working_tank) that aren't in CREATED_VARIABLE_CANDIDATES[target];
+    # those must still be routed through FeatureCreator, not treated as raw columns
+    # (which don't exist in turnup_data and would raise KeyError downstream).
+    _registry = FeatureCreator._registry()
+    created = unique_in_order(
+        [v for v in ctl if v in created_candidates or v in _registry]
+    )
+
+    prep_pip, _ = make_prep_pip(prefixes=pls_prefixes)
+    steam_pressure = [v for v in turnup_data.columns if re.search(r"cylinder.*steam_pressure", v, re.I)]
+    steam_diff_pressure = [v for v in turnup_data.columns if re.search(r"cylinder.*differential_pressure", v, re.I)]
+    exog = [v for v in ctl
+            if (v not in created and v not in steam_pressure
+                and v not in steam_diff_pressure and "vacuum" not in v.lower())]
+    exog = unique_in_order(["grammage"] + exog + ["grammage"])
+    for _, step in prep_pip.steps:
+        if isinstance(step, GroupwisePLSTransformer):
+            tnames = [f"{step.score_prefix}_{i}" for i in range(1, step.n_components + 1)]
+            exog = ordered_difference(unique_in_order(exog + tnames), list(step.pls_columns))
+    exog = unique_in_order(["grammage"] + exog)
+
+    pre_est, flist = build_pre_estimator(
+        exog_vars_reduced=exog, prep_pip=prep_pip, created_vars=created,
+        apply_ewm=False, include_grammage=allow_cross_grammage,
+    )
+
+    ts = turnup_data.copy().sort_index()
+    # Only drop-NA on feat_list columns that are actually RAW columns in the frame.
+    # feat_list can include engineered names (e.g. delta_basis_weight) that the pipeline
+    # creates downstream and are not present in turnup_data -> exclude them from dropna.
+    flist_present = [c for c in flist if c in ts.columns]
+    ts = ts.dropna(subset=[y_column]).dropna(subset=flist_present)
+
+    g_group = ts["grammage"].values
+    grade_change = pd.Series(g_group).ne(pd.Series(g_group).shift())
+    time_gap = ts.index.to_series().diff().gt(pd.Timedelta("12h"))
+    time_gap.iloc[0] = True
+    seg = (grade_change.values | time_gap.values).cumsum()
+
+    for col in flist:
+        if col in ts.columns and pd.api.types.is_numeric_dtype(ts[col]):
+            s = pd.Series(ts[col].values, index=ts.index)
+            ts[col] = s.groupby(seg).transform(lambda s: ewm_filter(s, halflife=ewm_halflife)).values
+    y_series = pd.Series(ts[y_column].values, index=ts.index)
+    ts[y_column] = y_series.groupby(seg).transform(lambda s: ewm_filter(s, halflife=ewm_halflife)).values
+
+    n = len(ts)
+    split = int(n * (1.0 - TEST_SIZE))
+    ts_raw = ts.loc[:, flist]
+    pre_est.fit(ts_raw.iloc[:split], ts[y_column].iloc[:split])
+    ts_tr = pre_est.transform(ts_raw)
+    fcols = [c for c in ts_tr.columns if c != y_column]
+    X = ts_tr[fcols].values.astype(float)
+    y = ts[y_column].values[:len(ts_tr)].astype(float)
+    th = to_hours(ts_tr.index)
+    grammage_all = ts["grammage"].values[:len(ts_tr)]
+    pair_grammage = None if allow_cross_grammage else grammage_all
+    later, earlier = lag_pairs(th, lag_days * 24.0, tolerance, grammage=pair_grammage)
+
+    dX = X[later] - X[earlier]
+    dy = y[later] - y[earlier]
+    frame = pd.DataFrame(dX, columns=fcols)
+    frame.insert(0, y_column, dy)
+    # drop constant / non-finite columns (CI selector requires finite, nonconstant)
+    finite = np.isfinite(frame.to_numpy()).all(axis=1)
+    frame = frame.loc[finite].reset_index(drop=True)
+    std = frame.std(ddof=0)
+    const_cols = [c for c in frame.columns if c != y_column and (not np.isfinite(std[c]) or std[c] <= 1e-12)]
+    if const_cols:
+        frame = frame.drop(columns=const_cols)
+    return frame, [c for c in fcols if c in frame.columns], prep_pip
 
 
 def build_ridge_model():
@@ -437,8 +583,35 @@ def main():
     parser.add_argument("--ewm_halflife", type=int, default=0)
     parser.add_argument("--spline_knots", type=int, default=6)
     parser.add_argument("--spline_degree", type=int, default=3)
+    parser.add_argument("--allow_cross_grammage", action="store_true",
+                        help="Allow differencing pairs that straddle a grammage "
+                             "change. Default OFF: only same-grammage contrasts "
+                             "(cross-grammage pairs are a confounding source).")
     parser.add_argument("--fs_k_features", type=int, default=15,
                         help="Number of features to select (for --model fs_ridge)")
+    parser.add_argument("--conditional_independence", action="store_true",
+                        help="Select predictors by the conditional-independence "
+                             "(partial-correlation) search in ci_feature_selection, "
+                             "over config.CONSIDERED_VARS with config.FIXED_VARIABLES "
+                             "always kept. The selected variables REPLACE "
+                             "CONTROL_VARS[target] for this run.")
+    parser.add_argument("--max_states", type=int, default=5000,
+                        help="CI search: max subsets (states) to visit before stopping. "
+                             "Higher -> more likely to reach a verified (complete) "
+                             "selection, but slower. Only used with "
+                             "--conditional_independence.")
+    parser.add_argument("--max_tests", type=int, default=500_000,
+                        help="CI search: max total partial-correlation tests to run. "
+                             "Only used with --conditional_independence.")
+    parser.add_argument("--max_k", type=int, default=3,
+                        help="CI search: max conditioning-set size per test. Larger -> "
+                             "more thorough but far more tests. Only used with "
+                             "--conditional_independence.")
+    parser.add_argument("--alpha", type=float, default=0.05,
+                        help="CI search: significance level of the partial-correlation "
+                             "tests. Larger -> harder to declare independence, so more "
+                             "variables survive. Only used with "
+                             "--conditional_independence.")
     args = parser.parse_args()
 
     # Derive EWM halflife from the lag: halflife = lag / 3
@@ -470,15 +643,26 @@ def main():
     # Data Loading & Filtering
     # =========================================================================
     print("\n--- Data Loading & Filtering ---")
-    prep_pip, _ = make_prep_pip(prefixes=PIPELINE_PREFIXES[Y_COLUMN])
+    # In CI mode the model's PLS structure must match what CI actually searched over,
+    # otherwise PLS groups present only in PIPELINE_PREFIXES (e.g. conc_starch) get their
+    # scores force-injected into the model even though CI never saw/selected them.
+    # Resolve the active prefix set ONCE and use it for both the model pipeline and the
+    # CI selection frame: CI_PIPELINE_PREFIXES[target] in CI mode (falling back to
+    # PIPELINE_PREFIXES[target]), PIPELINE_PREFIXES[target] otherwise.
+    if args.conditional_independence:
+        active_prefixes = CI_PIPELINE_PREFIXES.get(
+            Y_COLUMN, PIPELINE_PREFIXES.get(Y_COLUMN, []))
+    else:
+        active_prefixes = PIPELINE_PREFIXES[Y_COLUMN]
+    prep_pip, _ = make_prep_pip(prefixes=active_prefixes)
     turnup_data = pd.read_parquet(DATA_PATH)
 
     cond_col = turnup_data['Condensate_energy_from_paper_plant_to_power_plant']
-    ctl_vars = unique_in_order(v for v in CONTROL_VARS[Y_COLUMN] if "vacuum" not in v.lower())
-    created_vars = ordered_intersection(CREATED_VARIABLE_CANDIDATES[Y_COLUMN], ctl_vars)
 
     turnup_data = _feature_engineering(turnup_data, setpoint_df, steam_null=False, clip=True)
     turnup_data = turnup_data.set_index("Wedge_Time").sort_index()
+    turnup_data["dry_broke"] = turnup_data["Dry_broke_flow"]*turnup_data["Dry_Broke_Consistancy__%_"] / turnup_data["Production_Rate__T/h_"] /6000
+    turnup_data["wet_broke"] = turnup_data["Wet_broke_flow"]*turnup_data["Wet_broke_consistency"] / turnup_data["Production_Rate__T/h_"] /6000
 
     # Time filters
     if Y_COLUMN== "Steam_power" or Y_COLUMN== "Steam_power_corrected":
@@ -526,13 +710,13 @@ def main():
         turnup_data = turnup_data[turnup_data.index>"2025-04-01 00:00:00"]
         turnup_data = turnup_data[~((turnup_data.index > "2026-01-24 07:00") & (turnup_data.index < "2026-01-26 10:00"))]  
         turnup_data = turnup_data[turnup_data["Vacuum_Zone_1_PickUp"]<-0.5]
-        turnup_data = turnup_data[turnup_data.index>"2026-3-1"]
+        turnup_data = turnup_data[turnup_data.index>"2026-2-1"]
         turnup_data = turnup_data[turnup_data.index < "2026-07-1"]
 
     if Y_COLUMN== "MBS_SCT_CD":
         turnup_data = turnup_data[turnup_data.index>"2025-04-01 00:00:00"]
         turnup_data = turnup_data[~((turnup_data.index > "2026-01-24 07:00") & (turnup_data.index < "2026-01-26 10:00"))]  
-        #turnup_data = turnup_data[turnup_data.index>"2026-02-01"]
+        #turnup_data = turnup_data[turnup_data.index>"2026-01-01"]
         turnup_data = turnup_data[turnup_data.index>"2025-11-15"]
         turnup_data = turnup_data[turnup_data.index < "2026-07-1"]
 
@@ -559,11 +743,133 @@ def main():
     print(f"Filtered data: {turnup_data.shape}")
 
     # =========================================================================
+    # Conditional-independence feature selection (optional)
+    # =========================================================================
+    # When --conditional_independence is set, build the SAME differenced frame the model
+    # uses (identical EWM / same-grammage pairing / filters) but over CONSIDERED_VARS,
+    # then run the partial-correlation subset search on it. FIXED_VARIABLES are always
+    # kept. The selected transformed features are mapped back to their raw/source
+    # variables and REPLACE CONTROL_VARS[Y_COLUMN] for this run.
+    ci_selected_vars = None
+    ci_diagnostics = None
+    ci_selected_scores = None  # the exact PLS score names CI kept (option-1 honoring)
+    if args.conditional_independence:
+        import ci_feature_selection as _ci
+        print("\n--- Conditional-independence feature selection ---")
+        fixed_vars = list(FIXED_VARIABLES.get(Y_COLUMN, []))
+        # Per-target candidate pool. CONSIDERED_VARS is a dict keyed by target;
+        # fall back to the base list if a target has no explicit entry.
+        considered_vars = CONSIDERED_VARS.get(
+            Y_COLUMN, _BASE_CONSIDERED_VARS)
+        # CI selection and the final model share the SAME PLS structure
+        # (active_prefixes, resolved once above). This guarantees that every PLS
+        # group the model can use was actually searched by CI, and that CI cannot
+        # select a score the model lacks. Any group excluded from the CI prefixes
+        # (e.g. conc_starch for MBS_SCT_CD) is absent from BOTH the search frame and
+        # the fitted model -- so its score (conc_starch_1) can never leak in.
+        ci_prefixes = active_prefixes
+        ci_frame, ci_feature_cols, ci_prep_pip = build_ci_differenced_frame(
+            turnup_data, Y_COLUMN, considered_vars, ci_prefixes,
+            CREATED_VARIABLE_CANDIDATES[Y_COLUMN],
+            lag_days=args.lag_days, ewm_halflife=ewm_halflife,
+            allow_cross_grammage=args.allow_cross_grammage,
+        )
+        # map FIXED_VARIABLES to their representation among ci_feature_cols:
+        #   passthrough -> same name; PLS source -> its score name(s); else error.
+        src_to_scores = {}
+        for _p, _step in ci_prep_pip.steps:
+            if isinstance(_step, GroupwisePLSTransformer):
+                scores = [f"{_step.score_prefix}_{i}" for i in range(1, _step.n_components + 1)]
+                for src in _step.pls_columns:
+                    src_to_scores.setdefault(src, []).extend(scores)
+        ci_fixed = []
+        for fv in fixed_vars:
+            if fv in ci_feature_cols:
+                ci_fixed.append(fv)
+            elif fv in src_to_scores:
+                ci_fixed.extend([s for s in src_to_scores[fv] if s in ci_feature_cols])
+            else:
+                raise ValueError(
+                    f"FIXED_VARIABLE '{fv}' is not representable in the differenced "
+                    f"frame (not a passthrough feature nor a PLS source). Adjust "
+                    f"config.FIXED_VARIABLES[{Y_COLUMN!r}] or CONSIDERED_VARS.")
+        ci_fixed = unique_in_order(ci_fixed)
+
+        selection = _ci.select_subset_survivors(
+            ci_frame, Y_COLUMN, alpha=args.alpha, alpha_marginal=0.70,
+            max_k=args.max_k, max_states=args.max_states,
+            max_tests=args.max_tests, verbose=False,
+            fixed_vars=ci_fixed,
+        )
+        ci_selected = list(selection["selected_vars"])
+        # Independence diagnostics for the SELECTED (transformed) features: how
+        # robustly each survived conditioning on the others. Reported in
+        # results.json; does NOT change the selection. Uses the same CI frame,
+        # fixed set and alphas as the selection so the numbers are comparable.
+        indep = _ci.independence_diagnostics(
+            ci_frame, Y_COLUMN, ci_selected, fixed_vars=ci_fixed,
+            max_k=args.max_k, alpha=args.alpha, alpha_marginal=0.70,
+        )
+        # Report separators for OMITTED variables too (the conditioning set that
+        # explained each away), so dropped-vs-kept can be compared side by side.
+        sep_df = selection["separators_df"]
+        ci_diagnostics = {
+            "metadata": selection["metadata"],
+            "selected_feature_independence": indep["variables"],
+            "omitted_separators": (
+                sep_df.to_dict("records") if hasattr(sep_df, "to_dict") else []),
+            "fixed_audit": (
+                selection["fixed_audit_df"].to_dict("records")
+                if hasattr(selection["fixed_audit_df"], "to_dict") else []),
+        }
+        # Surface the weakest (most borderline) survivors to the console.
+        borderline = [d for d in indep["variables"]
+                      if d["role"] == "selected" and d["borderline"]]
+        if borderline:
+            print(f"CI borderline survivors (survived but close to alpha={indep['alpha']}):")
+            for d in borderline:
+                print(f"  {d['variable']}: max_p={d['max_p']:.4g} "
+                      f"min|r|={d['min_abs_partial_r']:.4g} "
+                      f"weakest_Z={d['weakest_conditioning_set']}")
+        # map selected transformed features back to raw/source variables
+        score_to_sources = {}
+        for _p, _step in ci_prep_pip.steps:
+            if isinstance(_step, GroupwisePLSTransformer):
+                for _i in range(1, _step.n_components + 1):
+                    score_to_sources[f"{_step.score_prefix}_{_i}"] = list(_step.pls_columns)
+        resolved = []
+        for v in ci_selected:
+            resolved.extend(score_to_sources.get(v, [v]))
+        # always include the fixed raw variables themselves
+        ci_selected_vars = unique_in_order(resolved + fixed_vars)
+        # Option-1 honoring: the exact PLS score names CI kept. Used below to add
+        # ONLY these scores to the model's feature set, so a group CI fully
+        # rejected is dropped and a group only partly kept contributes just its
+        # surviving component(s) -- making feature_cols match the CI decision.
+        ci_selected_scores = [v for v in ci_selected if v in score_to_sources]
+        print(f"CI complete={selection['metadata']['complete']} | "
+              f"selected {len(ci_selected)} features -> {len(ci_selected_vars)} raw/source vars")
+        print(f"CI vars: {ci_selected_vars}")
+
+    # =========================================================================
     # Preprocessing
     # =========================================================================
     print("\n--- Preprocessing ---")
     steam_pressure = [v for v in turnup_data.columns if re.search(r"cylinder.*steam_pressure", v, re.I)]
     steam_diff_pressure = [v for v in turnup_data.columns if re.search(r"cylinder.*differential_pressure", v, re.I)]
+
+    # Control variables: CI-selected set (if --conditional_independence) else CONTROL_VARS.
+    control_source = ci_selected_vars if ci_selected_vars is not None else CONTROL_VARS[Y_COLUMN]
+    ctl_vars = unique_in_order(v for v in control_source if "vacuum" not in v.lower())
+    created_vars = ordered_intersection(CREATED_VARIABLE_CANDIDATES[Y_COLUMN], ctl_vars)
+    if ci_selected_vars is not None:
+        # CI may select engineered vars (e.g. delta_basis_weight) that are creatable by
+        # FeatureCreator but NOT in this target's CREATED_VARIABLE_CANDIDATES. They must
+        # be routed through creation, not treated as raw columns. (Non-CI runs keep the
+        # original created_vars so existing models are unchanged.)
+        _registry = FeatureCreator._registry()
+        created_vars = unique_in_order(
+            created_vars + [v for v in ctl_vars if v in _registry])
 
     exog_vars_reduced = [
         v for v in ctl_vars
@@ -576,10 +882,25 @@ def main():
     for _, step in prep_pip.steps:
         if isinstance(step, GroupwisePLSTransformer):
             transformed_names = [f"{step.score_prefix}_{i}" for i in range(1, step.n_components + 1)]
-            exog_vars_reduced = ordered_difference(
-                unique_in_order(exog_vars_reduced + transformed_names),
-                list(step.pls_columns),
-            )
+            if ci_selected_scores is not None:
+                # Option-1: honor CI's per-score decisions. Add ONLY the scores CI
+                # kept for this group (in canonical order). If CI kept none, the
+                # group does not fire and its sources are NOT consumed here -- any
+                # source that is independently a CI-selected passthrough stays as a
+                # raw feature; otherwise it was never in the set to begin with.
+                keep_scores = [s for s in transformed_names if s in ci_selected_scores]
+                if keep_scores:
+                    exog_vars_reduced = ordered_difference(
+                        unique_in_order(exog_vars_reduced + keep_scores),
+                        list(step.pls_columns),
+                    )
+                # group fully rejected by CI -> leave exog_vars_reduced untouched
+            else:
+                # Non-CI runs: unchanged behavior (all scores, sources consumed).
+                exog_vars_reduced = ordered_difference(
+                    unique_in_order(exog_vars_reduced + transformed_names),
+                    list(step.pls_columns),
+                )
     exog_vars_reduced = unique_in_order(["grammage"] + exog_vars_reduced)
 
     pre_estimator, feat_list = build_pre_estimator(
@@ -587,8 +908,13 @@ def main():
         prep_pip=prep_pip,
         created_vars=created_vars,
         apply_ewm=False,  # EWM is applied upstream as a data prep step
+        # Same-grammage differencing kills the grammage one-hot (Delta=0), so drop it
+        # from the regression; the per-grade level is carried by the state's grade
+        # baseline instead. Keep grammage as a feature only if cross-grammage is allowed.
+        include_grammage=args.allow_cross_grammage,
     )
     print(f"Pipeline features: {len(feat_list)}")
+    print(f"Grammage as model feature: {args.allow_cross_grammage}")
 
     # =========================================================================
     # EWM filtering (data prep, NOT part of the model pipeline)
@@ -643,7 +969,14 @@ def main():
     y_all = turnup_ts[Y_COLUMN].values[:len(ts_transformed)].astype(float)
     t_hours = to_hours(ts_transformed.index)
 
+    # Grammage per transformed row, used to forbid cross-grammage differencing pairs
+    # (same-grammage only, unless --allow_cross_grammage). Differencing across a grade
+    # change captures a between-regime jump, which confounds the within-run dX->dy fit.
+    grammage_all = turnup_ts["grammage"].values[:len(ts_transformed)]
+    pair_grammage = None if args.allow_cross_grammage else grammage_all
+
     print(f"Shape: {ts_transformed.shape}, split at {split}")
+    print(f"Cross-grammage differencing: {'ALLOWED' if args.allow_cross_grammage else 'disallowed (same-grammage only)'}")
 
     # =========================================================================
     # Lag sweep (informational, train only)
@@ -658,10 +991,11 @@ def main():
     X_train, y_train = X_all[:split], y_all[:split]
     t_hours_train = t_hours[:split]
 
+    pair_grammage_train = None if pair_grammage is None else pair_grammage[:split]
     sweep_results = []
     for lag_d in DEFAULT_LAG_SWEEP:
         lag_h = lag_d * 24.0
-        later, earlier = lag_pairs(t_hours_train, lag_h)
+        later, earlier = lag_pairs(t_hours_train, lag_h, grammage=pair_grammage_train)
         if len(later) < 200:
             print(f"  lag {lag_d:6.2f}d  -- too few pairs ({len(later)}), skipping")
             continue
@@ -692,7 +1026,7 @@ def main():
     # Build differenced data at the chosen lag
     # =========================================================================
     lag_h = best_lag_d * 24.0
-    later, earlier = lag_pairs(t_hours, lag_h)
+    later, earlier = lag_pairs(t_hours, lag_h, grammage=pair_grammage)
     dX = X_all[later] - X_all[earlier]
     dy = y_all[later] - y_all[earlier]
 
@@ -846,6 +1180,37 @@ def main():
         print(f"\n  Top 10 by MI:")
         print(mi_df.head(10).to_string(index=False))
 
+        # -----------------------------------------------------------------
+        # Prune the pipeline to the MINIMAL input set (all targets).
+        # Back-propagate from selected features: drop PLS groups whose scores
+        # are all unselected (and their source cols) and created features that
+        # don't reach the model, shrinking feat_list to only the raw inputs
+        # actually needed. Verified against the original transform; falls back
+        # to the full pipeline if the pruned one doesn't reproduce it exactly.
+        # -----------------------------------------------------------------
+        from preprocessing import prune_pre_estimator
+        # reference = the selected columns of the ORIGINAL transform, in selected order
+        sel_idx = [feature_cols.index(n) for n in selected_names]
+        X_selected_reference = X_all[:, sel_idx]
+        pruned_pre, feat_list_min = prune_pre_estimator(
+            selected_features=selected_names,
+            prep_pip=prep_pip,
+            created_vars=created_vars,
+            full_pre_estimator=pre_estimator,
+            X_raw_fit=ts_raw.iloc[:split],
+            y_fit=turnup_ts[Y_COLUMN].iloc[:split],
+            X_raw_all=turnup_ts,
+            X_selected_reference=X_selected_reference,
+            apply_ewm=False,
+            ewm_halflife=ewm_halflife,
+        )
+        if pruned_pre is not None:
+            pre_estimator = pruned_pre
+            feat_list = feat_list_min
+            print(f"  [prune] pipeline pruned -> {len(feat_list)} raw inputs")
+        else:
+            print(f"  [prune] kept full pipeline ({len(feat_list)} raw inputs)")
+
     # =========================================================================
     # Metrics
     # =========================================================================
@@ -927,6 +1292,40 @@ def main():
     plt.close()
 
     # =========================================================================
+    # Grade baseline  g(grammage) = mean of (y_ewm - beta'X) per grammage
+    # =========================================================================
+    # After same-grammage differencing, grammage is no longer a regression feature.
+    # Its per-grade level is carried here, as the mean residual (y - beta'X) per grade.
+    # The deployed StateBuilder uses it as: c(t) = g(grammage) + deviation(t), so a
+    # cold-start row (no lag partner) falls back to the grade baseline instead of NaN.
+    # Only meaningful for linear models (ridge / fs_ridge), where beta'X is a linear
+    # level prediction. Computed train-only (model.pkl) and all-data (model_full.pkl).
+    def _compute_grade_baseline(row_mask):
+        """mean of (y_ewm - beta'X) per grammage over rows where row_mask is True."""
+        if MODEL not in ("ridge", "fs_ridge"):
+            return {}
+        # beta'X as a LEVEL prediction (linear model applied to level features)
+        if MODEL == "fs_ridge":
+            beta_x_lvl = model.predict(selector.transform(X_all)).ravel()
+        else:
+            beta_x_lvl = model.predict(X_all).ravel()
+        resid = y_all - beta_x_lvl                       # y_ewm - beta'X at each row
+        g = grammage_all
+        out = {}
+        for gv in np.unique(g[row_mask]):
+            sel = row_mask & (g == gv)
+            if sel.sum() > 0:
+                out[float(gv)] = float(np.mean(resid[sel]))
+        return out
+
+    train_row_mask = np.zeros(len(X_all), dtype=bool); train_row_mask[:split] = True
+    all_row_mask = np.ones(len(X_all), dtype=bool)
+    grade_baseline = _compute_grade_baseline(train_row_mask)        # for model.pkl
+    grade_baseline_full = _compute_grade_baseline(all_row_mask)     # for model_full.pkl
+    print(f"Grade baseline (train): "
+          f"{ {k: round(v,1) for k,v in grade_baseline.items()} }")
+
+    # =========================================================================
     # Save
     # =========================================================================
     print("\n--- Saving ---")
@@ -965,6 +1364,12 @@ def main():
             "apply_ewm_filter": True,
             "apply_ewm_filter_y": True,
             "ewm_halflife": ewm_halflife,
+            "allow_cross_grammage": bool(args.allow_cross_grammage),
+            "conditional_independence": bool(args.conditional_independence),
+            "ci_max_states": args.max_states if args.conditional_independence else None,
+            "ci_max_tests": args.max_tests if args.conditional_independence else None,
+            "ci_max_k": args.max_k if args.conditional_independence else None,
+            "ci_alpha": args.alpha if args.conditional_independence else None,
             "spline_knots": args.spline_knots if MODEL == "splines_ridge" else None,
             "spline_degree": args.spline_degree if MODEL == "splines_ridge" else None,
             "ridge_alpha": best_alpha,
@@ -995,6 +1400,9 @@ def main():
             "gain_over_persistence_ewm": m_ewm_model["r2"] - m_ewm_pers["r2"],
             "gain_over_persistence_raw": m_raw_model["r2"] - m_raw_pers["r2"],
         },
+        # Conditional-independence selection diagnostics (only populated when the
+        # run used --conditional_independence). See docs/ci_feature_selection.md.
+        "ci_selection": ci_diagnostics,
     }
     with open(out_dir / "results.json", "w") as f:
         json.dump(results_json, f, indent=2, default=float)
@@ -1003,18 +1411,22 @@ def main():
         if MODEL == "realmlp":
             cloudpickle.dump({"model": mlp_model, "scaler": mlp_scaler,
                               "pre_estimator": pre_estimator,
-                              "feat_list": feat_list}, f)
+                              "feat_list": feat_list,
+                              "grade_baseline": grade_baseline}, f)
         elif MODEL == "gam":
             cloudpickle.dump({"model": gam, "scaler": scaler_gam,
                               "pre_estimator": pre_estimator,
-                              "feat_list": feat_list}, f)
+                              "feat_list": feat_list,
+                              "grade_baseline": grade_baseline}, f)
         elif MODEL == "fs_ridge":
             cloudpickle.dump({"model": model, "pre_estimator": pre_estimator,
                               "feat_list": feat_list,
-                              "selected_features": selected_names}, f)
+                              "selected_features": selected_names,
+                              "grade_baseline": grade_baseline}, f)
         else:
             cloudpickle.dump({"model": model, "pre_estimator": pre_estimator,
-                              "feat_list": feat_list}, f)
+                              "feat_list": feat_list,
+                              "grade_baseline": grade_baseline}, f)
 
     # =========================================================================
     # Refit on ALL data and save as model_full.pkl
@@ -1076,18 +1488,22 @@ def main():
         if MODEL == "realmlp":
             cloudpickle.dump({"model": mlp_model_full, "scaler": mlp_scaler_full,
                               "pre_estimator": pre_estimator,
-                              "feat_list": feat_list}, f)
+                              "feat_list": feat_list,
+                              "grade_baseline": grade_baseline_full}, f)
         elif MODEL == "gam":
             cloudpickle.dump({"model": gam_full, "scaler": scaler_gam_full,
                               "pre_estimator": pre_estimator,
-                              "feat_list": feat_list}, f)
+                              "feat_list": feat_list,
+                              "grade_baseline": grade_baseline_full}, f)
         elif MODEL == "fs_ridge":
             cloudpickle.dump({"model": model_full, "pre_estimator": pre_estimator,
                               "feat_list": feat_list,
-                              "selected_features": selected_names}, f)
+                              "selected_features": selected_names,
+                              "grade_baseline": grade_baseline_full}, f)
         else:
             cloudpickle.dump({"model": model_full, "pre_estimator": pre_estimator,
-                              "feat_list": feat_list}, f)
+                              "feat_list": feat_list,
+                              "grade_baseline": grade_baseline_full}, f)
 
     print(f"\nDone. Results in: {out_dir}")
 
